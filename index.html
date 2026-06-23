@@ -6,153 +6,112 @@
 <title>ניהול תזרים ושכר</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  /* ======== צבעים בסיסיים ======== */
   :root {
-    --bg: #f7f7f5;
-    --surface: #ffffff;
-    --border: #e4e4e0;
-    --text: #1a1a18;
-    --muted: #888780;
-    --green: #0F6E56;
-    --green-bg: #E1F5EE;
-    --red: #993C1D;
-    --red-bg: #FAECE7;
-    --blue: #185FA5;
-    --blue-bg: #E6F1FB;
-    --amber: #854F0B;
-    --amber-bg: #FAEEDA;
-    --radius: 10px;
-    --radius-sm: 6px;
+    --bg: #f7f7f5; --surface: #ffffff; --border: #e4e4e0;
+    --text: #1a1a18; --muted: #888780;
+    --green: #0F6E56; --green-bg: #E1F5EE;
+    --red: #993C1D; --red-bg: #FAECE7;
+    --blue: #185FA5; --blue-bg: #E6F1FB;
+    --amber: #854F0B; --amber-bg: #FAEEDA;
+    --radius: 10px; --radius-sm: 6px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; min-height: 100vh; }
 
-  /* ======== כניסה ======== */
-  #auth-screen {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem;
-  }
-  .auth-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 2rem; width: 100%; max-width: 380px;
-  }
+  /* AUTH */
+  #auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 380px; }
   .auth-card h1 { font-size: 22px; font-weight: 600; margin-bottom: 0.25rem; }
   .auth-card p { color: var(--muted); font-size: 14px; margin-bottom: 1.5rem; }
-  .auth-tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .auth-tabs { display: flex; margin-bottom: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
   .auth-tab { flex: 1; padding: 8px; background: transparent; border: none; cursor: pointer; font-size: 14px; color: var(--muted); }
   .auth-tab.active { background: var(--text); color: #fff; font-weight: 500; }
   .field { margin-bottom: 12px; }
   .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
   .field input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: var(--bg); color: var(--text); }
-  .field input:focus { outline: none; border-color: var(--blue); }
   .btn-primary { width: 100%; padding: 11px; background: var(--text); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
-  .btn-primary:hover { opacity: 0.88; }
-  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .btn-primary:disabled { opacity: 0.5; }
   .msg { margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px; display: none; }
   .msg.ok { background: var(--green-bg); color: var(--green); display: block; }
   .msg.err { background: var(--red-bg); color: var(--red); display: block; }
 
-  /* ======== אפליקציה ======== */
+  /* APP */
   #app-screen { display: none; }
-  .topbar {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 0 1rem; display: flex; align-items: center; justify-content: space-between;
-    height: 56px; position: sticky; top: 0; z-index: 10;
-  }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
   .topbar-title { font-size: 16px; font-weight: 600; }
   .topbar-user { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
   .btn-logout { padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; cursor: pointer; font-size: 13px; color: var(--muted); }
-  .btn-logout:hover { background: var(--bg); }
-
   .main { max-width: 800px; margin: 0 auto; padding: 1.25rem 1rem 5rem; }
-
-  /* חודש */
   .month-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
   .month-bar label { font-size: 13px; color: var(--muted); }
   .month-bar select { padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 14px; }
-
-  /* כרטיסי סיכום */
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
   .card-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
   .card-value { font-size: 22px; font-weight: 600; }
-  .c-green { color: var(--green); }
-  .c-red { color: var(--red); }
-  .c-blue { color: var(--blue); }
-
-  /* טאבים */
+  .c-green { color: var(--green); } .c-red { color: var(--red); } .c-blue { color: var(--blue); }
   .tabs { display: flex; gap: 6px; margin-bottom: 1.25rem; flex-wrap: wrap; }
   .tab { padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; font-size: 13px; color: var(--muted); }
   .tab.active { background: var(--text); color: #fff; border-color: var(--text); font-weight: 500; }
-
-  /* סקשן */
   .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1rem; }
   .section-title { font-size: 14px; font-weight: 600; margin-bottom: 1rem; }
-  .page { display: none; }
-  .page.active { display: block; }
-
-  /* טופס */
-  .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .page { display: none; } .page.active { display: block; }
+  .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 10px; }
   .form-row input, .form-row select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 13px; width: 100%; }
-  .btn-add { padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--text); color: #fff; cursor: pointer; font-size: 13px; font-weight: 500; }
-  .btn-add:hover { opacity: 0.88; }
+  .btn-add { padding: 8px 16px; border: none; border-radius: var(--radius-sm); background: var(--text); color: #fff; cursor: pointer; font-size: 13px; font-weight: 500; }
   .btn-add:disabled { opacity: 0.5; }
-
-  /* טבלה */
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { text-align: right; color: var(--muted); font-weight: 400; padding: 6px 0; border-bottom: 1px solid var(--border); }
   td { padding: 9px 0; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
   .empty { text-align: center; color: var(--muted); padding: 20px; }
-
-  /* תגיות */
   .badge { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 11px; font-weight: 500; }
   .badge-income { background: var(--green-bg); color: var(--green); }
   .badge-expense { background: var(--red-bg); color: var(--red); }
   .badge-paid { background: var(--green-bg); color: var(--green); }
   .badge-pending { background: var(--amber-bg); color: var(--amber); }
   .badge-late { background: var(--red-bg); color: var(--red); }
-
-  /* כפתור מחיקה */
   .btn-del { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; padding: 2px 6px; border-radius: 4px; }
   .btn-del:hover { color: var(--red); background: var(--red-bg); }
-
-  /* בר קטגוריות */
   .bar-wrap { margin-bottom: 10px; }
   .bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
   .bar-bg { height: 8px; background: var(--bg); border-radius: 100px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 100px; }
-
-  /* התראות */
   .alert { padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; }
   .alert-ok { background: var(--green-bg); color: var(--green); }
   .alert-warn { background: var(--amber-bg); color: var(--amber); }
   .alert-danger { background: var(--red-bg); color: var(--red); }
+  select.status-select { padding: 4px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); }
 
-  /* טאב בר תחתון במובייל */
+  /* כרטיסי עובדים */
+  .emp-cards { display: flex; flex-direction: column; gap: 12px; }
+  .emp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .emp-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--border); cursor: pointer; }
+  .emp-card-name { font-weight: 600; font-size: 15px; }
+  .emp-card-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .emp-card-toggle { font-size: 18px; color: var(--muted); background: none; border: none; cursor: pointer; }
+  .emp-card-body { padding: 12px 16px; }
+  .emp-card-body.collapsed { display: none; }
+
+  /* טופס אירוע */
+  .event-form { background: var(--bg); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 10px; }
+  .event-form-title { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+  .event-form .form-row { margin-bottom: 8px; }
+  .btn-sm { padding: 6px 12px; border: none; border-radius: var(--radius-sm); background: var(--text); color: #fff; cursor: pointer; font-size: 12px; font-weight: 500; }
+
   @media (max-width: 600px) {
     .tabs { display: none; }
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--surface); border-top: 1px solid var(--border);
-      display: flex; padding: 8px 0 12px;
-    }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; padding: 8px 0 12px; }
     .bnav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; color: var(--muted); font-size: 11px; border: none; background: none; }
     .bnav-item.active { color: var(--text); font-weight: 600; }
     .bnav-icon { font-size: 22px; }
     .topbar-user span { display: none; }
   }
-  @media (min-width: 601px) {
-    .bottom-nav { display: none; }
-  }
-
-  .spinner { text-align: center; padding: 20px; color: var(--muted); font-size: 13px; }
-
-  select.status-select { padding: 4px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); }
+  @media (min-width: 601px) { .bottom-nav { display: none; } }
 </style>
 </head>
 <body>
 
-<!-- ====== מסך כניסה ====== -->
 <div id="auth-screen">
   <div class="auth-card">
     <h1>💰 תזרים ושכר</h1>
@@ -168,7 +127,6 @@
   </div>
 </div>
 
-<!-- ====== אפליקציה ====== -->
 <div id="app-screen">
   <div class="topbar">
     <div class="topbar-title">💰 תזרים ושכר</div>
@@ -184,15 +142,13 @@
       <select id="monthSelect" onchange="loadAll()"></select>
     </div>
 
-    <!-- כרטיסי סיכום -->
     <div class="cards">
       <div class="card"><div class="card-label">סה"כ הכנסות</div><div class="card-value c-green" id="d-income">—</div></div>
       <div class="card"><div class="card-label">סה"כ הוצאות</div><div class="card-value c-red" id="d-expense">—</div></div>
-      <div class="card"><div class="card-label">שכר לתשלום</div><div class="card-value c-blue" id="d-salary">—</div></div>
+      <div class="card"><div class="card-label">שכר החודש</div><div class="card-value c-blue" id="d-salary">—</div></div>
       <div class="card"><div class="card-label">יתרה נטו</div><div class="card-value" id="d-net">—</div></div>
     </div>
 
-    <!-- טאבים (דסקטופ) -->
     <div class="tabs">
       <button class="tab active" onclick="showPage('dashboard', this)">📊 סיכום</button>
       <button class="tab" onclick="showPage('transactions', this)">💸 הכנסות/הוצאות</button>
@@ -200,32 +156,27 @@
       <button class="tab" onclick="showPage('alerts', this)">🔔 התראות</button>
     </div>
 
-    <!-- דף סיכום -->
+    <!-- סיכום -->
     <div id="page-dashboard" class="page active">
       <div class="section">
         <div class="section-title">הוצאות לפי קטגוריה</div>
         <div id="cat-bars"><div class="empty">טוען...</div></div>
       </div>
       <div class="section">
-        <div class="section-title">סטטוס תשלום עובדים</div>
+        <div class="section-title">סטטוס תשלום עובדים החודש</div>
         <div id="emp-status"></div>
       </div>
     </div>
 
-    <!-- דף עסקאות -->
+    <!-- עסקאות -->
     <div id="page-transactions" class="page">
       <div class="section">
         <div class="section-title">הוסף רשומה</div>
         <div class="form-row">
           <input type="text" id="t-desc" placeholder="תיאור" />
           <input type="number" id="t-amount" placeholder="סכום ₪" min="0" />
-          <select id="t-type">
-            <option value="income">הכנסה</option>
-            <option value="expense">הוצאה</option>
-          </select>
-          <select id="t-cat">
-            <option>שירותים</option><option>שכירות</option><option>ציוד</option><option>שיווק</option><option>אחר</option>
-          </select>
+          <select id="t-type"><option value="income">הכנסה</option><option value="expense">הוצאה</option></select>
+          <select id="t-cat"><option>שירותים</option><option>שכירות</option><option>ציוד</option><option>שיווק</option><option>אחר</option></select>
         </div>
         <button class="btn-add" id="btn-add-tx" onclick="addTransaction()">+ הוסף</button>
       </div>
@@ -236,54 +187,35 @@
       </div>
     </div>
 
-    <!-- דף עובדים -->
+    <!-- עובדים -->
     <div id="page-employees" class="page">
       <div class="section">
-        <div class="section-title">הוסף עובד</div>
-        <div class="form-row">
-          <input type="text" id="e-name" placeholder="שם עובד" />
-          <input type="number" id="e-salary" placeholder="משכורת ₪" min="0" />
-          <select id="e-role"><option>שכיר</option><option>קבלן</option><option>שעתי</option></select>
+        <div class="section-title">הוסף עובד חדש</div>
+        <div class="form-row" style="grid-template-columns:1fr auto">
+          <input type="text" id="e-name" placeholder="שם העובד" />
+          <button class="btn-add" id="btn-add-emp" onclick="addEmployee()">+ הוסף</button>
         </div>
-        <button class="btn-add" id="btn-add-emp" onclick="addEmployee()">+ הוסף עובד</button>
       </div>
-      <div class="section">
-        <div class="section-title">רשימת עובדים</div>
-        <table><thead><tr><th>שם</th><th>סוג</th><th>משכורת</th><th>סטטוס</th><th></th></tr></thead>
-        <tbody id="emp-table"><tr><td colspan="5" class="empty">טוען...</td></tr></tbody></table>
-      </div>
+      <div id="emp-cards" class="emp-cards"></div>
     </div>
 
-    <!-- דף התראות -->
+    <!-- התראות -->
     <div id="page-alerts" class="page">
       <div id="alerts-box"><div class="empty">טוען...</div></div>
     </div>
   </div>
 
-  <!-- טאב בר תחתון (מובייל) -->
   <div class="bottom-nav">
-    <button class="bnav-item active" onclick="showPage('dashboard', this)" data-page="dashboard">
-      <span class="bnav-icon">📊</span>סיכום
-    </button>
-    <button class="bnav-item" onclick="showPage('transactions', this)" data-page="transactions">
-      <span class="bnav-icon">💸</span>עסקאות
-    </button>
-    <button class="bnav-item" onclick="showPage('employees', this)" data-page="employees">
-      <span class="bnav-icon">👥</span>עובדים
-    </button>
-    <button class="bnav-item" onclick="showPage('alerts', this)" data-page="alerts">
-      <span class="bnav-icon">🔔</span>התראות
-    </button>
+    <button class="bnav-item active" onclick="showPage('dashboard', this)" data-page="dashboard"><span class="bnav-icon">📊</span>סיכום</button>
+    <button class="bnav-item" onclick="showPage('transactions', this)" data-page="transactions"><span class="bnav-icon">💸</span>עסקאות</button>
+    <button class="bnav-item" onclick="showPage('employees', this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
+    <button class="bnav-item" onclick="showPage('alerts', this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
 
 <script>
-// =============================================
-// ⚠️  החלף את הערכים האלה במפתחות שלך מ-Supabase
-// =============================================
 const SUPABASE_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cnZsb2dxanpwbm9qZnpiYXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk2MjgsImV4cCI6MjA5NzgwNTYyOH0.2I45YWLkTDLjndmyoNImkPLfqOxJV7TVsff2kAOZHpg';
-// =============================================
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -291,19 +223,21 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let cachedTx = [];
 let cachedEmps = [];
+let cachedEvents = []; // אירועי עובדים
 
-// --- עזר ---
 const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
 const $ = id => document.getElementById(id);
+const getMonth = () => $('monthSelect').value;
 
 // --- חודשים ---
 function initMonths() {
   const sel = $('monthSelect');
+  sel.innerHTML = '';
   const now = new Date();
+  const names = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   for (let i = 5; i >= -1; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const val = d.toISOString().slice(0, 7);
-    const names = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
     const opt = document.createElement('option');
     opt.value = val;
     opt.textContent = names[d.getMonth()] + ' ' + d.getFullYear();
@@ -317,7 +251,7 @@ let authMode = 'login';
 function switchAuthTab(mode) {
   authMode = mode;
   document.querySelectorAll('.auth-tab').forEach((t, i) => {
-    t.classList.toggle('active', (mode === 'login' && i === 0) || (mode === 'signup' && i === 1));
+    t.classList.toggle('active', (mode==='login'&&i===0)||(mode==='signup'&&i===1));
   });
   $('auth-btn').textContent = mode === 'login' ? 'כניסה' : 'הרשמה';
   $('auth-msg').className = 'msg';
@@ -326,30 +260,21 @@ function switchAuthTab(mode) {
 async function doAuth() {
   const email = $('auth-email').value.trim();
   const password = $('auth-password').value;
-  const btn = $('auth-btn');
-  const msg = $('auth-msg');
   if (!email || !password) { showMsg('נא למלא אימייל וסיסמה', 'err'); return; }
-  btn.disabled = true;
-  btn.textContent = '...';
-  let res;
-  if (authMode === 'login') {
-    res = await sb.auth.signInWithPassword({ email, password });
-  } else {
-    res = await sb.auth.signUp({ email, password });
-  }
-  btn.disabled = false;
-  btn.textContent = authMode === 'login' ? 'כניסה' : 'הרשמה';
+  $('auth-btn').disabled = true;
+  $('auth-btn').textContent = '...';
+  const res = authMode === 'login'
+    ? await sb.auth.signInWithPassword({ email, password })
+    : await sb.auth.signUp({ email, password });
+  $('auth-btn').disabled = false;
+  $('auth-btn').textContent = authMode === 'login' ? 'כניסה' : 'הרשמה';
   if (res.error) { showMsg(res.error.message, 'err'); return; }
-  if (authMode === 'signup' && !res.data.session) {
-    showMsg('נשלח מייל אישור — בדוק את תיבת הדואר שלך', 'ok'); return;
-  }
+  if (authMode === 'signup' && !res.data.session) { showMsg('נשלח מייל אישור!', 'ok'); return; }
   enterApp(res.data.user);
 }
 
 function showMsg(text, type) {
-  const m = $('auth-msg');
-  m.textContent = text;
-  m.className = 'msg ' + type;
+  const m = $('auth-msg'); m.textContent = text; m.className = 'msg ' + type;
 }
 
 async function logout() {
@@ -368,25 +293,27 @@ function enterApp(user) {
   loadAll();
 }
 
-// --- טעינת נתונים ---
+// --- טעינה ---
 async function loadAll() {
-  const month = $('monthSelect').value;
+  const month = getMonth();
   const uid = currentUser.id;
-
-  const [txRes, empRes] = await Promise.all([
+  const [txRes, empRes, evRes] = await Promise.all([
     sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false }),
-    sb.from('employees').select('*').eq('user_id', uid).order('created_at')
+    sb.from('employees').select('*').eq('user_id', uid).order('name'),
+    // טוען רק אירועים של החודש הנבחר
+    sb.from('employee_events').select('*').eq('user_id', uid).eq('month', month).order('date')
   ]);
-
   cachedTx = txRes.data || [];
   cachedEmps = empRes.data || [];
+  cachedEvents = evRes.data || [];
   renderAll();
 }
 
 function renderAll() {
-  const income = cachedTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const expense = cachedTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  const salary = cachedEmps.reduce((s, e) => s + e.salary, 0);
+  const income = cachedTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = cachedTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  // שכר = סכום אירועי עובדים של החודש בלבד
+  const salary = cachedEvents.reduce((s,e)=>s+e.amount,0);
   const net = income - expense - salary;
 
   $('d-income').textContent = fmt(income);
@@ -399,71 +326,134 @@ function renderAll() {
   renderCatBars(expense);
   renderEmpStatus();
   renderTxTable();
-  renderEmpTable();
+  renderEmpCards();
   renderAlerts(income, expense, salary, net);
 }
 
 function renderCatBars(totalExp) {
   const cats = {};
-  cachedTx.filter(t => t.type === 'expense').forEach(t => { cats[t.category] = (cats[t.category] || 0) + t.amount; });
-  const colors = { שכירות: '#185FA5', ציוד: '#0F6E56', שיווק: '#854F0B', שירותים: '#993C1D', אחר: '#533C89' };
+  cachedTx.filter(t=>t.type==='expense').forEach(t=>{ cats[t.category]=(cats[t.category]||0)+t.amount; });
   const el = $('cat-bars');
   if (!Object.keys(cats).length) { el.innerHTML = '<div class="empty">אין הוצאות החודש</div>'; return; }
-  el.innerHTML = Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
-    const pct = totalExp > 0 ? Math.round(amt / totalExp * 100) : 0;
+  const colors = {שכירות:'#185FA5',ציוד:'#0F6E56',שיווק:'#854F0B',שירותים:'#993C1D',אחר:'#533C89'};
+  el.innerHTML = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>{
+    const pct = totalExp>0 ? Math.round(amt/totalExp*100) : 0;
     return `<div class="bar-wrap"><div class="bar-label"><span>${cat}</span><span>${fmt(amt)} (${pct}%)</span></div>
-    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${colors[cat] || '#888'}"></div></div></div>`;
+    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${colors[cat]||'#888'}"></div></div></div>`;
   }).join('');
 }
 
 function renderEmpStatus() {
-  const paid = cachedEmps.filter(e => e.status === 'שולם').length;
   const el = $('emp-status');
   if (!cachedEmps.length) { el.innerHTML = '<div class="empty">לא נוספו עובדים</div>'; return; }
-  el.innerHTML = `<p style="font-size:13px;color:var(--muted);margin-bottom:10px">${paid} מתוך ${cachedEmps.length} עובדים שולמו</p>` +
-    cachedEmps.map(e => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:13px">${e.name}</span>
-      <span class="badge badge-${e.status === 'שולם' ? 'paid' : e.status === 'באיחור' ? 'late' : 'pending'}">${e.status}</span>
-    </div>`).join('');
+  // סטטוס לפי אירועים של החודש
+  const empTotals = {};
+  const empPaid = {};
+  cachedEvents.forEach(ev => {
+    empTotals[ev.employee_id] = (empTotals[ev.employee_id]||0) + ev.amount;
+    if (!empPaid[ev.employee_id]) empPaid[ev.employee_id] = true;
+    if (ev.status !== 'שולם') empPaid[ev.employee_id] = false;
+  });
+  el.innerHTML = cachedEmps.map(emp => {
+    const total = empTotals[emp.id] || 0;
+    const evs = cachedEvents.filter(e=>e.employee_id===emp.id);
+    const allPaid = evs.length > 0 && evs.every(e=>e.status==='שולם');
+    const hasLate = evs.some(e=>e.status==='באיחור');
+    const status = evs.length===0 ? 'אין אירועים' : allPaid ? 'שולם' : hasLate ? 'באיחור' : 'ממתין';
+    const cls = status==='שולם' ? 'paid' : status==='באיחור' ? 'late' : status==='ממתין' ? 'pending' : '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div><span style="font-size:13px;font-weight:500">${emp.name}</span>${total>0?`<span style="font-size:12px;color:var(--muted);margin-right:8px">${fmt(total)}</span>`:''}
+      </div>
+      ${cls ? `<span class="badge badge-${cls}">${status}</span>` : `<span style="font-size:12px;color:var(--muted)">${status}</span>`}
+    </div>`;
+  }).join('');
 }
 
 function renderTxTable() {
   const tb = $('tx-table');
   if (!cachedTx.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">אין רשומות לחודש זה</td></tr>'; return; }
-  tb.innerHTML = cachedTx.map(t => `<tr>
+  tb.innerHTML = cachedTx.map(t=>`<tr>
     <td>${t.description}</td>
     <td style="color:var(--muted);font-size:12px">${t.category}</td>
-    <td><span class="badge badge-${t.type}">${t.type === 'income' ? 'הכנסה' : 'הוצאה'}</span></td>
+    <td><span class="badge badge-${t.type}">${t.type==='income'?'הכנסה':'הוצאה'}</span></td>
     <td style="font-weight:600">${fmt(t.amount)}</td>
     <td><button class="btn-del" onclick="deleteTx('${t.id}')">🗑</button></td>
   </tr>`).join('');
 }
 
-function renderEmpTable() {
-  const tb = $('emp-table');
-  if (!cachedEmps.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">לא נוספו עובדים</td></tr>'; return; }
-  tb.innerHTML = cachedEmps.map(e => `<tr>
-    <td>${e.name}</td>
-    <td style="color:var(--muted);font-size:12px">${e.role}</td>
-    <td style="font-weight:600">${fmt(e.salary)}</td>
-    <td><select class="status-select" onchange="updateEmpStatus('${e.id}', this.value)">
-      ${['ממתין','שולם','באיחור'].map(s => `<option ${e.status===s?'selected':''}>${s}</option>`).join('')}
-    </select></td>
-    <td><button class="btn-del" onclick="deleteEmp('${e.id}')">🗑</button></td>
-  </tr>`).join('');
+function renderEmpCards() {
+  const el = $('emp-cards');
+  if (!cachedEmps.length) {
+    el.innerHTML = '<div class="section"><div class="empty">לא נוספו עובדים עדיין</div></div>';
+    return;
+  }
+  el.innerHTML = cachedEmps.map(emp => {
+    const empEvents = cachedEvents.filter(e => e.employee_id === emp.id);
+    const total = empEvents.reduce((s,e)=>s+e.amount,0);
+    const month = getMonth();
+    return `
+    <div class="emp-card">
+      <div class="emp-card-header" onclick="toggleCard('${emp.id}')">
+        <div>
+          <div class="emp-card-name">👤 ${emp.name}</div>
+          <div class="emp-card-meta">${empEvents.length} אירועים החודש${total>0?' · '+fmt(total):''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn-del" onclick="event.stopPropagation();deleteEmp('${emp.id}')">🗑</button>
+          <span id="toggle-icon-${emp.id}">▼</span>
+        </div>
+      </div>
+      <div class="emp-card-body" id="card-body-${emp.id}">
+        <div class="event-form">
+          <div class="event-form-title">+ הוסף אירוע</div>
+          <div class="form-row">
+            <input type="text" id="ev-event-${emp.id}" placeholder="שם האירוע" />
+            <input type="date" id="ev-date-${emp.id}" />
+            <input type="number" id="ev-amount-${emp.id}" placeholder="סכום ₪" min="0" />
+          </div>
+          <button class="btn-sm" onclick="addEvent('${emp.id}')">הוסף אירוע</button>
+        </div>
+        ${empEvents.length ? `
+        <table>
+          <thead><tr><th>אירוע</th><th>תאריך</th><th>סכום</th><th>סטטוס</th><th></th></tr></thead>
+          <tbody>
+            ${empEvents.map(ev=>`<tr>
+              <td style="font-size:13px">${ev.event_name}</td>
+              <td style="font-size:12px;color:var(--muted)">${ev.date||'—'}</td>
+              <td style="font-weight:600">${fmt(ev.amount)}</td>
+              <td><select class="status-select" onchange="updateEventStatus('${ev.id}',this.value)">
+                ${['ממתין','שולם','באיחור'].map(s=>`<option ${ev.status===s?'selected':''}>${s}</option>`).join('')}
+              </select></td>
+              <td><button class="btn-del" onclick="deleteEvent('${ev.id}')">🗑</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">אין אירועים החודש</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(empId) {
+  const body = $('card-body-'+empId);
+  const icon = $('toggle-icon-'+empId);
+  body.classList.toggle('collapsed');
+  icon.textContent = body.classList.contains('collapsed') ? '▶' : '▼';
 }
 
 function renderAlerts(income, expense, salary, net) {
   const alerts = [];
   const total_out = expense + salary;
-  const pending = cachedEmps.filter(e => e.status === 'ממתין' || e.status === 'באיחור');
-  const late = cachedEmps.filter(e => e.status === 'באיחור');
-  if (net < 0) alerts.push({ type: 'danger', msg: `יתרה שלילית: ${fmt(net)} — ההוצאות עולות על ההכנסות` });
-  if (income > 0 && total_out / income > 0.85) alerts.push({ type: 'warn', msg: `ההוצאות מהוות ${Math.round(total_out / income * 100)}% מההכנסות — גבוה מהמומלץ` });
-  if (late.length) alerts.push({ type: 'danger', msg: `${late.length} עובדים עם תשלום באיחור: ${late.map(e => e.name).join(', ')}` });
-  if (pending.length) alerts.push({ type: 'warn', msg: `${pending.length} עובדים ממתינים לתשלום: ${pending.map(e => e.name).join(', ')}` });
-  if (!alerts.length) alerts.push({ type: 'ok', msg: 'הכל תקין — אין התראות פעילות החודש ✓' });
-  $('alerts-box').innerHTML = alerts.map(a => `<div class="alert alert-${a.type}">${a.msg}</div>`).join('');
+  const lateEvents = cachedEvents.filter(e=>e.status==='באיחור');
+  const pendingEmps = [...new Set(cachedEvents.filter(e=>e.status==='ממתין').map(e=>e.employee_id))];
+  if (net < 0) alerts.push({type:'danger', msg:`יתרה שלילית: ${fmt(net)} — ההוצאות עולות על ההכנסות`});
+  if (income > 0 && total_out/income > 0.85) alerts.push({type:'warn', msg:`ההוצאות מהוות ${Math.round(total_out/income*100)}% מההכנסות`});
+  if (lateEvents.length) alerts.push({type:'danger', msg:`${lateEvents.length} תשלומים באיחור החודש`});
+  if (pendingEmps.length) {
+    const names = pendingEmps.map(id=>cachedEmps.find(e=>e.id===id)?.name).filter(Boolean);
+    alerts.push({type:'warn', msg:`עובדים עם תשלומים פתוחים: ${names.join(', ')}`});
+  }
+  if (!alerts.length) alerts.push({type:'ok', msg:'הכל תקין — אין התראות פעילות החודש ✓'});
+  $('alerts-box').innerHTML = alerts.map(a=>`<div class="alert alert-${a.type}">${a.msg}</div>`).join('');
 }
 
 // --- פעולות ---
@@ -472,60 +462,78 @@ async function addTransaction() {
   const amount = parseFloat($('t-amount').value);
   const type = $('t-type').value;
   const category = $('t-cat').value;
-  const month = $('monthSelect').value;
-  if (!desc || !amount || amount <= 0) return;
-  const btn = $('btn-add-tx');
-  btn.disabled = true;
-  await sb.from('transactions').insert({ user_id: currentUser.id, month, description: desc, amount, type, category });
-  $('t-desc').value = ''; $('t-amount').value = '';
-  btn.disabled = false;
+  if (!desc || !amount || amount<=0) return;
+  $('btn-add-tx').disabled = true;
+  await sb.from('transactions').insert({user_id:currentUser.id, month:getMonth(), description:desc, amount, type, category});
+  $('t-desc').value=''; $('t-amount').value='';
+  $('btn-add-tx').disabled = false;
   await loadAll();
 }
 
 async function deleteTx(id) {
   if (!confirm('למחוק רשומה זו?')) return;
-  await sb.from('transactions').delete().eq('id', id);
+  await sb.from('transactions').delete().eq('id',id);
   await loadAll();
 }
 
 async function addEmployee() {
   const name = $('e-name').value.trim();
-  const salary = parseFloat($('e-salary').value);
-  const role = $('e-role').value;
-  if (!name || !salary || salary <= 0) return;
-  const btn = $('btn-add-emp');
-  btn.disabled = true;
-  await sb.from('employees').insert({ user_id: currentUser.id, name, salary, role, status: 'ממתין' });
-  $('e-name').value = ''; $('e-salary').value = '';
-  btn.disabled = false;
+  if (!name) return;
+  $('btn-add-emp').disabled = true;
+  await sb.from('employees').insert({user_id:currentUser.id, name});
+  $('e-name').value='';
+  $('btn-add-emp').disabled = false;
   await loadAll();
 }
 
 async function deleteEmp(id) {
-  if (!confirm('למחוק עובד זה?')) return;
-  await sb.from('employees').delete().eq('id', id);
+  if (!confirm('למחוק עובד זה וכל האירועים שלו?')) return;
+  await sb.from('employee_events').delete().eq('employee_id',id);
+  await sb.from('employees').delete().eq('id',id);
   await loadAll();
 }
 
-async function updateEmpStatus(id, status) {
-  await sb.from('employees').update({ status }).eq('id', id);
+async function addEvent(empId) {
+  const eventName = $('ev-event-'+empId).value.trim();
+  const date = $('ev-date-'+empId).value;
+  const amount = parseFloat($('ev-amount-'+empId).value);
+  if (!eventName || !amount || amount<=0) { alert('נא למלא שם אירוע וסכום'); return; }
+  await sb.from('employee_events').insert({
+    user_id: currentUser.id,
+    employee_id: empId,
+    event_name: eventName,
+    date: date || null,
+    amount,
+    month: getMonth(),
+    status: 'ממתין'
+  });
+  $('ev-event-'+empId).value='';
+  $('ev-date-'+empId).value='';
+  $('ev-amount-'+empId).value='';
   await loadAll();
 }
 
-// --- ניווט ---
+async function deleteEvent(id) {
+  if (!confirm('למחוק אירוע זה?')) return;
+  await sb.from('employee_events').delete().eq('id',id);
+  await loadAll();
+}
+
+async function updateEventStatus(id, status) {
+  await sb.from('employee_events').update({status}).eq('id',id);
+  await loadAll();
+}
+
 function showPage(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab, .bnav-item').forEach(t => t.classList.remove('active'));
-  $('page-' + id).classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab,.bnav-item').forEach(t=>t.classList.remove('active'));
+  $('page-'+id).classList.add('active');
   if (el) el.classList.add('active');
-  document.querySelectorAll(`[data-page="${id}"]`).forEach(b => b.classList.add('active'));
+  document.querySelectorAll(`[data-page="${id}"]`).forEach(b=>b.classList.add('active'));
 }
 
-// --- אתחול ---
-sb.auth.getSession().then(({ data }) => {
-  if (data.session) {
-    enterApp(data.session.user);
-  }
+sb.auth.getSession().then(({data}) => {
+  if (data.session) enterApp(data.session.user);
 });
 </script>
 </body>
