@@ -853,8 +853,11 @@ let allRenderedEvents = [];
 
 function openEditEventModalById(idx) {
   const ev = allRenderedEvents[idx];
-  if (!ev) return;
-  openEditEventModal(ev.title, ev.start.slice(0,10), ev.source, ev.detailId||'');
+  if (!ev) { console.error('Event not found at index', idx, allRenderedEvents); return; }
+  // מצא detailId עדכני מהנתונים
+  const detail = cachedEventDetails.find(d=>d.event_title===ev.title && d.event_date===ev.start.slice(0,10));
+  const detailId = detail?.id || ev.detailId || '';
+  openEditEventModal(ev.title, ev.start.slice(0,10), ev.source, detailId);
 }
 
 function openNewEventModal(){
