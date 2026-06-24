@@ -196,18 +196,22 @@
 
 
     <!-- יתרה נטו + צפי רווח + מס — קטן למעלה -->
-    <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
-      <div style="background:var(--surface);border-radius:100px;padding:8px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px">
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+      <div style="background:var(--surface);border-radius:100px;padding:8px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px">
         <span style="font-size:11px;color:var(--muted);font-weight:500">💰 יתרה נטו</span>
         <span style="font-size:17px;font-weight:700" id="d-net">—</span>
       </div>
-      <div style="background:var(--amber-bg);border-radius:100px;padding:8px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px">
+      <div style="background:var(--amber-bg);border-radius:100px;padding:8px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px">
         <span style="font-size:11px;color:var(--amber);font-weight:500">📊 צפי רווח</span>
         <span style="font-size:17px;font-weight:700" id="d-pending">—</span>
       </div>
-      <div style="background:var(--red-soft);border-radius:100px;padding:8px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px">
-        <span style="font-size:11px;color:var(--red);font-weight:500">🧾 מס צפוי</span>
+      <div style="background:var(--red-soft);border-radius:100px;padding:8px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--red);font-weight:500">🧾 מס על נכנס</span>
         <span style="font-size:17px;font-weight:700;color:var(--red)" id="d-tax">—</span>
+      </div>
+      <div style="background:var(--red-bg);border-radius:100px;padding:8px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--red);font-weight:500">🧾 מס צפוי</span>
+        <span style="font-size:17px;font-weight:700;color:var(--red)" id="d-tax-pending">—</span>
       </div>
       <div style="background:var(--surface);border-radius:100px;padding:6px 14px;box-shadow:var(--shadow);display:flex;align-items:center;gap:6px">
         <span style="font-size:11px;color:var(--muted)">% מס</span>
@@ -577,7 +581,7 @@ function renderAll(){
   pendingEl.style.color=pendingNet>=0?'var(--green)':'var(--red)';
   const netEl=$('d-net');netEl.textContent=fmt(net);netEl.className='card-value '+(net>=0?'c-green':'c-red');
   updatePFIncome(income);
-  updateTax(income, expense, salary);
+  updateTax(income, expense, salary, pendingIncome);
   renderCatBars(expense);renderEmpStatus();renderTxTable();renderEmpCards();renderClientsList();renderEventsList();renderAlerts(income,expense,salary,net);
 }
 
@@ -1085,15 +1089,20 @@ function confirmAllocation() {
 }
 
 // מס
-function updateTax(inc, exp, sal) {
+function updateTax(inc, exp, sal, pendingInc) {
   const rate = parseFloat(document.getElementById('tax-rate')?.value) || 17;
-  // מחשב מס על הרווח בפועל (הכנסות - הוצאות - שכר)
-  const taxableIncome = (inc !== undefined ? inc : parseFloat($('d-income').textContent.replace(/[^\d.-]/g,''))||0)
-    - (exp !== undefined ? exp : parseFloat($('d-expense').textContent.replace(/[^\d.-]/g,''))||0)
-    - (sal !== undefined ? sal : parseFloat($('d-salary').textContent.replace(/[^\d.-]/g,''))||0);
-  const tax = taxableIncome > 0 ? taxableIncome * (rate / 100) : 0;
+  
+  // מס על נכנס בפועל
+  const actualIncome = inc !== undefined ? inc : parseFloat(($('d-income').textContent||'0').replace(/[^\d.-]/g,''))||0;
+  const tax = actualIncome > 0 ? actualIncome * (rate / 100) : 0;
   const taxEl = document.getElementById('d-tax');
   if (taxEl) taxEl.textContent = fmt(tax);
+
+  // מס צפוי על הכנסות ממתינות
+  const pendingIncomeAmt = pendingInc !== undefined ? pendingInc : parseFloat(($('d-pending-income').textContent||'0').replace(/[^\d.-]/g,''))||0;
+  const taxPending = pendingIncomeAmt > 0 ? pendingIncomeAmt * (rate / 100) : 0;
+  const taxPendingEl = document.getElementById('d-tax-pending');
+  if (taxPendingEl) taxPendingEl.textContent = fmt(taxPending);
 }
 
 sb.auth.getSession().then(({data})=>{if(data.session)enterApp(data.session.user);});
