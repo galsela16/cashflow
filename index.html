@@ -249,7 +249,7 @@ function initMonths() {
   // שנים — 3 שנים אחורה עד שנה קדימה
   const ySel = $('yearSel');
   ySel.innerHTML = '';
-  for (let y = now.getFullYear() - 3; y <= now.getFullYear() + 1; y++) {
+  for (let y = now.getFullYear(); y <= 2099; y++) {
     const opt = document.createElement('option');
     opt.value = y;
     opt.textContent = y;
