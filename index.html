@@ -527,7 +527,7 @@ const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser=null, cachedTx=[], cachedEmps=[], cachedEmpEvents=[], cachedClients=[], cachedEventDetails=[], cachedEventWorkers=[], gcalEvents=[];
-let modalWorkers=[], currentEditDetailId=null, isNewManualEvent=false;
+let modalWorkers=[], currentEditDetailId=null, isNewManualEvent=false, currentEventDate=null;
 
 const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
 const $ = id => document.getElementById(id);
@@ -836,13 +836,20 @@ function renderAlerts(income,expense,salary,net){
 }
 
 // Google Calendar
+let gcalMonth = '';
 async function loadGCal(){
   const el=$('events-list');
   el.innerHTML='<div class="empty">טוען...</div>';
+  gcalMonth = getMonth();
   try{
-    const res=await fetch(GAS_URL+'?month='+getMonth());
-    gcalEvents=await res.json();
-    if(!Array.isArray(gcalEvents)) gcalEvents=[];
+    const res=await fetch(GAS_URL+'?month='+gcalMonth);
+    const data=await res.json();
+    gcalEvents=Array.isArray(data)?data:[];
+    // טען גם event_details של החודש הזה מסופהבייס
+    const detRes = await sb.from('event_details').select('*').eq('user_id',currentUser.id);
+    cachedEventDetails = detRes.data||[];
+    const wRes = await sb.from('event_workers').select('*');
+    cachedEventWorkers = wRes.data||[];
     renderEventsList();
   }catch(err){el.innerHTML='<div class="empty" style="color:var(--red)">שגיאת חיבור</div>';}
 }
@@ -870,6 +877,7 @@ async function openEditEventModalById(idx) {
   
   // פתח מודל עם הנתונים
   currentEditDetailId = detailId || null;
+  currentEventDate = date;
   isNewManualEvent = ev.source === 'manual';
   $('modal-event-title').textContent = title;
   $('modal-title-input').value = title;
@@ -946,12 +954,12 @@ function renderModalWorkers(){
     </div>`).join('');
 }
 
-function closeEventModal(){$('event-modal').style.display='none';modalWorkers=[];currentEditDetailId=null;}
+function closeEventModal(){$('event-modal').style.display='none';modalWorkers=[];currentEditDetailId=null;currentEventDate=null;}
 
 async function saveEvent(){
   const uid=currentUser.id;
   const title=$('modal-title-input').value.trim()||$('modal-event-title').textContent;
-  const date=$('modal-date-input').value||new Date().toISOString().slice(0,10);
+  const date=currentEventDate||$('modal-date-input').value||new Date().toISOString().slice(0,10);
   if(!title){alert('שגיאה: אין כותרת לאירוע');return;}
 
   const clientId=$('modal-client').value||null;
