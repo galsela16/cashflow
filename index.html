@@ -569,7 +569,7 @@ async function loadAll(){
     sb.from('employees').select('*').eq('user_id',uid).order('name'),
     sb.from('employee_events').select('*').eq('user_id',uid).eq('month',month),
     sb.from('clients').select('*').eq('user_id',uid).order('name'),
-    sb.from('event_details').select('*').eq('user_id',uid),
+    sb.from('event_details').select('*').eq('user_id',uid).order('event_date',{ascending:false}),
     sb.from('event_workers').select('*')
   ]);
   cachedTx=txR.data||[];cachedEmps=empR.data||[];cachedEmpEvents=evR.data||[];
