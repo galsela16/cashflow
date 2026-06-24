@@ -175,7 +175,7 @@
     <div class="field"><label>סיסמה</label>
       <div style="position:relative">
         <input type="text" id="auth-password" placeholder="לפחות 6 תווים" style="padding-left:40px" />
-        <button type="button" onclick="togglePass()" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="eye-btn">👁</button>
+        <button type="button" onclick="togglePass()" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="eye-btn">show</button>
       </div>
     </div>
     <button class="btn-primary" id="auth-btn" onclick="doAuth()">כניסה</button>
@@ -565,8 +565,8 @@ async function doAuth(){
 function togglePass(){
   const inp = document.getElementById('auth-password');
   const btn = document.getElementById('eye-btn');
-  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
-  else{inp.type='password';btn.textContent='👁';}
+  if(inp.type==='password'){inp.type='text';btn.textContent='hide';}
+  else{inp.type='password';btn.textContent='show';}
 }
 function showMsg(t,type){const m=$('auth-msg');m.textContent=t;m.className='msg '+type;}
 async function logout(){await sb.auth.signOut();$('auth-screen').style.display='flex';$('app-screen').style.display='none';}
