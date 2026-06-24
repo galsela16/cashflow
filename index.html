@@ -851,13 +851,46 @@ async function loadGCal(){
 // מאגר אירועים לעריכה
 let allRenderedEvents = [];
 
-function openEditEventModalById(idx) {
+async function openEditEventModalById(idx) {
   const ev = allRenderedEvents[idx];
-  if (!ev) { console.error('Event not found at index', idx, allRenderedEvents); return; }
-  // מצא detailId עדכני מהנתונים
-  const detail = cachedEventDetails.find(d=>d.event_title===ev.title && d.event_date===ev.start.slice(0,10));
-  const detailId = detail?.id || ev.detailId || '';
-  openEditEventModal(ev.title, ev.start.slice(0,10), ev.source, detailId);
+  if (!ev) return;
+  const title = ev.title;
+  const date = ev.start.slice(0,10);
+  
+  // חפש תמיד בסופהבייס
+  const res = await sb.from('event_details')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .eq('event_title', title)
+    .eq('event_date', date)
+    .maybeSingle();
+  
+  const detail = res.data;
+  const detailId = detail?.id || '';
+  
+  // פתח מודל עם הנתונים
+  currentEditDetailId = detailId || null;
+  isNewManualEvent = ev.source === 'manual';
+  $('modal-event-title').textContent = title;
+  $('modal-title-input').value = title;
+  $('modal-date-input').value = date;
+  $('modal-title-input').style.display = ev.source==='manual'?'block':'none';
+  $('modal-date-input').style.display = ev.source==='manual'?'block':'none';
+  
+  fillClientSelect(detail?.client_id);
+  $('modal-price').value = detail?.price || '';
+  $('modal-status').value = detail?.status || 'לא יצאה דרישת תשלום';
+  $('modal-notes').value = detail?.notes || '';
+  
+  // עובדים
+  if(detailId) {
+    const wRes = await sb.from('event_workers').select('*').eq('event_detail_id', detailId);
+    modalWorkers = (wRes.data||[]).map(w=>({employee_id:w.employee_id, amount:w.amount, status:w.status}));
+  } else {
+    modalWorkers = [];
+  }
+  renderModalWorkers();
+  $('event-modal').style.display = 'flex';
 }
 
 function openNewEventModal(){
