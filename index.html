@@ -1023,6 +1023,7 @@ async function loadRecurring() {
   const res = await sb.from('recurring_expenses').select('*').eq('user_id', currentUser.id).order('created_at');
   cachedRecurring = res.data || [];
   renderRecurring();
+  updateTax();
 }
 
 function renderRecurring() {
@@ -1201,15 +1202,20 @@ function confirmAllocation() {
 function updateTax(inc, exp, sal, pendingInc) {
   const rate = parseFloat(document.getElementById('tax-rate')?.value) || 17;
   
-  // מס על נכנס בפועל
+  // סכום הוצאות קבועות מוכרות
+  const recurringTotal = cachedRecurring.reduce((s,r) => s + r.amount, 0);
+
+  // מס על נכנס בפועל — פחות הוצאות מוכרות
   const actualIncome = inc !== undefined ? inc : parseFloat(($('d-income').textContent||'0').replace(/[^\d.-]/g,''))||0;
-  const tax = actualIncome > 0 ? actualIncome * (rate / 100) : 0;
+  const taxableActual = Math.max(0, actualIncome - recurringTotal);
+  const tax = taxableActual * (rate / 100);
   const taxEl = document.getElementById('d-tax');
   if (taxEl) taxEl.textContent = fmt(tax);
 
-  // מס צפוי על הכנסות ממתינות
+  // מס צפוי — על הכנסות ממתינות פחות הוצאות מוכרות
   const pendingIncomeAmt = pendingInc !== undefined ? pendingInc : parseFloat(($('d-pending-income').textContent||'0').replace(/[^\d.-]/g,''))||0;
-  const taxPending = pendingIncomeAmt > 0 ? pendingIncomeAmt * (rate / 100) : 0;
+  const taxablePending = Math.max(0, pendingIncomeAmt - recurringTotal);
+  const taxPending = taxablePending * (rate / 100);
   const taxPendingEl = document.getElementById('d-tax-pending');
   if (taxPendingEl) taxPendingEl.textContent = fmt(taxPending);
 }
