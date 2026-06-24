@@ -916,6 +916,8 @@ async function saveEvent(){
   const uid=currentUser.id;
   const title=$('modal-title-input').value.trim()||$('modal-event-title').textContent;
   const date=$('modal-date-input').value||new Date().toISOString().slice(0,10);
+  console.log('saveEvent:', {title, date, currentEditDetailId, isNewManualEvent});
+  if(!title){alert('שגיאה: אין כותרת לאירוע');return;}
   const clientId=$('modal-client').value||null;
   const price=parseFloat($('modal-price').value)||0;
   const status=$('modal-status').value;
