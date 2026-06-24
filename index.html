@@ -820,6 +820,7 @@ function renderModalWorkers() {
 function closeEventModal() { $('event-modal').style.display = 'none'; modalWorkers = []; currentEditDetailId = null; currentEventDate = null; }
 
 async function saveEvent() {
+  console.log('saveEvent called', {currentEditDetailId, currentEventDate, isNewManualEvent});
   const uid = currentUser.id;
   const title = $('modal-ev-title').value.trim() || $('modal-event-title').textContent;
   const date = currentEventDate || $('modal-ev-date').value || new Date().toISOString().slice(0, 10);
