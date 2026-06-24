@@ -565,86 +565,40 @@ function showPage(id, el) {
   document.querySelectorAll('[data-page="'+id+'"]').forEach(b=>b.classList.add('active'));
 }
 
-// יומן גוגל דרך iCal
-const ICAL_URL = 'https://corsproxy.io/?' + encodeURIComponent('https://calendar.google.com/calendar/ical/galsela16%40gmail.com/private-310f54b7d02b0263ba36e1ad8c110ab8/basic.ics');
-
-function parseICS(ics) {
-  const events = [];
-  const lines = ics.replace(/\r\n /g, '').replace(/\r/g, '').split('\n');
-  let current = null;
-  for (const line of lines) {
-    if (line === 'BEGIN:VEVENT') { current = {}; }
-    else if (line === 'END:VEVENT' && current) { events.push(current); current = null; }
-    else if (current) {
-      if (line.startsWith('SUMMARY:')) current.title = line.slice(8);
-      else if (line.startsWith('DTSTART')) {
-        const val = line.split(':')[1];
-        current.start = val;
-        current.allDay = !val.includes('T');
-      }
-      else if (line.startsWith('LOCATION:')) current.location = line.slice(9);
-      else if (line.startsWith('DESCRIPTION:')) current.description = line.slice(12);
-    }
-  }
-  return events;
-}
+// יומן גוגל דרך Google Apps Script
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzH60EnHD5wqtRfYR1vv1-5oELqEK7RlcWqwHlvT88xQDfysYupYV3I8FbnsdRWfkNing/exec';
 
 async function loadGCal() {
   const el = document.getElementById('gcal-events');
   el.innerHTML = '<div class="empty">טוען...</div>';
   const month = getMonth();
-  const [year, mon] = month.split('-');
-  
+
   try {
-    const res = await fetch(ICAL_URL);
-    const ics = await res.text();
-    const allEvents = parseICS(ics);
-    
-    // סינון לפי החודש הנבחר
-    const events = allEvents.filter(ev => {
-      if (!ev.start) return false;
-      // תמיכה בפורמט YYYYMMDD ובפורמט YYYY-MM-DD
-      const clean = ev.start.replace(/-/g, '');
-      const d = clean.slice(0,4) + '-' + clean.slice(4,6);
-      return d === month;
-    }).sort((a,b) => a.start > b.start ? 1 : -1);
-    
-    if (!events.length) {
+    const res = await fetch(GAS_URL + '?month=' + month);
+    const events = await res.json();
+
+    if (!Array.isArray(events) || !events.length) {
       el.innerHTML = '<div class="empty">אין אירועים החודש</div>';
       return;
     }
-    
+
     const hebrewDays = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
     const hebrewMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-    
+
     el.innerHTML = events.map(ev => {
-      let dateStr = '', timeStr = '';
-      if (ev.allDay) {
-        const clean = ev.start.replace(/-/g, '');
-        const y = clean.slice(0,4), m = clean.slice(4,6), d = clean.slice(6,8);
-        const date = new Date(y, m-1, d);
-        dateStr = `יום ${hebrewDays[date.getDay()]}, ${date.getDate()} ב${hebrewMonths[date.getMonth()]}`;
-        timeStr = 'כל היום';
-      } else {
-        const clean = ev.start.replace(/-/g,'').replace('T','');
-        const y=clean.slice(0,4),m=clean.slice(4,6),d=clean.slice(6,8);
-        const h=clean.slice(9,11)||clean.slice(8,10),min=clean.slice(11,13)||clean.slice(10,12);
-        const date = new Date(y,m-1,d,h,min);
-        dateStr = `יום ${hebrewDays[date.getDay()]}, ${date.getDate()} ב${hebrewMonths[date.getMonth()]}`;
-        timeStr = `${h}:${min}`;
-      }
-      return `<div class="gcal-event">
-        <div>
-          <div class="gcal-event-title">${ev.title || '(ללא שם)'}</div>
-          <div class="gcal-event-meta">${dateStr}</div>
-          ${ev.location ? `<div class="gcal-event-meta">📍 ${ev.location}</div>` : ''}
-        </div>
-        <div class="gcal-event-time">${timeStr}</div>
-      </div>`;
+      const date = new Date(ev.start);
+      const dateStr = 'יום ' + hebrewDays[date.getDay()] + ', ' + date.getDate() + ' ב' + hebrewMonths[date.getMonth()];
+      const timeStr = ev.allDay ? 'כל היום' : date.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+      return '<div class="gcal-event"><div>' +
+        '<div class="gcal-event-title">' + (ev.title || '(ללא שם)') + '</div>' +
+        '<div class="gcal-event-meta">' + dateStr + '</div>' +
+        (ev.location ? '<div class="gcal-event-meta">📍 ' + ev.location + '</div>' : '') +
+        '</div><div class="gcal-event-time">' + timeStr + '</div></div>';
     }).join('');
-    
+
   } catch(err) {
     el.innerHTML = '<div class="empty" style="color:var(--red)">שגיאת חיבור — נסה שוב</div>';
+    console.error(err);
   }
 }
 
