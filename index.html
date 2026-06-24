@@ -978,6 +978,10 @@ async function saveEvent(){
     .eq('event_title', title)
     .eq('event_date', date)
     .maybeSingle();
+  
+  alert('חיפוש: title=[' + title + '] date=[' + date + ']
+תוצאה: ' + JSON.stringify(existing));
+  
   if(existing.data) detailId = existing.data.id;
 
   if(detailId){
