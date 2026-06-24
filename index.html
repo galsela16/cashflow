@@ -681,6 +681,7 @@ function renderEventsList(){
 
   if(!allEvents.length){el.innerHTML='<div class="empty">לחץ על "יומן גוגל" לטעינה, או הוסף אירוע ידני</div>';return;}
 
+  allRenderedEvents = allEvents;
   el.innerHTML=allEvents.map((ev,i)=>{
     const date=new Date(ev.start);
     const dateStr=`${date.getDate()} ב${hebrewMonths[date.getMonth()]}`;
@@ -701,8 +702,8 @@ function renderEventsList(){
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           ${detail?`<span class="badge badge-${statusCls}">${detail.status}</span>`:''}
-          <button class="btn-sm" onclick="event.stopPropagation();openEditEventModal('${ev.title}','${ev.start.slice(0,10)}','${ev.source}','${detail?.id||''}')">✏️</button>
-          ${ev.source==='manual'?`<button class="btn-del" onclick="event.stopPropagation();deleteManualEvent('${detail?.id}')">🗑</button>`:''}
+          <button class="btn-sm" onclick="event.stopPropagation();openEditEventModalById(${i})">✏️</button>
+          ${ev.source==='manual'?`<button class="btn-del" onclick="event.stopPropagation();deleteManualEvent(${i})">🗑</button>`:''}
         </div>
       </div>
       <div class="event-card-body" id="ev-body-${i}">
@@ -847,6 +848,15 @@ async function loadGCal(){
 }
 
 // מודל אירוע
+// מאגר אירועים לעריכה
+let allRenderedEvents = [];
+
+function openEditEventModalById(idx) {
+  const ev = allRenderedEvents[idx];
+  if (!ev) return;
+  openEditEventModal(ev.title, ev.start.slice(0,10), ev.source, ev.detailId||'');
+}
+
 function openNewEventModal(){
   isNewManualEvent=true; currentEditDetailId=null; modalWorkers=[];
   $('modal-event-title').textContent='אירוע חדש';
@@ -927,8 +937,10 @@ async function saveEvent(){
   if(gcalEvents.length) renderEventsList();
 }
 
-async function deleteManualEvent(id){
-  if(!id||!confirm('למחוק אירוע זה?'))return;
+async function deleteManualEvent(idx){
+  const ev = allRenderedEvents[idx];
+  const id = ev?.detailId;
+  if(!id||!confirm('למחוט אירוע זה?'))return;
   await sb.from('event_workers').delete().eq('event_detail_id',id);
   await sb.from('event_details').delete().eq('id',id);
   await loadAll();
