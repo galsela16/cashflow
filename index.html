@@ -260,6 +260,7 @@
       <button class="tab" onclick="showPage('employees',this)">👥 עובדים</button>
       <button class="tab" onclick="showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" onclick="showPage('alerts',this)">🔔 התראות</button>
+      <button class="tab" onclick="showPage('recurring',this)">🔄 הוצאות קבועות</button>
       <button class="tab" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
     </div>
 
@@ -329,6 +330,44 @@
       <div id="clients-list"></div>
     </div>
 
+    <!-- הוצאות קבועות -->
+    <div id="page-recurring" class="page">
+      <div class="section">
+        <div class="section-title">הוסף הוצאה קבועה</div>
+        <div class="form-row">
+          <input type="text" id="r-desc" placeholder="תיאור (שכירות, ביטוח...)" />
+          <input type="number" id="r-amount" placeholder="סכום ₪ לחודש" min="0" />
+          <select id="r-cat">
+            <option>שכירות</option>
+            <option>ביטוח</option>
+            <option>תוכנות</option>
+            <option>טלפון</option>
+            <option>רכב</option>
+            <option>שיווק</option>
+            <option>אחר</option>
+          </select>
+        </div>
+        <button class="btn-add" id="btn-add-recurring" onclick="addRecurring()">+ הוסף</button>
+      </div>
+
+      <div class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div class="section-title" style="margin-bottom:0">רשימת הוצאות קבועות</div>
+          <div style="background:var(--red-soft);border-radius:100px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--red)" id="recurring-total">סה"כ: ₪0 / חודש</div>
+        </div>
+        <table>
+          <thead><tr><th>תיאור</th><th>קטגוריה</th><th>סכום חודשי</th><th></th></tr></thead>
+          <tbody id="recurring-table"><tr><td colspan="4" class="empty">טוען...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="section" style="background:var(--blue-soft)">
+        <div class="section-title">📅 החודש הנוכחי</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">לחץ כדי לייבא את כל ההוצאות הקבועות לחודש הנוכחי בבת אחת</div>
+        <button class="btn-add" onclick="importRecurringToMonth()">📥 ייבא הוצאות קבועות לחודש</button>
+      </div>
+    </div>
+
     <!-- Profit First -->
     <div id="page-profitfirst" class="page">
 
@@ -394,6 +433,7 @@
     <button class="bnav-item" onclick="showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
     <button class="bnav-item" onclick="showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
     <button class="bnav-item" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
+    <button class="bnav-item" onclick="showPage('recurring',this)" data-page="recurring"><span class="bnav-icon">🔄</span>קבועות</button>
     <button class="bnav-item" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>PF</button>
   </div>
 </div>
@@ -940,6 +980,7 @@ function toggleCard(empId){const body=$('card-body-'+empId),icon=$('toggle-icon-
 function toggleEl(id){const el=$(id);if(el)el.classList.toggle('open');}
 
 function showPage(id,el){
+  if(id==='recurring') loadRecurring();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab,.bnav-item').forEach(t=>t.classList.remove('active'));
   const page=document.getElementById('page-'+id);
@@ -973,6 +1014,74 @@ async function saveEmpDetails(){
   await sb.from('employees').update({name,phone,email,role,notes}).eq('id',currentEmpId);
   closeEmpModal();
   await loadAll();
+}
+
+// הוצאות קבועות
+let cachedRecurring = [];
+
+async function loadRecurring() {
+  const res = await sb.from('recurring_expenses').select('*').eq('user_id', currentUser.id).order('created_at');
+  cachedRecurring = res.data || [];
+  renderRecurring();
+}
+
+function renderRecurring() {
+  const tb = document.getElementById('recurring-table');
+  const totalEl = document.getElementById('recurring-total');
+  if (!tb) return;
+  
+  const total = cachedRecurring.reduce((s, r) => s + r.amount, 0);
+  if (totalEl) totalEl.textContent = 'סה"כ: ' + fmt(total) + ' / חודש';
+
+  if (!cachedRecurring.length) {
+    tb.innerHTML = '<tr><td colspan="4" class="empty">אין הוצאות קבועות</td></tr>';
+    return;
+  }
+  tb.innerHTML = cachedRecurring.map(r => `<tr>
+    <td style="font-weight:500">${r.description}</td>
+    <td style="font-size:12px;color:var(--muted)">${r.category}</td>
+    <td style="font-weight:600;color:var(--red)">${fmt(r.amount)}</td>
+    <td><button class="btn-del" onclick="deleteRecurring('${r.id}')">🗑</button></td>
+  </tr>`).join('');
+}
+
+async function addRecurring() {
+  const desc = document.getElementById('r-desc').value.trim();
+  const amount = parseFloat(document.getElementById('r-amount').value);
+  const category = document.getElementById('r-cat').value;
+  if (!desc || !amount || amount <= 0) return;
+  document.getElementById('btn-add-recurring').disabled = true;
+  await sb.from('recurring_expenses').insert({ user_id: currentUser.id, description: desc, amount, category });
+  document.getElementById('r-desc').value = '';
+  document.getElementById('r-amount').value = '';
+  document.getElementById('btn-add-recurring').disabled = false;
+  await loadRecurring();
+}
+
+async function deleteRecurring(id) {
+  if (!confirm('למחוק הוצאה קבועה זו?')) return;
+  await sb.from('recurring_expenses').delete().eq('id', id);
+  await loadRecurring();
+}
+
+async function importRecurringToMonth() {
+  if (!cachedRecurring.length) { alert('אין הוצאות קבועות להוסיף'); return; }
+  const month = getMonth();
+  if (!confirm('לייבא ' + cachedRecurring.length + ' הוצאות קבועות לחודש ' + month + '?')) return;
+  
+  const toInsert = cachedRecurring.map(r => ({
+    user_id: currentUser.id,
+    month,
+    description: r.description + ' (קבועה)',
+    amount: r.amount,
+    type: 'expense',
+    category: r.category
+  }));
+  
+  await sb.from('transactions').insert(toInsert);
+  await loadAll();
+  showPage('transactions', null);
+  alert('✅ ' + cachedRecurring.length + ' הוצאות יובאו בהצלחה לחודש!');
 }
 
 // Profit First
