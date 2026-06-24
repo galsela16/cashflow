@@ -198,6 +198,12 @@ tr:last-child td{border-bottom:none}
         <button type="button" id="eye-btn" onclick="togglePass()" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);line-height:1">👁️</button>
       </div>
     </div>
+    <div class="field" id="confirm-password-field" style="display:none"><label>אימות סיסמה</label>
+      <div style="position:relative">
+        <input type="password" id="auth-confirm" placeholder="הכנס שוב את הסיסמה" style="padding-left:40px" />
+        <button type="button" onclick="toggleConfirm()" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);line-height:1">👁️</button>
+      </div>
+    </div>
     <button class="btn-primary" id="auth-btn" onclick="doAuth()">כניסה</button>
     <div class="msg" id="auth-msg"></div>
   </div>
@@ -488,6 +494,14 @@ const HEB_MON = ['\u05d9\u05e0\u05d5\u05d0\u05e8','\u05e4\u05d1\u05e8\u05d5\u05d
 
 // ── AUTH ──
 let authMode = 'login';
+
+function toggleConfirm() {
+  const inp = document.getElementById('auth-confirm');
+  const btn = inp.nextElementSibling;
+  if (!inp) return;
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁️'; }
+}
 
 function togglePass() {
   const inp = $('auth-password');
