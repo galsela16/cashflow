@@ -175,7 +175,7 @@
       <div class="card"><div class="card-label">סה"כ הוצאות</div><div class="card-value c-red" id="d-expense">—</div></div>
       <div class="card"><div class="card-label">שכר החודש</div><div class="card-value c-blue" id="d-salary">—</div></div>
       <div class="card"><div class="card-label">יתרה נטו</div><div class="card-value" id="d-net">—</div></div>
-      <div class="card" style="border-style:dashed;opacity:0.85"><div class="card-label">📋 צפי ממתין</div><div class="card-value" style="color:var(--amber);font-size:18px" id="d-pending">—</div><div style="font-size:11px;color:var(--muted);margin-top:4px">טרם שולם</div></div>
+      <div style="background:var(--amber-bg);border:1px dashed var(--amber);border-radius:var(--radius);padding:0.75rem;display:flex;flex-direction:column;justify-content:center"><div style="font-size:11px;color:var(--amber);margin-bottom:4px">📋 צפי ממתין</div><div style="font-size:18px;font-weight:600;color:var(--amber)" id="d-pending">—</div><div style="font-size:10px;color:var(--amber);margin-top:3px;opacity:0.7">טרם שולם</div></div>
     </div>
 
     <div class="tabs">
@@ -380,7 +380,10 @@ async function loadAll(){
 function renderAll(){
   const txIncome=cachedTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const expense=cachedTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const salary=cachedEmpEvents.reduce((s,e)=>s+e.amount,0);
+  // שכר עובדים: מאירועי עובדים + מאירועים כלליים של החודש
+  const monthDetailIds=cachedEventDetails.filter(d=>(d.month===month||(d.event_date&&d.event_date.slice(0,7)===month))).map(d=>d.id);
+  const eventWorkersSalary=cachedEventWorkers.filter(w=>monthDetailIds.includes(w.event_detail_id)).reduce((s,w)=>s+w.amount,0);
+  const salary=cachedEmpEvents.reduce((s,e)=>s+e.amount,0) + eventWorkersSalary;
   // הכנסות מאירועים של החודש הנוכחי
   const month=getMonth();
   const eventIncome=cachedEventDetails.filter(d=>(d.month===month||(d.event_date&&d.event_date.slice(0,7)===month))&&d.price>0&&d.status==='שולם').reduce((s,d)=>s+(d.price||0),0);
@@ -406,12 +409,16 @@ function renderCatBars(totalExp){
 function renderEmpStatus(){
   const el=$('emp-status');
   if(!cachedEmps.length){el.innerHTML='<div class="empty">לא נוספו עובדים</div>';return;}
+  const month=getMonth();
+  const monthDetailIds=cachedEventDetails.filter(d=>(d.month===month||(d.event_date&&d.event_date.slice(0,7)===month))).map(d=>d.id);
   el.innerHTML=cachedEmps.map(emp=>{
     const evs=cachedEmpEvents.filter(e=>e.employee_id===emp.id);
-    const total=evs.reduce((s,e)=>s+e.amount,0);
-    const allPaid=evs.length>0&&evs.every(e=>e.status==='שולם');
-    const hasLate=evs.some(e=>e.status==='באיחור');
-    const status=evs.length===0?'אין אירועים':allPaid?'שולם':hasLate?'באיחור':'ממתין';
+    const evWorkers=cachedEventWorkers.filter(w=>w.employee_id===emp.id&&monthDetailIds.includes(w.event_detail_id));
+    const total=evs.reduce((s,e)=>s+e.amount,0)+evWorkers.reduce((s,w)=>s+w.amount,0);
+    const allPaid=evs.length>0&&evs.every(e=>e.status==='שולם')&&evWorkers.every(w=>w.status==='שולם');
+    const hasLate=evs.some(e=>e.status==='באיחור')||evWorkers.some(w=>w.status==='באיחור');
+    const totalEvents=evs.length+evWorkers.length;
+    const status=totalEvents===0?'אין אירועים':allPaid?'שולם':hasLate?'באיחור':'ממתין';
     const cls=status==='שולם'?'paid':status==='באיחור'?'late':status==='ממתין'?'pending':'';
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
       <div><span style="font-size:13px;font-weight:500">${emp.name}</span>${total>0?`<span style="font-size:12px;color:var(--muted);margin-right:8px">${fmt(total)}</span>`:''}
