@@ -13,6 +13,7 @@
     --red: #993C1D; --red-bg: #FAECE7;
     --blue: #185FA5; --blue-bg: #E6F1FB;
     --amber: #854F0B; --amber-bg: #FAEEDA;
+    --purple: #533C89; --purple-bg: #EDE8F5;
     --radius: 10px; --radius-sm: 6px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,7 +38,7 @@
 
   /* APP */
   #app-screen { display: none; }
-  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
   .topbar-title { font-size: 16px; font-weight: 600; }
   .topbar-user { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
   .btn-logout { padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; cursor: pointer; font-size: 13px; color: var(--muted); }
@@ -60,11 +61,13 @@
   .form-row input, .form-row select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 13px; width: 100%; }
   .btn-add { padding: 8px 16px; border: none; border-radius: var(--radius-sm); background: var(--text); color: #fff; cursor: pointer; font-size: 13px; font-weight: 500; }
   .btn-add:disabled { opacity: 0.5; }
+  .btn-sm { padding: 5px 10px; border: none; border-radius: var(--radius-sm); background: var(--text); color: #fff; cursor: pointer; font-size: 12px; font-weight: 500; }
+  .btn-outline { padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--text); cursor: pointer; font-size: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { text-align: right; color: var(--muted); font-weight: 400; padding: 6px 0; border-bottom: 1px solid var(--border); }
   td { padding: 9px 0; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
-  .empty { text-align: center; color: var(--muted); padding: 20px; }
+  .empty { text-align: center; color: var(--muted); padding: 20px; font-size: 13px; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 11px; font-weight: 500; }
   .badge-income { background: var(--green-bg); color: var(--green); }
   .badge-expense { background: var(--red-bg); color: var(--red); }
@@ -81,11 +84,6 @@
   .alert-ok { background: var(--green-bg); color: var(--green); }
   .alert-warn { background: var(--amber-bg); color: var(--amber); }
   .alert-danger { background: var(--red-bg); color: var(--red); }
-  .gcal-event { padding: 10px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  .gcal-event:last-child { border-bottom: none; }
-  .gcal-event-title { font-size: 13px; font-weight: 500; }
-  .gcal-event-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .gcal-event-time { font-size: 12px; color: var(--blue); white-space: nowrap; font-weight: 500; }
   select.status-select { padding: 4px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); }
 
   /* כרטיסי עובדים */
@@ -94,22 +92,42 @@
   .emp-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--border); cursor: pointer; }
   .emp-card-name { font-weight: 600; font-size: 15px; }
   .emp-card-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .emp-card-toggle { font-size: 18px; color: var(--muted); background: none; border: none; cursor: pointer; }
   .emp-card-body { padding: 12px 16px; }
   .emp-card-body.collapsed { display: none; }
-
-  /* טופס אירוע */
   .event-form { background: var(--bg); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 10px; }
   .event-form-title { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
-  .event-form .form-row { margin-bottom: 8px; }
-  .btn-sm { padding: 6px 12px; border: none; border-radius: var(--radius-sm); background: var(--text); color: #fff; cursor: pointer; font-size: 12px; font-weight: 500; }
+
+  /* אירועי יומן */
+  .gcal-event-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+  .gcal-event-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .gcal-event-header:hover { background: var(--bg); }
+  .gcal-event-title { font-weight: 600; font-size: 14px; }
+  .gcal-event-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .gcal-event-body { padding: 12px 16px; border-top: 1px solid var(--border); display: none; }
+  .gcal-event-body.open { display: block; }
+  .gcal-event-price { font-size: 13px; color: var(--green); font-weight: 600; }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .detail-row:last-child { border-bottom: none; }
+
+  /* מודל */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .modal { background: var(--surface); border-radius: var(--radius); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-size: 15px; font-weight: 600; }
+  .modal-body { padding: 1.25rem; }
+  .modal-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 13px; font-family: inherit; }
+  .worker-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .worker-row select, .worker-row input { flex: 1; }
 
   @media (max-width: 600px) {
     .tabs { display: none; }
-    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; padding: 8px 0 12px; }
-    .bnav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; color: var(--muted); font-size: 11px; border: none; background: none; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; padding: 8px 0 12px; z-index: 50; }
+    .bnav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; color: var(--muted); font-size: 10px; border: none; background: none; }
     .bnav-item.active { color: var(--text); font-weight: 600; }
-    .bnav-icon { font-size: 22px; }
+    .bnav-icon { font-size: 20px; }
     .topbar-user span { display: none; }
   }
   @media (min-width: 601px) { .bottom-nav { display: none; } }
@@ -159,8 +177,9 @@
       <button class="tab active" onclick="showPage('dashboard', this)">📊 סיכום</button>
       <button class="tab" onclick="showPage('transactions', this)">💸 הכנסות/הוצאות</button>
       <button class="tab" onclick="showPage('employees', this)">👥 עובדים</button>
+      <button class="tab" onclick="showPage('clients', this)">🤝 לקוחות</button>
+      <button class="tab" onclick="showPage('gcal', this)">📅 אירועים</button>
       <button class="tab" onclick="showPage('alerts', this)">🔔 התראות</button>
-      <button class="tab" onclick="showPage('gcal', this)">📅 יומן גוגל</button>
     </div>
 
     <!-- סיכום -->
@@ -206,12 +225,32 @@
       <div id="emp-cards" class="emp-cards"></div>
     </div>
 
-    <!-- יומן גוגל -->
+    <!-- לקוחות -->
+    <div id="page-clients" class="page">
+      <div class="section">
+        <div class="section-title">הוסף לקוח</div>
+        <div class="form-row">
+          <input type="text" id="c-name" placeholder="שם הלקוח" />
+          <input type="tel" id="c-phone" placeholder="טלפון" />
+          <input type="email" id="c-email" placeholder="אימייל" />
+        </div>
+        <button class="btn-add" id="btn-add-client" onclick="addClient()">+ הוסף לקוח</button>
+      </div>
+      <div class="section">
+        <div class="section-title">רשימת לקוחות</div>
+        <table><thead><tr><th>שם</th><th>טלפון</th><th>אימייל</th><th></th></tr></thead>
+        <tbody id="clients-table"><tr><td colspan="4" class="empty">טוען...</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- אירועים -->
     <div id="page-gcal" class="page">
       <div class="section">
-        <div class="section-title">📅 אירועי יומן גוגל — החודש הנבחר</div>
-        <button class="btn-add" onclick="loadGCal()" style="margin-bottom:12px">🔄 רענן יומן</button>
-        <div id="gcal-events"><div class="empty">לחץ על רענן יומן לטעינה</div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-title" style="margin-bottom:0">📅 אירועים מהיומן</div>
+          <button class="btn-outline" onclick="loadGCal()">🔄 רענן</button>
+        </div>
+        <div id="gcal-events"><div class="empty">לחץ על רענן לטעינה</div></div>
       </div>
     </div>
 
@@ -225,35 +264,75 @@
     <button class="bnav-item active" onclick="showPage('dashboard', this)" data-page="dashboard"><span class="bnav-icon">📊</span>סיכום</button>
     <button class="bnav-item" onclick="showPage('transactions', this)" data-page="transactions"><span class="bnav-icon">💸</span>עסקאות</button>
     <button class="bnav-item" onclick="showPage('employees', this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
+    <button class="bnav-item" onclick="showPage('clients', this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
+    <button class="bnav-item" onclick="showPage('gcal', this)" data-page="gcal"><span class="bnav-icon">📅</span>אירועים</button>
     <button class="bnav-item" onclick="showPage('alerts', this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
-    <button class="bnav-item" onclick="showPage('gcal', this)" data-page="gcal"><span class="bnav-icon">📅</span>יומן</button>
+  </div>
+</div>
+
+<!-- מודל פרטי אירוע -->
+<div class="modal-overlay" id="event-modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-event-title">פרטי אירוע</div>
+      <button class="btn-del" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>לקוח</label>
+        <select id="modal-client">
+          <option value="">-- ללא לקוח --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>מחיר ללקוח (₪)</label>
+        <input type="number" id="modal-price" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label>סטטוס תשלום לקוח</label>
+        <select id="modal-status">
+          <option value="ממתין">ממתין</option>
+          <option value="שולם">שולם</option>
+          <option value="באיחור">באיחור</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>הערות</label>
+        <textarea id="modal-notes" rows="2" placeholder="הערות..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>עובדים באירוע</label>
+        <div id="modal-workers"></div>
+        <button class="btn-outline" style="margin-top:8px" onclick="addWorkerRow()">+ הוסף עובד</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal()">ביטול</button>
+      <button class="btn-add" onclick="saveEventDetails()">שמור</button>
+    </div>
   </div>
 </div>
 
 <script>
 const SUPABASE_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cnZsb2dxanpwbm9qZnpiYXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk2MjgsImV4cCI6MjA5NzgwNTYyOH0.2I45YWLkTDLjndmyoNImkPLfqOxJV7TVsff2kAOZHpg';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzH60EnHD5wqtRfYR1vv1-5oELqEK7RlcWqwHlvT88xQDfysYupYV3I8FbnsdRWfkNing/exec';
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
-let cachedTx = [];
-let cachedEmps = [];
-let cachedEvents = []; // אירועי עובדים
+let cachedTx = [], cachedEmps = [], cachedEvents = [], cachedClients = [], cachedEventDetails = [], gcalEvents = [];
+let currentModalEvent = null;
 
 const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
 const $ = id => document.getElementById(id);
 const getMonth = () => $('yearSel').value + '-' + $('monthSel').value.padStart(2,'0');
 
-// --- חודשים ---
 function initMonths() {
   const now = new Date();
   const names = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-  
-  // חודשים
-  const mSel = $('monthSel');
-  mSel.innerHTML = '';
+  const mSel = $('monthSel'); mSel.innerHTML = '';
   names.forEach((name, i) => {
     const opt = document.createElement('option');
     opt.value = String(i+1).padStart(2,'0');
@@ -261,152 +340,100 @@ function initMonths() {
     if (i === now.getMonth()) opt.selected = true;
     mSel.appendChild(opt);
   });
-
-  // שנים — 3 שנים אחורה עד שנה קדימה
-  const ySel = $('yearSel');
-  ySel.innerHTML = '';
+  const ySel = $('yearSel'); ySel.innerHTML = '';
   for (let y = now.getFullYear(); y <= 2099; y++) {
     const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
+    opt.value = y; opt.textContent = y;
     if (y === now.getFullYear()) opt.selected = true;
     ySel.appendChild(opt);
   }
 }
+function updateMonth() { loadAll(); }
 
-function updateMonth() {
-  loadAll();
-}
-
-// --- Auth ---
+// AUTH
 let authMode = 'login';
 function switchAuthTab(mode) {
   authMode = mode;
-  document.querySelectorAll('.auth-tab').forEach((t, i) => {
-    t.classList.toggle('active', (mode==='login'&&i===0)||(mode==='signup'&&i===1));
-  });
-  $('auth-btn').textContent = mode === 'login' ? 'כניסה' : 'הרשמה';
-  $('auth-msg').className = 'msg';
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active',(mode==='login'&&i===0)||(mode==='signup'&&i===1)));
+  $('auth-btn').textContent = mode==='login'?'כניסה':'הרשמה';
+  $('auth-msg').className='msg';
 }
-
 async function doAuth() {
-  const email = $('auth-email').value.trim();
-  const password = $('auth-password').value;
-  if (!email || !password) { showMsg('נא למלא אימייל וסיסמה', 'err'); return; }
-  $('auth-btn').disabled = true;
-  $('auth-btn').textContent = '...';
-  const res = authMode === 'login'
-    ? await sb.auth.signInWithPassword({ email, password })
-    : await sb.auth.signUp({ email, password });
-  $('auth-btn').disabled = false;
-  $('auth-btn').textContent = authMode === 'login' ? 'כניסה' : 'הרשמה';
-  if (res.error) { showMsg(res.error.message, 'err'); return; }
-  if (authMode === 'signup' && !res.data.session) { showMsg('נשלח מייל אישור!', 'ok'); return; }
+  const email=$('auth-email').value.trim(), password=$('auth-password').value;
+  if(!email||!password){showMsg('נא למלא אימייל וסיסמה','err');return;}
+  $('auth-btn').disabled=true; $('auth-btn').textContent='...';
+  const res=authMode==='login'?await sb.auth.signInWithPassword({email,password}):await sb.auth.signUp({email,password});
+  $('auth-btn').disabled=false; $('auth-btn').textContent=authMode==='login'?'כניסה':'הרשמה';
+  if(res.error){showMsg(res.error.message,'err');return;}
+  if(authMode==='signup'&&!res.data.session){showMsg('נשלח מייל אישור!','ok');return;}
   enterApp(res.data.user);
 }
+function showMsg(text,type){const m=$('auth-msg');m.textContent=text;m.className='msg '+type;}
+async function logout(){await sb.auth.signOut();$('auth-screen').style.display='flex';$('app-screen').style.display='none';currentUser=null;}
+function enterApp(user){currentUser=user;$('auth-screen').style.display='none';$('app-screen').style.display='block';$('user-email-display').textContent=user.email;initMonths();loadAll();}
 
-function showMsg(text, type) {
-  const m = $('auth-msg'); m.textContent = text; m.className = 'msg ' + type;
-}
-
-async function logout() {
-  await sb.auth.signOut();
-  $('auth-screen').style.display = 'flex';
-  $('app-screen').style.display = 'none';
-  currentUser = null;
-}
-
-function enterApp(user) {
-  currentUser = user;
-  $('auth-screen').style.display = 'none';
-  $('app-screen').style.display = 'block';
-  $('user-email-display').textContent = user.email;
-  initMonths();
-  loadAll();
-}
-
-// --- טעינה ---
+// LOAD
 async function loadAll() {
-  const month = getMonth();
-  const uid = currentUser.id;
-  const [txRes, empRes, evRes] = await Promise.all([
-    sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false }),
-    sb.from('employees').select('*').eq('user_id', uid).order('name'),
-    // טוען רק אירועים של החודש הנבחר
-    sb.from('employee_events').select('*').eq('user_id', uid).eq('month', month).order('date')
+  const month=getMonth(), uid=currentUser.id;
+  const [txRes,empRes,evRes,clientRes,detailRes] = await Promise.all([
+    sb.from('transactions').select('*').eq('user_id',uid).eq('month',month).order('created_at',{ascending:false}),
+    sb.from('employees').select('*').eq('user_id',uid).order('name'),
+    sb.from('employee_events').select('*').eq('user_id',uid).eq('month',month).order('date'),
+    sb.from('clients').select('*').eq('user_id',uid).order('name'),
+    sb.from('event_details').select('*').eq('user_id',uid)
   ]);
-  cachedTx = txRes.data || [];
-  cachedEmps = empRes.data || [];
-  cachedEvents = evRes.data || [];
+  cachedTx=txRes.data||[]; cachedEmps=empRes.data||[]; cachedEvents=evRes.data||[];
+  cachedClients=clientRes.data||[]; cachedEventDetails=detailRes.data||[];
   renderAll();
 }
 
 function renderAll() {
-  const income = cachedTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const expense = cachedTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  // שכר = סכום אירועי עובדים של החודש בלבד
-  const salary = cachedEvents.reduce((s,e)=>s+e.amount,0);
-  const net = income - expense - salary;
-
-  $('d-income').textContent = fmt(income);
-  $('d-expense').textContent = fmt(expense);
-  $('d-salary').textContent = fmt(salary);
-  const netEl = $('d-net');
-  netEl.textContent = fmt(net);
-  netEl.className = 'card-value ' + (net >= 0 ? 'c-green' : 'c-red');
-
-  renderCatBars(expense);
-  renderEmpStatus();
-  renderTxTable();
-  renderEmpCards();
-  renderAlerts(income, expense, salary, net);
+  const income=cachedTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense=cachedTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const salary=cachedEvents.reduce((s,e)=>s+e.amount,0);
+  const net=income-expense-salary;
+  $('d-income').textContent=fmt(income); $('d-expense').textContent=fmt(expense);
+  $('d-salary').textContent=fmt(salary);
+  const netEl=$('d-net'); netEl.textContent=fmt(net);
+  netEl.className='card-value '+(net>=0?'c-green':'c-red');
+  renderCatBars(expense); renderEmpStatus(); renderTxTable(); renderEmpCards(); renderClientsTable(); renderAlerts(income,expense,salary,net);
+  if(gcalEvents.length) renderGCalEvents();
 }
 
 function renderCatBars(totalExp) {
-  const cats = {};
-  cachedTx.filter(t=>t.type==='expense').forEach(t=>{ cats[t.category]=(cats[t.category]||0)+t.amount; });
-  const el = $('cat-bars');
-  if (!Object.keys(cats).length) { el.innerHTML = '<div class="empty">אין הוצאות החודש</div>'; return; }
-  const colors = {שכירות:'#185FA5',ציוד:'#0F6E56',שיווק:'#854F0B',שירותים:'#993C1D',אחר:'#533C89'};
-  el.innerHTML = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>{
-    const pct = totalExp>0 ? Math.round(amt/totalExp*100) : 0;
-    return `<div class="bar-wrap"><div class="bar-label"><span>${cat}</span><span>${fmt(amt)} (${pct}%)</span></div>
-    <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${colors[cat]||'#888'}"></div></div></div>`;
+  const cats={};
+  cachedTx.filter(t=>t.type==='expense').forEach(t=>{cats[t.category]=(cats[t.category]||0)+t.amount;});
+  const el=$('cat-bars');
+  if(!Object.keys(cats).length){el.innerHTML='<div class="empty">אין הוצאות החודש</div>';return;}
+  const colors={שכירות:'#185FA5',ציוד:'#0F6E56',שיווק:'#854F0B',שירותים:'#993C1D',אחר:'#533C89'};
+  el.innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>{
+    const pct=totalExp>0?Math.round(amt/totalExp*100):0;
+    return `<div class="bar-wrap"><div class="bar-label"><span>${cat}</span><span>${fmt(amt)} (${pct}%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${colors[cat]||'#888'}"></div></div></div>`;
   }).join('');
 }
 
 function renderEmpStatus() {
-  const el = $('emp-status');
-  if (!cachedEmps.length) { el.innerHTML = '<div class="empty">לא נוספו עובדים</div>'; return; }
-  // סטטוס לפי אירועים של החודש
-  const empTotals = {};
-  const empPaid = {};
-  cachedEvents.forEach(ev => {
-    empTotals[ev.employee_id] = (empTotals[ev.employee_id]||0) + ev.amount;
-    if (!empPaid[ev.employee_id]) empPaid[ev.employee_id] = true;
-    if (ev.status !== 'שולם') empPaid[ev.employee_id] = false;
-  });
-  el.innerHTML = cachedEmps.map(emp => {
-    const total = empTotals[emp.id] || 0;
-    const evs = cachedEvents.filter(e=>e.employee_id===emp.id);
-    const allPaid = evs.length > 0 && evs.every(e=>e.status==='שולם');
-    const hasLate = evs.some(e=>e.status==='באיחור');
-    const status = evs.length===0 ? 'אין אירועים' : allPaid ? 'שולם' : hasLate ? 'באיחור' : 'ממתין';
-    const cls = status==='שולם' ? 'paid' : status==='באיחור' ? 'late' : status==='ממתין' ? 'pending' : '';
+  const el=$('emp-status');
+  if(!cachedEmps.length){el.innerHTML='<div class="empty">לא נוספו עובדים</div>';return;}
+  el.innerHTML=cachedEmps.map(emp=>{
+    const evs=cachedEvents.filter(e=>e.employee_id===emp.id);
+    const total=evs.reduce((s,e)=>s+e.amount,0);
+    const allPaid=evs.length>0&&evs.every(e=>e.status==='שולם');
+    const hasLate=evs.some(e=>e.status==='באיחור');
+    const status=evs.length===0?'אין אירועים':allPaid?'שולם':hasLate?'באיחור':'ממתין';
+    const cls=status==='שולם'?'paid':status==='באיחור'?'late':status==='ממתין'?'pending':'';
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
       <div><span style="font-size:13px;font-weight:500">${emp.name}</span>${total>0?`<span style="font-size:12px;color:var(--muted);margin-right:8px">${fmt(total)}</span>`:''}
-      </div>
-      ${cls ? `<span class="badge badge-${cls}">${status}</span>` : `<span style="font-size:12px;color:var(--muted)">${status}</span>`}
+      </div>${cls?`<span class="badge badge-${cls}">${status}</span>`:`<span style="font-size:12px;color:var(--muted)">${status}</span>`}
     </div>`;
   }).join('');
 }
 
 function renderTxTable() {
-  const tb = $('tx-table');
-  if (!cachedTx.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">אין רשומות לחודש זה</td></tr>'; return; }
-  tb.innerHTML = cachedTx.map(t=>`<tr>
-    <td>${t.description}</td>
-    <td style="color:var(--muted);font-size:12px">${t.category}</td>
+  const tb=$('tx-table');
+  if(!cachedTx.length){tb.innerHTML='<tr><td colspan="5" class="empty">אין רשומות לחודש זה</td></tr>';return;}
+  tb.innerHTML=cachedTx.map(t=>`<tr>
+    <td>${t.description}</td><td style="color:var(--muted);font-size:12px">${t.category}</td>
     <td><span class="badge badge-${t.type}">${t.type==='income'?'הכנסה':'הוצאה'}</span></td>
     <td style="font-weight:600">${fmt(t.amount)}</td>
     <td><button class="btn-del" onclick="deleteTx('${t.id}')">🗑</button></td>
@@ -414,28 +441,21 @@ function renderTxTable() {
 }
 
 function renderEmpCards() {
-  const el = $('emp-cards');
-  if (!cachedEmps.length) {
-    el.innerHTML = '<div class="section"><div class="empty">לא נוספו עובדים עדיין</div></div>';
-    return;
-  }
-  el.innerHTML = cachedEmps.map(emp => {
-    const empEvents = cachedEvents.filter(e => e.employee_id === emp.id);
-    const total = empEvents.reduce((s,e)=>s+e.amount,0);
-    const month = getMonth();
-    return `
-    <div class="emp-card">
+  const el=$('emp-cards');
+  if(!cachedEmps.length){el.innerHTML='<div class="section"><div class="empty">לא נוספו עובדים</div></div>';return;}
+  el.innerHTML=cachedEmps.map(emp=>{
+    const empEvents=cachedEvents.filter(e=>e.employee_id===emp.id);
+    const total=empEvents.reduce((s,e)=>s+e.amount,0);
+    return `<div class="emp-card">
       <div class="emp-card-header" onclick="toggleCard('${emp.id}')">
-        <div>
-          <div class="emp-card-name">👤 ${emp.name}</div>
-          <div class="emp-card-meta">${empEvents.length} אירועים החודש${total>0?' · '+fmt(total):''}</div>
-        </div>
+        <div><div class="emp-card-name">👤 ${emp.name}</div>
+        <div class="emp-card-meta">${empEvents.length} אירועים החודש${total>0?' · '+fmt(total):''}</div></div>
         <div style="display:flex;align-items:center;gap:8px">
           <button class="btn-del" onclick="event.stopPropagation();deleteEmp('${emp.id}')">🗑</button>
           <span id="toggle-icon-${emp.id}">▼</span>
         </div>
       </div>
-      <div class="emp-card-body" id="card-body-${emp.id}">
+      <div class="emp-card-body collapsed" id="card-body-${emp.id}">
         <div class="event-form">
           <div class="event-form-title">+ הוסף אירוע</div>
           <div class="form-row">
@@ -443,168 +463,257 @@ function renderEmpCards() {
             <input type="date" id="ev-date-${emp.id}" />
             <input type="number" id="ev-amount-${emp.id}" placeholder="סכום ₪" min="0" />
           </div>
-          <button class="btn-sm" onclick="addEvent('${emp.id}')">הוסף אירוע</button>
+          <button class="btn-sm" onclick="addEvent('${emp.id}')">הוסף</button>
         </div>
-        ${empEvents.length ? `
-        <table>
-          <thead><tr><th>אירוע</th><th>תאריך</th><th>סכום</th><th>סטטוס</th><th></th></tr></thead>
-          <tbody>
-            ${empEvents.map(ev=>`<tr>
-              <td style="font-size:13px">${ev.event_name}</td>
-              <td style="font-size:12px;color:var(--muted)">${ev.date||'—'}</td>
-              <td style="font-weight:600">${fmt(ev.amount)}</td>
-              <td><select class="status-select" onchange="updateEventStatus('${ev.id}',this.value)">
-                ${['ממתין','שולם','באיחור'].map(s=>`<option ${ev.status===s?'selected':''}>${s}</option>`).join('')}
-              </select></td>
-              <td><button class="btn-del" onclick="deleteEvent('${ev.id}')">🗑</button></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>` : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">אין אירועים החודש</div>'}
+        ${empEvents.length?`<table><thead><tr><th>אירוע</th><th>תאריך</th><th>סכום</th><th>סטטוס</th><th></th></tr></thead><tbody>
+          ${empEvents.map(ev=>`<tr>
+            <td style="font-size:13px">${ev.event_name}</td>
+            <td style="font-size:12px;color:var(--muted)">${ev.date||'—'}</td>
+            <td style="font-weight:600">${fmt(ev.amount)}</td>
+            <td><select class="status-select" onchange="updateEventStatus('${ev.id}',this.value)">
+              ${['ממתין','שולם','באיחור'].map(s=>`<option ${ev.status===s?'selected':''}>${s}</option>`).join('')}
+            </select></td>
+            <td><button class="btn-del" onclick="deleteEvent('${ev.id}')">🗑</button></td>
+          </tr>`).join('')}
+        </tbody></table>`:'<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">אין אירועים החודש</div>'}
       </div>
     </div>`;
   }).join('');
 }
 
-function toggleCard(empId) {
-  const body = $('card-body-'+empId);
-  const icon = $('toggle-icon-'+empId);
-  body.classList.toggle('collapsed');
-  icon.textContent = body.classList.contains('collapsed') ? '▶' : '▼';
+function renderClientsTable() {
+  const tb=$('clients-table');
+  if(!cachedClients.length){tb.innerHTML='<tr><td colspan="4" class="empty">לא נוספו לקוחות</td></tr>';return;}
+  tb.innerHTML=cachedClients.map(c=>`<tr>
+    <td style="font-weight:500">${c.name}</td>
+    <td style="font-size:13px;color:var(--muted)">${c.phone||'—'}</td>
+    <td style="font-size:13px;color:var(--muted)">${c.email||'—'}</td>
+    <td><button class="btn-del" onclick="deleteClient('${c.id}')">🗑</button></td>
+  </tr>`).join('');
 }
 
-function renderAlerts(income, expense, salary, net) {
-  const alerts = [];
-  const total_out = expense + salary;
-  const lateEvents = cachedEvents.filter(e=>e.status==='באיחור');
-  const pendingEmps = [...new Set(cachedEvents.filter(e=>e.status==='ממתין').map(e=>e.employee_id))];
-  if (net < 0) alerts.push({type:'danger', msg:`יתרה שלילית: ${fmt(net)} — ההוצאות עולות על ההכנסות`});
-  if (income > 0 && total_out/income > 0.85) alerts.push({type:'warn', msg:`ההוצאות מהוות ${Math.round(total_out/income*100)}% מההכנסות`});
-  if (lateEvents.length) alerts.push({type:'danger', msg:`${lateEvents.length} תשלומים באיחור החודש`});
-  if (pendingEmps.length) {
-    const names = pendingEmps.map(id=>cachedEmps.find(e=>e.id===id)?.name).filter(Boolean);
-    alerts.push({type:'warn', msg:`עובדים עם תשלומים פתוחים: ${names.join(', ')}`});
+function renderGCalEvents() {
+  const el=$('gcal-events');
+  if(!gcalEvents.length){el.innerHTML='<div class="empty">אין אירועים החודש</div>';return;}
+  const hebrewDays=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  const hebrewMonths=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  el.innerHTML=gcalEvents.map((ev,i)=>{
+    const date=new Date(ev.start);
+    const dateStr=`יום ${hebrewDays[date.getDay()]}, ${date.getDate()} ב${hebrewMonths[date.getMonth()]}`;
+    const timeStr=ev.allDay?'כל היום':date.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+    const detail=cachedEventDetails.find(d=>d.event_title===ev.title&&d.event_date===ev.start.slice(0,10));
+    const client=detail&&detail.client_id?cachedClients.find(c=>c.id===detail.client_id):null;
+    const statusCls=detail?detail.status==='שולם'?'paid':detail.status==='באיחור'?'late':'pending':'';
+    return `<div class="gcal-event-card">
+      <div class="gcal-event-header" onclick="toggleGCalEvent('gcal-body-${i}')">
+        <div>
+          <div class="gcal-event-title">${ev.title||'(ללא שם)'}</div>
+          <div class="gcal-event-date">${dateStr} · ${timeStr}${client?` · 🤝 ${client.name}`:''}${detail&&detail.price?` · ${fmt(detail.price)}`:''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${detail?`<span class="badge badge-${statusCls}">${detail.status}</span>`:''}
+          <button class="btn-sm" onclick="event.stopPropagation();openEventModal(${i})">✏️ פרטים</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleGCalEvent(id) {
+  const el=$(id);
+  if(el) el.classList.toggle('open');
+}
+
+function renderAlerts(income,expense,salary,net) {
+  const alerts=[];
+  const total_out=expense+salary;
+  const lateEvents=cachedEvents.filter(e=>e.status==='באיחור');
+  const pendingEmps=[...new Set(cachedEvents.filter(e=>e.status==='ממתין').map(e=>e.employee_id))];
+  if(net<0) alerts.push({type:'danger',msg:`יתרה שלילית: ${fmt(net)} — ההוצאות עולות על ההכנסות`});
+  if(income>0&&total_out/income>0.85) alerts.push({type:'warn',msg:`ההוצאות מהוות ${Math.round(total_out/income*100)}% מההכנסות`});
+  if(lateEvents.length) alerts.push({type:'danger',msg:`${lateEvents.length} תשלומים באיחור החודש`});
+  if(pendingEmps.length){const names=pendingEmps.map(id=>cachedEmps.find(e=>e.id===id)?.name).filter(Boolean);alerts.push({type:'warn',msg:`עובדים עם תשלומים פתוחים: ${names.join(', ')}`});}
+  if(!alerts.length) alerts.push({type:'ok',msg:'הכל תקין — אין התראות פעילות החודש ✓'});
+  $('alerts-box').innerHTML=alerts.map(a=>`<div class="alert alert-${a.type}">${a.msg}</div>`).join('');
+}
+
+// GOOGLE CALENDAR
+async function loadGCal() {
+  const el=$('gcal-events');
+  el.innerHTML='<div class="empty">טוען...</div>';
+  const month=getMonth();
+  try {
+    const res=await fetch(GAS_URL+'?month='+month);
+    gcalEvents=await res.json();
+    if(!Array.isArray(gcalEvents)||!gcalEvents.length){el.innerHTML='<div class="empty">אין אירועים החודש</div>';return;}
+    renderGCalEvents();
+  } catch(err) {
+    el.innerHTML='<div class="empty" style="color:var(--red)">שגיאת חיבור — נסה שוב</div>';
   }
-  if (!alerts.length) alerts.push({type:'ok', msg:'הכל תקין — אין התראות פעילות החודש ✓'});
-  $('alerts-box').innerHTML = alerts.map(a=>`<div class="alert alert-${a.type}">${a.msg}</div>`).join('');
 }
 
-// --- פעולות ---
+// מודל אירוע
+function openEventModal(idx) {
+  currentModalEvent=gcalEvents[idx];
+  $('modal-event-title').textContent=currentModalEvent.title;
+  const detail=cachedEventDetails.find(d=>d.event_title===currentModalEvent.title&&d.event_date===currentModalEvent.start.slice(0,10));
+  
+  // מלא לקוחות
+  const clientSel=$('modal-client');
+  clientSel.innerHTML='<option value="">-- ללא לקוח --</option>'+
+    cachedClients.map(c=>`<option value="${c.id}" ${detail&&detail.client_id===c.id?'selected':''}>${c.name}</option>`).join('');
+  
+  $('modal-price').value=detail?.price||'';
+  $('modal-status').value=detail?.status||'ממתין';
+  $('modal-notes').value=detail?.notes||'';
+  
+  // עובדים
+  renderModalWorkers(detail?.id);
+  $('event-modal').style.display='flex';
+}
+
+async function renderModalWorkers(detailId) {
+  const container=$('modal-workers');
+  let workers=[];
+  if(detailId){
+    const res=await sb.from('event_workers').select('*').eq('event_detail_id',detailId);
+    workers=res.data||[];
+  }
+  container.innerHTML=workers.map((w,i)=>`
+    <div class="worker-row" id="worker-row-${i}">
+      <select onchange="updateWorkerRow(${i},this.value,'emp')">
+        <option value="">בחר עובד</option>
+        ${cachedEmps.map(e=>`<option value="${e.id}" ${w.employee_id===e.id?'selected':''}>${e.name}</option>`).join('')}
+      </select>
+      <input type="number" placeholder="סכום ₪" value="${w.amount||''}" onchange="updateWorkerRow(${i},this.value,'amount')" />
+      <select onchange="updateWorkerRow(${i},this.value,'status')">
+        ${['ממתין','שולם','באיחור'].map(s=>`<option ${w.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn-del" onclick="removeWorkerRow(${i})">✕</button>
+    </div>`).join('');
+  container._workers=workers;
+}
+
+let modalWorkers=[];
+function addWorkerRow() {
+  const container=$('modal-workers');
+  if(!container._workers) container._workers=[];
+  container._workers.push({employee_id:'',amount:0,status:'ממתין'});
+  renderModalWorkersFresh(container._workers);
+}
+
+function renderModalWorkersFresh(workers) {
+  const container=$('modal-workers');
+  container.innerHTML=workers.map((w,i)=>`
+    <div class="worker-row">
+      <select onchange="workers_temp[${i}].employee_id=this.value">
+        <option value="">בחר עובד</option>
+        ${cachedEmps.map(e=>`<option value="${e.id}" ${w.employee_id===e.id?'selected':''}>${e.name}</option>`).join('')}
+      </select>
+      <input type="number" placeholder="סכום ₪" value="${w.amount||''}" oninput="workers_temp[${i}].amount=parseFloat(this.value)||0" />
+      <select onchange="workers_temp[${i}].status=this.value">
+        ${['ממתין','שולם','באיחור'].map(s=>`<option ${w.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn-del" onclick="workers_temp.splice(${i},1);renderModalWorkersFresh(workers_temp)">✕</button>
+    </div>`).join('');
+  window.workers_temp=workers;
+}
+
+function closeModal() { $('event-modal').style.display='none'; currentModalEvent=null; window.workers_temp=[]; }
+
+async function saveEventDetails() {
+  if(!currentModalEvent) return;
+  const uid=currentUser.id;
+  const eventDate=currentModalEvent.start.slice(0,10);
+  const price=parseFloat($('modal-price').value)||0;
+  const status=$('modal-status').value;
+  const notes=$('modal-notes').value;
+  const clientId=$('modal-client').value||null;
+
+  // שמור או עדכן פרטי אירוע
+  let detailId=null;
+  const existing=cachedEventDetails.find(d=>d.event_title===currentModalEvent.title&&d.event_date===eventDate);
+  if(existing) {
+    await sb.from('event_details').update({price,status,notes,client_id:clientId}).eq('id',existing.id);
+    detailId=existing.id;
+  } else {
+    const res=await sb.from('event_details').insert({user_id:uid,event_title:currentModalEvent.title,event_date:eventDate,price,status,notes,client_id:clientId}).select();
+    detailId=res.data?.[0]?.id;
+  }
+
+  // שמור עובדים
+  if(detailId && window.workers_temp && window.workers_temp.length) {
+    await sb.from('event_workers').delete().eq('event_detail_id',detailId);
+    const validWorkers=window.workers_temp.filter(w=>w.employee_id&&w.amount>0);
+    if(validWorkers.length) {
+      await sb.from('event_workers').insert(validWorkers.map(w=>({event_detail_id:detailId,employee_id:w.employee_id,amount:w.amount,status:w.status||'ממתין'})));
+    }
+  }
+
+  closeModal();
+  await loadAll();
+  renderGCalEvents();
+}
+
+// פעולות
 async function addTransaction() {
-  const desc = $('t-desc').value.trim();
-  const amount = parseFloat($('t-amount').value);
-  const type = $('t-type').value;
-  const category = $('t-cat').value;
-  if (!desc || !amount || amount<=0) return;
-  $('btn-add-tx').disabled = true;
-  await sb.from('transactions').insert({user_id:currentUser.id, month:getMonth(), description:desc, amount, type, category});
+  const desc=$('t-desc').value.trim(), amount=parseFloat($('t-amount').value), type=$('t-type').value, category=$('t-cat').value;
+  if(!desc||!amount||amount<=0) return;
+  $('btn-add-tx').disabled=true;
+  await sb.from('transactions').insert({user_id:currentUser.id,month:getMonth(),description:desc,amount,type,category});
   $('t-desc').value=''; $('t-amount').value='';
-  $('btn-add-tx').disabled = false;
+  $('btn-add-tx').disabled=false;
   await loadAll();
 }
-
-async function deleteTx(id) {
-  if (!confirm('למחוק רשומה זו?')) return;
-  await sb.from('transactions').delete().eq('id',id);
-  await loadAll();
-}
+async function deleteTx(id){if(!confirm('למחוק?'))return;await sb.from('transactions').delete().eq('id',id);await loadAll();}
 
 async function addEmployee() {
-  const name = $('e-name').value.trim();
-  if (!name) return;
-  $('btn-add-emp').disabled = true;
-  await sb.from('employees').insert({user_id:currentUser.id, name});
+  const name=$('e-name').value.trim();
+  if(!name) return;
+  $('btn-add-emp').disabled=true;
+  await sb.from('employees').insert({user_id:currentUser.id,name});
   $('e-name').value='';
-  $('btn-add-emp').disabled = false;
+  $('btn-add-emp').disabled=false;
   await loadAll();
 }
+async function deleteEmp(id){if(!confirm('למחוק עובד?'))return;await sb.from('employee_events').delete().eq('employee_id',id);await sb.from('employees').delete().eq('id',id);await loadAll();}
 
-async function deleteEmp(id) {
-  if (!confirm('למחוק עובד זה וכל האירועים שלו?')) return;
-  await sb.from('employee_events').delete().eq('employee_id',id);
-  await sb.from('employees').delete().eq('id',id);
+async function addClient() {
+  const name=$('c-name').value.trim(), phone=$('c-phone').value.trim(), email=$('c-email').value.trim();
+  if(!name) return;
+  $('btn-add-client').disabled=true;
+  await sb.from('clients').insert({user_id:currentUser.id,name,phone,email});
+  $('c-name').value=''; $('c-phone').value=''; $('c-email').value='';
+  $('btn-add-client').disabled=false;
   await loadAll();
 }
+async function deleteClient(id){if(!confirm('למחוק לקוח?'))return;await sb.from('clients').delete().eq('id',id);await loadAll();}
 
 async function addEvent(empId) {
-  const eventName = $('ev-event-'+empId).value.trim();
-  const date = $('ev-date-'+empId).value;
-  const amount = parseFloat($('ev-amount-'+empId).value);
-  if (!eventName || !amount || amount<=0) { alert('נא למלא שם אירוע וסכום'); return; }
-  await sb.from('employee_events').insert({
-    user_id: currentUser.id,
-    employee_id: empId,
-    event_name: eventName,
-    date: date || null,
-    amount,
-    month: getMonth(),
-    status: 'ממתין'
-  });
-  $('ev-event-'+empId).value='';
-  $('ev-date-'+empId).value='';
-  $('ev-amount-'+empId).value='';
+  const eventName=$('ev-event-'+empId).value.trim(), date=$('ev-date-'+empId).value, amount=parseFloat($('ev-amount-'+empId).value);
+  if(!eventName||!amount||amount<=0){alert('נא למלא שם אירוע וסכום');return;}
+  await sb.from('employee_events').insert({user_id:currentUser.id,employee_id:empId,event_name:eventName,date:date||null,amount,month:getMonth(),status:'ממתין'});
+  $('ev-event-'+empId).value=''; $('ev-date-'+empId).value=''; $('ev-amount-'+empId).value='';
   await loadAll();
 }
+async function deleteEvent(id){if(!confirm('למחוק?'))return;await sb.from('employee_events').delete().eq('id',id);await loadAll();}
+async function updateEventStatus(id,status){await sb.from('employee_events').update({status}).eq('id',id);await loadAll();}
 
-async function deleteEvent(id) {
-  if (!confirm('למחוק אירוע זה?')) return;
-  await sb.from('employee_events').delete().eq('id',id);
-  await loadAll();
-}
+function toggleCard(empId){const body=$('card-body-'+empId),icon=$('toggle-icon-'+empId);body.classList.toggle('collapsed');icon.textContent=body.classList.contains('collapsed')?'▶':'▼';}
 
-async function updateEventStatus(id, status) {
-  await sb.from('employee_events').update({status}).eq('id',id);
-  await loadAll();
-}
-
-function showPage(id, el) {
+function showPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab,.bnav-item').forEach(t=>t.classList.remove('active'));
-  const page = document.getElementById('page-'+id);
-  if (page) page.classList.add('active');
-  if (el) el.classList.add('active');
+  const page=document.getElementById('page-'+id);
+  if(page) page.classList.add('active');
+  if(el) el.classList.add('active');
   document.querySelectorAll('[data-page="'+id+'"]').forEach(b=>b.classList.add('active'));
+  if(id==='gcal'&&!gcalEvents.length) loadGCal();
 }
 
-// יומן גוגל דרך Google Apps Script
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzH60EnHD5wqtRfYR1vv1-5oELqEK7RlcWqwHlvT88xQDfysYupYV3I8FbnsdRWfkNing/exec';
-
-async function loadGCal() {
-  const el = document.getElementById('gcal-events');
-  el.innerHTML = '<div class="empty">טוען...</div>';
-  const month = getMonth();
-
-  try {
-    const res = await fetch(GAS_URL + '?month=' + month);
-    const events = await res.json();
-
-    if (!Array.isArray(events) || !events.length) {
-      el.innerHTML = '<div class="empty">אין אירועים החודש</div>';
-      return;
-    }
-
-    const hebrewDays = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-    const hebrewMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-
-    el.innerHTML = events.map(ev => {
-      const date = new Date(ev.start);
-      const dateStr = 'יום ' + hebrewDays[date.getDay()] + ', ' + date.getDate() + ' ב' + hebrewMonths[date.getMonth()];
-      const timeStr = ev.allDay ? 'כל היום' : date.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
-      return '<div class="gcal-event"><div>' +
-        '<div class="gcal-event-title">' + (ev.title || '(ללא שם)') + '</div>' +
-        '<div class="gcal-event-meta">' + dateStr + '</div>' +
-        (ev.location ? '<div class="gcal-event-meta">📍 ' + ev.location + '</div>' : '') +
-        '</div><div class="gcal-event-time">' + timeStr + '</div></div>';
-    }).join('');
-
-  } catch(err) {
-    el.innerHTML = '<div class="empty" style="color:var(--red)">שגיאת חיבור — נסה שוב</div>';
-    console.error(err);
-  }
-}
-
-sb.auth.getSession().then(({data}) => {
-  if (data.session) enterApp(data.session.user);
-});
+window.workers_temp=[];
+sb.auth.getSession().then(({data})=>{if(data.session)enterApp(data.session.user);});
 </script>
 </body>
 </html>
