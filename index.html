@@ -389,9 +389,10 @@
       <div class="form-group">
         <label>סטטוס תשלום לקוח</label>
         <select id="modal-status">
-          <option value="ממתין">ממתין</option>
-          <option value="שולם">שולם</option>
-          <option value="באיחור">באיחור</option>
+          <option value="לא יצאה דרישת תשלום">לא יצאה דרישת תשלום</option>
+          <option value="יצאה דרישת תשלום">יצאה דרישת תשלום</option>
+          <option value="בוצע תשלום">בוצע תשלום</option>
+          <option value="בוצע תשלום + חשבונית מס">בוצע תשלום + חשבונית מס</option>
         </select>
       </div>
       <div class="form-group">
@@ -477,7 +478,7 @@ function renderAll(){
 
   // הכנסות — רק מה שכבר שולם בפועל
   const txIncome=cachedTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const eventIncome=monthDetails.filter(d=>d.price>0&&d.status==='שולם').reduce((s,d)=>s+(d.price||0),0);
+  const eventIncome=monthDetails.filter(d=>d.price>0&&(d.status==='בוצע תשלום'||d.status==='בוצע תשלום + חשבונית מס')).reduce((s,d)=>s+(d.price||0),0);
   const income=txIncome+eventIncome;
 
   // הוצאות — עסקאות בלבד
@@ -492,7 +493,7 @@ function renderAll(){
   const net=income-expense-salary;
 
   // הכנסה צפויה = כל הכנסות (שולם + ממתין)
-  const pendingIncome=monthDetails.filter(d=>d.price>0&&d.status==='ממתין').reduce((s,d)=>s+(d.price||0),0);
+  const pendingIncome=monthDetails.filter(d=>d.price>0&&(d.status==='לא יצאה דרישת תשלום'||d.status==='יצאה דרישת תשלום')).reduce((s,d)=>s+(d.price||0),0);
   const totalClientIncome=income+pendingIncome; // שולם + ממתין
 
   // שכר צפוי = כל השכר (שולם + ממתין)
@@ -578,7 +579,7 @@ function renderEventsList(){
     const dateStr=`${date.getDate()} ב${hebrewMonths[date.getMonth()]}`;
     const detail=ev.source==='manual'?cachedEventDetails.find(d=>d.id===ev.detailId):cachedEventDetails.find(d=>d.event_title===ev.title&&d.event_date===ev.start.slice(0,10));
     const client=detail?.client_id?cachedClients.find(c=>c.id===detail.client_id):null;
-    const statusCls=detail?detail.status==='שולם'?'paid':detail.status==='באיחור'?'late':'pending':'';
+    const statusCls=detail?detail.status==='בוצע תשלום'||detail.status==='בוצע תשלום + חשבונית מס'?'paid':detail.status==='יצאה דרישת תשלום'?'pending':detail.status==='לא יצאה דרישת תשלום'?'late':'pending':'';
     const workers=detail?cachedEventWorkers.filter(w=>w.event_detail_id===detail.id):[];
     const workerTotal=workers.reduce((s,w)=>s+w.amount,0);
     const profit=detail?.price?detail.price-workerTotal:null;
@@ -673,7 +674,7 @@ function renderClientsList(){
   el.innerHTML=cachedClients.map(c=>{
     const clientEvents=cachedEventDetails.filter(d=>d.client_id===c.id);
     const totalPrice=clientEvents.reduce((s,d)=>s+(d.price||0),0);
-    const paidEvents=clientEvents.filter(d=>d.status==='שולם');
+    const paidEvents=clientEvents.filter(d=>d.status==='בוצע תשלום'||d.status==='בוצע תשלום + חשבונית מס');
     const totalPaid=paidEvents.reduce((s,d)=>s+(d.price||0),0);
     const debt=totalPrice-totalPaid;
     return `<div class="client-card">
@@ -703,7 +704,7 @@ function renderClientsList(){
         ${clientEvents.length?`<div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">היסטוריית אירועים:</div>`+
           clientEvents.map(d=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
             <span>${d.event_title}</span>
-            <span>${d.price?fmt(d.price):'—'} · <span class="badge badge-${d.status==='שולם'?'paid':d.status==='באיחור'?'late':'pending'}">${d.status}</span></span>
+            <span>${d.price?fmt(d.price):'—'} · <span class="badge badge-${d.status==='בוצע תשלום'||d.status==='בוצע תשלום + חשבונית מס'?'paid':d.status==='יצאה דרישת תשלום'?'pending':'late'}">${d.status}</span></span>
           </div>`).join('')
         :'<div style="font-size:13px;color:var(--muted);text-align:center">אין אירועים עדיין</div>'}
       </div>
@@ -715,7 +716,7 @@ function renderAlerts(income,expense,salary,net){
   const alerts=[];
   const total_out=expense+salary;
   const lateEmpEvents=cachedEmpEvents.filter(e=>e.status==='באיחור');
-  const lateClientEvents=cachedEventDetails.filter(d=>d.status==='באיחור');
+  const lateClientEvents=cachedEventDetails.filter(d=>d.status==='יצאה דרישת תשלום');
   if(net<0) alerts.push({type:'danger',msg:`יתרה שלילית: ${fmt(net)}`});
   if(income>0&&total_out/income>0.85) alerts.push({type:'warn',msg:`ההוצאות מהוות ${Math.round(total_out/income*100)}% מההכנסות`});
   if(lateEmpEvents.length) alerts.push({type:'danger',msg:`${lateEmpEvents.length} תשלומים לעובדים באיחור`});
@@ -757,7 +758,7 @@ function openEditEventModal(title,date,source,detailId){
   $('modal-date-input').value=date; $('modal-date-input').style.display=source==='manual'?'block':'none';
   const detail=detailId?cachedEventDetails.find(d=>d.id===detailId):null;
   fillClientSelect(detail?.client_id);
-  $('modal-price').value=detail?.price||''; $('modal-status').value=detail?.status||'ממתין'; $('modal-notes').value=detail?.notes||'';
+  $('modal-price').value=detail?.price||''; $('modal-status').value=detail?.status||'לא יצאה דרישת תשלום'; $('modal-notes').value=detail?.notes||'';
   modalWorkers=detailId?cachedEventWorkers.filter(w=>w.event_detail_id===detailId).map(w=>({employee_id:w.employee_id,amount:w.amount,status:w.status})):[];
   renderModalWorkers();
   $('event-modal').style.display='flex';
