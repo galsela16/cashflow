@@ -378,14 +378,13 @@ async function loadAll(){
 }
 
 function renderAll(){
+  const month=getMonth();
   const txIncome=cachedTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const expense=cachedTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   // שכר עובדים: מאירועי עובדים + מאירועים כלליים של החודש
   const monthDetailIds=cachedEventDetails.filter(d=>(d.month===month||(d.event_date&&d.event_date.slice(0,7)===month))).map(d=>d.id);
   const eventWorkersSalary=cachedEventWorkers.filter(w=>monthDetailIds.includes(w.event_detail_id)).reduce((s,w)=>s+w.amount,0);
   const salary=cachedEmpEvents.reduce((s,e)=>s+e.amount,0) + eventWorkersSalary;
-  // הכנסות מאירועים של החודש הנוכחי
-  const month=getMonth();
   const eventIncome=cachedEventDetails.filter(d=>(d.month===month||(d.event_date&&d.event_date.slice(0,7)===month))&&d.price>0&&d.status==='שולם').reduce((s,d)=>s+(d.price||0),0);
   const pendingIncome=cachedEventDetails.filter(d=>(d.month===month||(d.event_date&&d.event_date.slice(0,7)===month))&&d.price>0&&d.status==='ממתין').reduce((s,d)=>s+(d.price||0),0);
   const income=txIncome+eventIncome;
