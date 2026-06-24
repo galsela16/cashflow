@@ -187,48 +187,46 @@
     </div>
 
 
+    <!-- יתרה נטו + צפי רווח — קטן למעלה -->
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div style="background:var(--surface);border-radius:100px;padding:8px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--muted);font-weight:500">💰 יתרה נטו</span>
+        <span style="font-size:17px;font-weight:700" id="d-net">—</span>
+      </div>
+      <div style="background:var(--amber-bg);border-radius:100px;padding:8px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--amber);font-weight:500">📊 צפי רווח</span>
+        <span style="font-size:17px;font-weight:700" id="d-pending">—</span>
+      </div>
+    </div>
     <!-- שורה 1: הכנסות -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div class="card" style="border-right:4px solid var(--green)">
+      <div class="card">
         <div class="card-label">✅ נכנס מלקוחות</div>
         <div class="card-value c-green" id="d-income">—</div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">שולם בפועל</div>
       </div>
-      <div class="card" style="border-right:4px solid #6ee7b7;background:var(--green-soft)">
+      <div class="card" style="background:var(--green-soft)">
         <div class="card-label">🕐 צפוי מלקוחות</div>
         <div class="card-value" style="color:var(--green)" id="d-pending-income">—</div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">טרם שולם</div>
       </div>
     </div>
-    <!-- שורה 2: הוצאות -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div class="card" style="border-right:4px solid var(--blue)">
+    <!-- שורה 2: עובדים + הוצאות -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.25rem">
+      <div class="card">
         <div class="card-label">✅ יצא לעובדים</div>
         <div class="card-value c-blue" id="d-salary">—</div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">שולם בפועל</div>
       </div>
-      <div class="card" style="border-right:4px solid #93c5fd;background:var(--blue-soft)">
+      <div class="card" style="background:var(--blue-soft)">
         <div class="card-label">🕐 צפוי לעובדים</div>
         <div class="card-value" style="color:var(--blue)" id="d-pending-salary">—</div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">טרם שולם</div>
       </div>
-    </div>
-    <!-- שורה 3: הוצאות + יתרה + צפי -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.25rem">
-      <div class="card" style="border-right:4px solid var(--red)">
+      <div class="card">
         <div class="card-label">💸 הוצאות</div>
         <div class="card-value c-red" id="d-expense">—</div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">הוצאות עסק</div>
-      </div>
-      <div class="card">
-        <div class="card-label">💰 יתרה נטו</div>
-        <div class="card-value" id="d-net">—</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">בפועל</div>
-      </div>
-      <div class="card" style="border-right:4px solid #fbbf24;background:var(--amber-bg)">
-        <div class="card-label">📊 צפי רווח</div>
-        <div class="card-value" id="d-pending">—</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">הכנסות פחות שכר</div>
       </div>
     </div>
 
