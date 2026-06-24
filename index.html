@@ -139,7 +139,8 @@
   <div class="main">
     <div class="month-bar">
       <label>חודש:</label>
-      <select id="monthSelect" onchange="loadAll()"></select>
+      <select id="monthSel" onchange="updateMonth()"></select>
+      <select id="yearSel" onchange="updateMonth()"></select>
     </div>
 
     <div class="cards">
@@ -227,23 +228,38 @@ let cachedEvents = []; // אירועי עובדים
 
 const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
 const $ = id => document.getElementById(id);
-const getMonth = () => $('monthSelect').value;
+const getMonth = () => $('yearSel').value + '-' + $('monthSel').value.padStart(2,'0');
 
 // --- חודשים ---
 function initMonths() {
-  const sel = $('monthSelect');
-  sel.innerHTML = '';
   const now = new Date();
   const names = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-  for (let i = 5; i >= -1; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const val = d.toISOString().slice(0, 7);
+  
+  // חודשים
+  const mSel = $('monthSel');
+  mSel.innerHTML = '';
+  names.forEach((name, i) => {
     const opt = document.createElement('option');
-    opt.value = val;
-    opt.textContent = names[d.getMonth()] + ' ' + d.getFullYear();
-    if (i === 0) opt.selected = true;
-    sel.appendChild(opt);
+    opt.value = String(i+1).padStart(2,'0');
+    opt.textContent = name;
+    if (i === now.getMonth()) opt.selected = true;
+    mSel.appendChild(opt);
+  });
+
+  // שנים — 3 שנים אחורה עד שנה קדימה
+  const ySel = $('yearSel');
+  ySel.innerHTML = '';
+  for (let y = now.getFullYear() - 3; y <= now.getFullYear() + 1; y++) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === now.getFullYear()) opt.selected = true;
+    ySel.appendChild(opt);
   }
+}
+
+function updateMonth() {
+  loadAll();
 }
 
 // --- Auth ---
