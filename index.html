@@ -175,6 +175,7 @@
       <div class="card"><div class="card-label">סה"כ הוצאות</div><div class="card-value c-red" id="d-expense">—</div></div>
       <div class="card"><div class="card-label">שכר החודש</div><div class="card-value c-blue" id="d-salary">—</div></div>
       <div class="card"><div class="card-label">יתרה נטו</div><div class="card-value" id="d-net">—</div></div>
+      <div class="card"><div class="card-label">צפי (ממתין)</div><div class="card-value" style="color:var(--amber)" id="d-pending">—</div></div>
     </div>
 
     <div class="tabs">
@@ -377,11 +378,16 @@ async function loadAll(){
 }
 
 function renderAll(){
-  const income=cachedTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const txIncome=cachedTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const expense=cachedTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   const salary=cachedEmpEvents.reduce((s,e)=>s+e.amount,0);
+  // הכנסות מאירועים של החודש הנוכחי
+  const month=getMonth();
+  const eventIncome=cachedEventDetails.filter(d=>d.month===month&&d.price>0&&d.status==='שולם').reduce((s,d)=>s+(d.price||0),0);
+  const pendingIncome=cachedEventDetails.filter(d=>d.month===month&&d.price>0&&d.status==='ממתין').reduce((s,d)=>s+(d.price||0),0);
+  const income=txIncome+eventIncome;
   const net=income-expense-salary;
-  $('d-income').textContent=fmt(income);$('d-expense').textContent=fmt(expense);$('d-salary').textContent=fmt(salary);
+  $('d-income').textContent=fmt(income);$('d-expense').textContent=fmt(expense);$('d-salary').textContent=fmt(salary);$('d-pending').textContent=fmt(pendingIncome);
   const netEl=$('d-net');netEl.textContent=fmt(net);netEl.className='card-value '+(net>=0?'c-green':'c-red');
   renderCatBars(expense);renderEmpStatus();renderTxTable();renderEmpCards();renderClientsList();renderEventsList();renderAlerts(income,expense,salary,net);
 }
