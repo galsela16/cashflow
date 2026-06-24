@@ -916,19 +916,19 @@ async function saveEvent(){
   const uid=currentUser.id;
   const title=$('modal-title-input').value.trim()||$('modal-event-title').textContent;
   const date=$('modal-date-input').value||new Date().toISOString().slice(0,10);
-  console.log('saveEvent:', {title, date, currentEditDetailId, isNewManualEvent});
   if(!title){alert('שגיאה: אין כותרת לאירוע');return;}
   const clientId=$('modal-client').value||null;
   const price=parseFloat($('modal-price').value)||0;
   const status=$('modal-status').value;
   const notes=$('modal-notes').value;
-  const month=getMonth();
+  // שמור לפי חודש האירוע עצמו, לא החודש הנוכחי
+  const eventMonth = date ? date.slice(0,7) : getMonth();
 
   let detailId=currentEditDetailId;
   if(detailId){
-    await sb.from('event_details').update({event_title:title,event_date:date,client_id:clientId,price,status,notes}).eq('id',detailId);
+    await sb.from('event_details').update({event_title:title,event_date:date,client_id:clientId,price,status,notes,month:eventMonth}).eq('id',detailId);
   } else {
-    const res=await sb.from('event_details').insert({user_id:uid,event_title:title,event_date:date,client_id:clientId,price,status,notes,month,is_manual:isNewManualEvent}).select();
+    const res=await sb.from('event_details').insert({user_id:uid,event_title:title,event_date:date,client_id:clientId,price,status,notes,month:eventMonth,is_manual:isNewManualEvent}).select();
     detailId=res.data?.[0]?.id;
   }
 
