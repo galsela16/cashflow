@@ -491,13 +491,17 @@ function renderEventsList(){
 function renderEmpCards(){
   const el=$('emp-cards');
   if(!cachedEmps.length){el.innerHTML='<div class="section"><div class="empty">לא נוספו עובדים</div></div>';return;}
+  const month=getMonth();
+  const monthDetailIds=cachedEventDetails.filter(d=>(d.month===month||(d.event_date&&d.event_date.slice(0,7)===month))).map(d=>d.id);
   el.innerHTML=cachedEmps.map(emp=>{
     const empEvents=cachedEmpEvents.filter(e=>e.employee_id===emp.id);
-    const total=empEvents.reduce((s,e)=>s+e.amount,0);
+    const empEventWorkers=cachedEventWorkers.filter(w=>w.employee_id===emp.id&&monthDetailIds.includes(w.event_detail_id));
+    const total=empEvents.reduce((s,e)=>s+e.amount,0)+empEventWorkers.reduce((s,w)=>s+w.amount,0);
+    const totalEvents=empEvents.length+empEventWorkers.length;
     return `<div class="emp-card">
       <div class="emp-card-header" onclick="toggleCard('${emp.id}')">
         <div><div class="emp-card-name">👤 ${emp.name}</div>
-        <div class="emp-card-meta">${empEvents.length} אירועים החודש${total>0?' · '+fmt(total):''}</div></div>
+        <div class="emp-card-meta">${totalEvents} אירועים החודש${total>0?' · '+fmt(total):''}</div></div>
         <div style="display:flex;align-items:center;gap:8px">
           <button class="btn-del" onclick="event.stopPropagation();deleteEmp('${emp.id}')">🗑</button>
           <span id="toggle-icon-${emp.id}">▼</span>
@@ -513,7 +517,16 @@ function renderEmpCards(){
           </div>
           <button class="btn-sm" onclick="addEmpEvent('${emp.id}')">הוסף</button>
         </div>
-        ${empEvents.length?`<table><thead><tr><th>אירוע</th><th>תאריך</th><th>סכום</th><th>סטטוס</th><th></th></tr></thead><tbody>
+        ${(empEvents.length||empEventWorkers.length)?`<table><thead><tr><th>אירוע</th><th>תאריך</th><th>סכום</th><th>סטטוס</th><th></th></tr></thead><tbody>
+          ${empEventWorkers.map(w=>{const det=cachedEventDetails.find(d=>d.id===w.event_detail_id);return `<tr>
+            <td style="font-size:13px">${det?.event_title||'אירוע'} <span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:1px 5px;border-radius:100px">מאירוע</span></td>
+            <td style="font-size:12px;color:var(--muted)">${det?.event_date||'—'}</td>
+            <td style="font-weight:600">${fmt(w.amount)}</td>
+            <td><select class="status-select" onchange="updateEventWorkerStatus('${w.id}',this.value)">
+              ${['ממתין','שולם','באיחור'].map(s=>`<option ${w.status===s?'selected':''}>${s}</option>`).join('')}
+            </select></td>
+            <td></td>
+          </tr>`}).join('')}
           ${empEvents.map(ev=>`<tr>
             <td style="font-size:13px">${ev.event_name}</td>
             <td style="font-size:12px;color:var(--muted)">${ev.date||'—'}</td>
@@ -728,6 +741,7 @@ async function addEmpEvent(empId){
 }
 async function deleteEmpEvent(id){if(!confirm('למחוק?'))return;await sb.from('employee_events').delete().eq('id',id);await loadAll();}
 async function updateEmpEventStatus(id,status){await sb.from('employee_events').update({status}).eq('id',id);await loadAll();}
+async function updateEventWorkerStatus(id,status){await sb.from('event_workers').update({status}).eq('id',id);await loadAll();}
 
 function toggleCard(empId){const body=$('card-body-'+empId),icon=$('toggle-icon-'+empId);body.classList.toggle('collapsed');icon.textContent=body.classList.contains('collapsed')?'▶':'▼';}
 function toggleEl(id){const el=$(id);if(el)el.classList.toggle('open');}
