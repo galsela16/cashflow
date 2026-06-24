@@ -617,12 +617,18 @@ function renderAll() {
   renderAlerts(income, expense, salary, net, pendingIncome);
 }
 
+// שומר את ערכי ההכנסה האחרונים לחישוב מס
+let lastIncome = 0, lastPendingIncome = 0;
+
 function updateTax(inc, pendInc) {
   const rate = parseFloat($('tax-rate').value) || 17;
   const rec = cachedRecurring.reduce((s, r) => s + r.amount, 0);
-  const taxable = Math.max(0, (inc !== undefined ? inc : 0) - rec);
+  // אם קיבלנו ערכים חדשים — שמור אותם
+  if (inc !== undefined) lastIncome = inc;
+  if (pendInc !== undefined) lastPendingIncome = pendInc;
+  const taxable = Math.max(0, lastIncome - rec);
   $('d-tax').textContent = fmt(taxable * rate / 100);
-  const pendTaxable = Math.max(0, (pendInc !== undefined ? pendInc : 0) - rec);
+  const pendTaxable = Math.max(0, lastPendingIncome - rec);
   $('d-tax-pending').textContent = fmt(pendTaxable * rate / 100);
 }
 
