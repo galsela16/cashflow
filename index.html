@@ -187,11 +187,13 @@
     </div>
 
     <div class="cards">
-      <div class="card"><div class="card-label">סה"כ הכנסות</div><div class="card-value c-green" id="d-income">—</div></div>
-      <div class="card"><div class="card-label">סה"כ הוצאות</div><div class="card-value c-red" id="d-expense">—</div></div>
-      <div class="card"><div class="card-label">שכר החודש</div><div class="card-value c-blue" id="d-salary">—</div></div>
+      <div class="card"><div class="card-label">תשלום שנכנס מלקוחות</div><div class="card-value c-green" id="d-income">—</div></div>
+      <div class="card"><div class="card-label">הוצאות</div><div class="card-value c-red" id="d-expense">—</div></div>
+      <div class="card"><div class="card-label">שכר שיצא לעובדים</div><div class="card-value c-blue" id="d-salary">—</div></div>
       <div class="card"><div class="card-label">יתרה נטו</div><div class="card-value" id="d-net">—</div></div>
-      <div style="background:var(--amber-bg);border:1px dashed var(--amber);border-radius:var(--radius);padding:0.75rem;display:flex;flex-direction:column;justify-content:center"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500">📋 צפי רווח</div><div style="font-size:18px;font-weight:600;color:var(--amber)" id="d-pending">—</div><div style="font-size:10px;color:var(--muted);margin-top:3px">הכנסות פחות שכר ממתינים</div></div>
+      <div class="card" style="background:var(--green-soft);border:1.5px solid #a7f3d0"><div class="card-label" style="color:var(--green)">הכנסה צפויה מלקוחות</div><div class="card-value" style="color:var(--green)" id="d-pending-income">—</div></div>
+      <div class="card" style="background:var(--red-soft);border:1.5px solid #fca5a5"><div class="card-label" style="color:var(--red)">תשלום צפוי לעובדים</div><div class="card-value" style="color:var(--red)" id="d-pending-salary">—</div></div>
+      <div style="background:var(--amber-bg);border:1px dashed var(--amber);border-radius:var(--radius);padding:0.75rem;display:flex;flex-direction:column;justify-content:center"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500">📊 צפי רווח</div><div style="font-size:18px;font-weight:600;color:var(--amber)" id="d-pending">—</div><div style="font-size:10px;color:var(--muted);margin-top:3px">הכנסה צפויה פחות שכר צפוי</div></div>
     </div>
 
     <div class="tabs">
@@ -453,6 +455,9 @@ function renderAll(){
   $('d-income').textContent=fmt(income);
   $('d-expense').textContent=fmt(expense);
   $('d-salary').textContent=fmt(salary);
+  // עדכון כרטיסי צפי נפרדים
+  $('d-pending-income').textContent=fmt(pendingIncome);
+  $('d-pending-salary').textContent=fmt(pendingEmpSalary+pendingWorkerSalary);
   const pendingEl=$('d-pending');
   pendingEl.textContent=(pendingNet>=0?'+':'')+fmt(Math.abs(pendingNet));
   pendingEl.style.color=pendingNet>=0?'var(--green)':'var(--red)';
