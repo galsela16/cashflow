@@ -81,6 +81,11 @@
   .alert-ok { background: var(--green-bg); color: var(--green); }
   .alert-warn { background: var(--amber-bg); color: var(--amber); }
   .alert-danger { background: var(--red-bg); color: var(--red); }
+  .gcal-event { padding: 10px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .gcal-event:last-child { border-bottom: none; }
+  .gcal-event-title { font-size: 13px; font-weight: 500; }
+  .gcal-event-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .gcal-event-time { font-size: 12px; color: var(--blue); white-space: nowrap; font-weight: 500; }
   select.status-select { padding: 4px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); }
 
   /* כרטיסי עובדים */
@@ -155,6 +160,7 @@
       <button class="tab" onclick="showPage('transactions', this)">💸 הכנסות/הוצאות</button>
       <button class="tab" onclick="showPage('employees', this)">👥 עובדים</button>
       <button class="tab" onclick="showPage('alerts', this)">🔔 התראות</button>
+      <button class="tab" onclick="showPage('gcal', this)">📅 יומן גוגל</button>
     </div>
 
     <!-- סיכום -->
@@ -211,6 +217,7 @@
     <button class="bnav-item" onclick="showPage('transactions', this)" data-page="transactions"><span class="bnav-icon">💸</span>עסקאות</button>
     <button class="bnav-item" onclick="showPage('employees', this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
     <button class="bnav-item" onclick="showPage('alerts', this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
+    <button class="bnav-item" onclick="showPage('gcal', this)" data-page="gcal"><span class="bnav-icon">📅</span>יומן</button>
   </div>
 </div>
 
@@ -546,6 +553,85 @@ function showPage(id, el) {
   $('page-'+id).classList.add('active');
   if (el) el.classList.add('active');
   document.querySelectorAll(`[data-page="${id}"]`).forEach(b=>b.classList.add('active'));
+}
+
+// יומן גוגל דרך iCal
+const ICAL_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://calendar.google.com/calendar/ical/galsela16%40gmail.com/private-310f54b7d02b0263ba36e1ad8c110ab8/basic.ics');
+
+function parseICS(ics) {
+  const events = [];
+  const lines = ics.replace(/\r\n /g, '').replace(/\r/g, '').split('\n');
+  let current = null;
+  for (const line of lines) {
+    if (line === 'BEGIN:VEVENT') { current = {}; }
+    else if (line === 'END:VEVENT' && current) { events.push(current); current = null; }
+    else if (current) {
+      if (line.startsWith('SUMMARY:')) current.title = line.slice(8);
+      else if (line.startsWith('DTSTART')) {
+        const val = line.split(':')[1];
+        current.start = val;
+        current.allDay = !val.includes('T');
+      }
+      else if (line.startsWith('LOCATION:')) current.location = line.slice(9);
+      else if (line.startsWith('DESCRIPTION:')) current.description = line.slice(12);
+    }
+  }
+  return events;
+}
+
+async function loadGCal() {
+  const el = document.getElementById('gcal-events');
+  el.innerHTML = '<div class="empty">טוען...</div>';
+  const month = getMonth();
+  const [year, mon] = month.split('-');
+  
+  try {
+    const res = await fetch(ICAL_URL);
+    const ics = await res.text();
+    const allEvents = parseICS(ics);
+    
+    // סינון לפי החודש הנבחר
+    const events = allEvents.filter(ev => {
+      if (!ev.start) return false;
+      const d = ev.start.slice(0,4) + '-' + ev.start.slice(4,6);
+      return d === month;
+    }).sort((a,b) => a.start > b.start ? 1 : -1);
+    
+    if (!events.length) {
+      el.innerHTML = '<div class="empty">אין אירועים החודש</div>';
+      return;
+    }
+    
+    const hebrewDays = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const hebrewMonths = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+    
+    el.innerHTML = events.map(ev => {
+      let dateStr = '', timeStr = '';
+      if (ev.allDay) {
+        const y = ev.start.slice(0,4), m = ev.start.slice(4,6), d = ev.start.slice(6,8);
+        const date = new Date(y, m-1, d);
+        dateStr = `יום ${hebrewDays[date.getDay()]}, ${date.getDate()} ב${hebrewMonths[date.getMonth()]}`;
+        timeStr = 'כל היום';
+      } else {
+        const y=ev.start.slice(0,4),m=ev.start.slice(4,6),d=ev.start.slice(6,8);
+        const h=ev.start.slice(9,11),min=ev.start.slice(11,13);
+        const date = new Date(y,m-1,d,h,min);
+        dateStr = `יום ${hebrewDays[date.getDay()]}, ${date.getDate()} ב${hebrewMonths[date.getMonth()]}`;
+        timeStr = `${h}:${min}`;
+      }
+      return `<div class="gcal-event">
+        <div>
+          <div class="gcal-event-title">${ev.title || '(ללא שם)'}</div>
+          <div class="gcal-event-meta">${dateStr}</div>
+          ${ev.location ? `<div class="gcal-event-meta">📍 ${ev.location}</div>` : ''}
+        </div>
+        <div class="gcal-event-time">${timeStr}</div>
+      </div>`;
+    }).join('');
+    
+  } catch(err) {
+    el.innerHTML = '<div class="empty" style="color:var(--red)">שגיאת חיבור — נסה שוב</div>';
+  }
 }
 
 sb.auth.getSession().then(({data}) => {
