@@ -767,7 +767,7 @@ function openNewEventModal() {
 }
 
 async function openEditEventModalByTitle(btn) {
-  const title = btn.getAttribute('data-title');
+  const title = btn.getAttribute('data-title').trim();
   const date = btn.getAttribute('data-date');
   const source = btn.getAttribute('data-source');
   const detailId = btn.getAttribute('data-detailid');
