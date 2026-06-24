@@ -603,7 +603,9 @@ async function loadGCal() {
     // סינון לפי החודש הנבחר
     const events = allEvents.filter(ev => {
       if (!ev.start) return false;
-      const d = ev.start.slice(0,4) + '-' + ev.start.slice(4,6);
+      // תמיכה בפורמט YYYYMMDD ובפורמט YYYY-MM-DD
+      const clean = ev.start.replace(/-/g, '');
+      const d = clean.slice(0,4) + '-' + clean.slice(4,6);
       return d === month;
     }).sort((a,b) => a.start > b.start ? 1 : -1);
     
@@ -618,13 +620,15 @@ async function loadGCal() {
     el.innerHTML = events.map(ev => {
       let dateStr = '', timeStr = '';
       if (ev.allDay) {
-        const y = ev.start.slice(0,4), m = ev.start.slice(4,6), d = ev.start.slice(6,8);
+        const clean = ev.start.replace(/-/g, '');
+        const y = clean.slice(0,4), m = clean.slice(4,6), d = clean.slice(6,8);
         const date = new Date(y, m-1, d);
         dateStr = `יום ${hebrewDays[date.getDay()]}, ${date.getDate()} ב${hebrewMonths[date.getMonth()]}`;
         timeStr = 'כל היום';
       } else {
-        const y=ev.start.slice(0,4),m=ev.start.slice(4,6),d=ev.start.slice(6,8);
-        const h=ev.start.slice(9,11),min=ev.start.slice(11,13);
+        const clean = ev.start.replace(/-/g,'').replace('T','');
+        const y=clean.slice(0,4),m=clean.slice(4,6),d=clean.slice(6,8);
+        const h=clean.slice(9,11)||clean.slice(8,10),min=clean.slice(11,13)||clean.slice(10,12);
         const date = new Date(y,m-1,d,h,min);
         dateStr = `יום ${hebrewDays[date.getDay()]}, ${date.getDate()} ב${hebrewMonths[date.getMonth()]}`;
         timeStr = `${h}:${min}`;
