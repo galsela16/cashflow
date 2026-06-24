@@ -920,7 +920,7 @@ async function saveEvent(){
   const title=$('modal-title-input').value.trim()||$('modal-event-title').textContent;
   const date=$('modal-date-input').value||new Date().toISOString().slice(0,10);
   if(!title){alert('שגיאה: אין כותרת לאירוע');return;}
-  alert('שומר... כותרת: ' + title + ' | תאריך: ' + date + ' | detailId: ' + (currentEditDetailId||'null'));
+
   const clientId=$('modal-client').value||null;
   const price=parseFloat($('modal-price').value)||0;
   const status=$('modal-status').value;
@@ -930,16 +930,14 @@ async function saveEvent(){
 
   let detailId=currentEditDetailId;
   
-  // אם אין detailId, חפש קיים לפי כותרת + תאריך
-  if(!detailId) {
-    const existing = await sb.from('event_details')
-      .select('id')
-      .eq('user_id', uid)
-      .eq('event_title', title)
-      .eq('event_date', date)
-      .maybeSingle();
-    if(existing.data) detailId = existing.data.id;
-  }
+  // אם אין detailId, חפש תמיד בסופהבייס לפי כותרת + תאריך
+  const existing = await sb.from('event_details')
+    .select('id')
+    .eq('user_id', uid)
+    .eq('event_title', title)
+    .eq('event_date', date)
+    .maybeSingle();
+  if(existing.data) detailId = existing.data.id;
 
   if(detailId){
     await sb.from('event_details').update({event_title:title,event_date:date,client_id:clientId,price,status,notes,month:eventMonth}).eq('id',detailId);
