@@ -925,6 +925,18 @@ async function saveEvent(){
   const eventMonth = date ? date.slice(0,7) : getMonth();
 
   let detailId=currentEditDetailId;
+  
+  // אם אין detailId, חפש קיים לפי כותרת + תאריך
+  if(!detailId) {
+    const existing = await sb.from('event_details')
+      .select('id')
+      .eq('user_id', uid)
+      .eq('event_title', title)
+      .eq('event_date', date)
+      .maybeSingle();
+    if(existing.data) detailId = existing.data.id;
+  }
+
   if(detailId){
     await sb.from('event_details').update({event_title:title,event_date:date,client_id:clientId,price,status,notes,month:eventMonth}).eq('id',detailId);
   } else {
