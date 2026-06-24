@@ -871,8 +871,12 @@ function openEditEventModal(title,date,source,detailId){
   isNewManualEvent=false;
   currentEditDetailId=detailId||null;
   $('modal-event-title').textContent=title;
-  $('modal-title-input').value=title; $('modal-title-input').style.display=source==='manual'?'block':'none';
-  $('modal-date-input').value=date; $('modal-date-input').style.display=source==='manual'?'block':'none';
+  // שמור תמיד את הכותרת והתאריך — גם לאירועי גוגל
+  $('modal-title-input').value=title;
+  $('modal-date-input').value=date;
+  // הצג שדות רק לאירועים ידניים
+  $('modal-title-input').style.display=source==='manual'?'block':'none';
+  $('modal-date-input').style.display=source==='manual'?'block':'none';
   const detail=detailId?cachedEventDetails.find(d=>d.id===detailId):null;
   fillClientSelect(detail?.client_id);
   $('modal-price').value=detail?.price||''; $('modal-status').value=detail?.status||'לא יצאה דרישת תשלום'; $('modal-notes').value=detail?.notes||'';
