@@ -96,6 +96,14 @@
   .alert-ok { background: var(--green-bg); color: var(--green); }
   .alert-warn { background: var(--amber-bg); color: var(--amber); }
   .alert-danger { background: var(--red-bg); color: var(--red); }
+  .pf-account-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); }
+  .pf-account-row:last-child { border-bottom:none; }
+  .pf-account-name { font-size:14px; font-weight:500; display:flex; align-items:center; gap:8px; }
+  .pf-account-pct { font-size:13px; color:var(--muted); }
+  .pf-account-amount { font-size:20px; font-weight:700; }
+  .pf-slider-row { margin-bottom:10px; }
+  .pf-slider-row label { display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; }
+  .pf-slider-row input[type=range] { width:100%; accent-color:var(--blue); }
   select.status-select { padding: 4px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); }
 
   /* עובדים */
@@ -248,6 +256,7 @@
       <button class="tab" onclick="showPage('employees',this)">👥 עובדים</button>
       <button class="tab" onclick="showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" onclick="showPage('alerts',this)">🔔 התראות</button>
+      <button class="tab" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
     </div>
 
     <!-- סיכום -->
@@ -316,6 +325,58 @@
       <div id="clients-list"></div>
     </div>
 
+    <!-- Profit First -->
+    <div id="page-profitfirst" class="page">
+
+      <!-- הסבר -->
+      <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1rem;color:white">
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px">🏦 Profit First</div>
+        <div style="font-size:13px;opacity:0.85">פעמיים בחודש — הכנס את ההכנסות שנכנסו והאפליקציה תחשב כמה להעביר לכל חשבון</div>
+      </div>
+
+      <!-- הכנסה לחלוקה -->
+      <div class="section">
+        <div class="section-title">💵 הכנסה לחלוקה</div>
+        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:8px">
+          <div style="flex:1">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סכום שנכנס מאז ההקצאה האחרונה (₪)</label>
+            <input type="number" id="pf-income" placeholder="הכנס סכום..." oninput="calcPF()"
+              style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:18px;font-weight:600;background:var(--bg);color:var(--text)" />
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">💡 זה הסכום שהצטבר בחשבון ההכנסות מאז הפעם הקודמת</div>
+      </div>
+
+      <!-- הקצאות -->
+      <div class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div class="section-title" style="margin-bottom:0">📊 הקצאה לחשבונות</div>
+          <button class="btn-outline" onclick="togglePFEdit()" id="pf-edit-btn">✏️ ערוך אחוזים</button>
+        </div>
+
+        <div id="pf-accounts">
+          <!-- יוצג דינמית -->
+        </div>
+
+        <div id="pf-edit" style="display:none;background:var(--bg);border-radius:var(--radius-sm);padding:12px;margin-top:12px">
+          <div style="font-size:13px;font-weight:500;margin-bottom:10px;color:var(--muted)">ערוך אחוזים (סה"כ חייב להיות 100%)</div>
+          <div id="pf-sliders"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+            <span style="font-size:13px;color:var(--muted)">סה"כ: <span id="pf-total-pct" style="font-weight:700">100%</span></span>
+            <button class="btn-sm" onclick="savePFSettings()">שמור</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- כפתור הקצאה -->
+      <div style="text-align:center;margin-top:1rem">
+        <button class="btn-add" style="padding:12px 32px;font-size:15px" onclick="confirmAllocation()">
+          ✅ בצעתי הקצאה — אפס ומחזור
+        </button>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px" id="pf-last-allocation"></div>
+      </div>
+    </div>
+
     <!-- התראות -->
     <div id="page-alerts" class="page">
       <div id="alerts-box"></div>
@@ -329,6 +390,7 @@
     <button class="bnav-item" onclick="showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
     <button class="bnav-item" onclick="showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
     <button class="bnav-item" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
+    <button class="bnav-item" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>PF</button>
   </div>
 </div>
 
@@ -453,7 +515,7 @@ async function doAuth(){
 }
 function showMsg(t,type){const m=$('auth-msg');m.textContent=t;m.className='msg '+type;}
 async function logout(){await sb.auth.signOut();$('auth-screen').style.display='flex';$('app-screen').style.display='none';}
-function enterApp(user){currentUser=user;$('auth-screen').style.display='none';$('app-screen').style.display='block';$('user-email-display').textContent=user.email;initMonths();loadAll();}
+function enterApp(user){currentUser=user;$('auth-screen').style.display='none';$('app-screen').style.display='block';$('user-email-display').textContent=user.email;initMonths();loadAll();loadPFSettings();}
 
 // LOAD
 async function loadAll(){
@@ -906,6 +968,112 @@ async function saveEmpDetails(){
   await sb.from('employees').update({name,phone,email,role,notes}).eq('id',currentEmpId);
   closeEmpModal();
   await loadAll();
+}
+
+// Profit First
+let pfSettings = {
+  accounts: [
+    { name: 'הוצאות תפעוליות', icon: '⚙️', pct: 22, color: 'var(--blue)' },
+    { name: 'שכר הנהלה', icon: '👤', pct: 50, color: 'var(--green)' },
+    { name: 'מיסים', icon: '🧾', pct: 18, color: 'var(--red)' },
+    { name: 'רווח', icon: '🏆', pct: 10, color: 'var(--amber)' },
+  ],
+  lastAllocation: null
+};
+
+function loadPFSettings() {
+  const saved = localStorage.getItem('pf_settings');
+  if (saved) try { pfSettings = JSON.parse(saved); } catch(e) {}
+  renderPFAccounts();
+  renderPFSliders();
+  const lastEl = document.getElementById('pf-last-allocation');
+  if (lastEl && pfSettings.lastAllocation) {
+    lastEl.textContent = 'הקצאה אחרונה: ' + new Date(pfSettings.lastAllocation).toLocaleDateString('he-IL');
+  }
+}
+
+function savePFSettings() {
+  localStorage.setItem('pf_settings', JSON.stringify(pfSettings));
+  renderPFAccounts();
+  togglePFEdit();
+  calcPF();
+}
+
+function calcPF() {
+  const income = parseFloat(document.getElementById('pf-income')?.value) || 0;
+  document.querySelectorAll('.pf-amount').forEach((el, i) => {
+    const amt = income * (pfSettings.accounts[i].pct / 100);
+    el.textContent = fmt(amt);
+    el.style.color = pfSettings.accounts[i].color;
+  });
+}
+
+function renderPFAccounts() {
+  const el = document.getElementById('pf-accounts');
+  if (!el) return;
+  el.innerHTML = pfSettings.accounts.map((acc, i) => `
+    <div class="pf-account-row">
+      <div>
+        <div class="pf-account-name">${acc.icon} ${acc.name}</div>
+        <div class="pf-account-pct">${acc.pct}%</div>
+      </div>
+      <div class="pf-amount" style="font-size:20px;font-weight:700;color:${acc.color}">₪0</div>
+    </div>`).join('');
+}
+
+function renderPFSliders() {
+  const el = document.getElementById('pf-sliders');
+  if (!el) return;
+  el.innerHTML = pfSettings.accounts.map((acc, i) => `
+    <div class="pf-slider-row">
+      <label>
+        <span>${acc.icon} ${acc.name}</span>
+        <span id="pf-pct-${i}" style="font-weight:600">${acc.pct}%</span>
+      </label>
+      <input type="range" min="0" max="100" value="${acc.pct}" 
+        oninput="updatePFSlider(${i}, this.value)" />
+    </div>`).join('');
+  updatePFTotal();
+}
+
+function updatePFSlider(i, val) {
+  pfSettings.accounts[i].pct = parseInt(val);
+  document.getElementById('pf-pct-'+i).textContent = val + '%';
+  updatePFTotal();
+}
+
+function updatePFTotal() {
+  const total = pfSettings.accounts.reduce((s, a) => s + a.pct, 0);
+  const el = document.getElementById('pf-total-pct');
+  if (el) {
+    el.textContent = total + '%';
+    el.style.color = total === 100 ? 'var(--green)' : 'var(--red)';
+  }
+}
+
+function togglePFEdit() {
+  const el = document.getElementById('pf-edit');
+  const btn = document.getElementById('pf-edit-btn');
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '✏️ ערוך אחוזים' : '✕ סגור';
+  if (!isOpen) renderPFSliders();
+}
+
+function confirmAllocation() {
+  const income = parseFloat(document.getElementById('pf-income')?.value) || 0;
+  if (!income) { alert('נא להכניס סכום הכנסה'); return; }
+  const total = pfSettings.accounts.reduce((s,a)=>s+a.pct,0);
+  if (total !== 100) { alert('האחוזים חייבים לסכום ל-100%'); return; }
+  if (!confirm('לאשר הקצאה של ' + fmt(income) + '?')) return;
+  pfSettings.lastAllocation = new Date().toISOString();
+  localStorage.setItem('pf_settings', JSON.stringify(pfSettings));
+  document.getElementById('pf-income').value = '';
+  calcPF();
+  const lastEl = document.getElementById('pf-last-allocation');
+  if (lastEl) lastEl.textContent = 'הקצאה אחרונה: ' + new Date().toLocaleDateString('he-IL');
+  alert('✅ הקצאה בוצעה בהצלחה!');
 }
 
 // מס
