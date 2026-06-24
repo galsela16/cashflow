@@ -269,6 +269,36 @@
   </div>
 </div>
 
+<!-- מודל עובד -->
+<div class="modal-overlay" id="emp-modal" style="display:none" onclick="if(event.target===this)closeEmpModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">עריכת פרטי עובד</div>
+      <button class="btn-del" onclick="closeEmpModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>שם</label><input type="text" id="emp-modal-name" /></div>
+      <div class="form-group"><label>טלפון</label><input type="tel" id="emp-modal-phone" placeholder="050-0000000" /></div>
+      <div class="form-group"><label>אימייל</label><input type="email" id="emp-modal-email" placeholder="email@example.com" /></div>
+      <div class="form-group"><label>תפקיד</label>
+        <select id="emp-modal-role">
+          <option value="">-- בחר --</option>
+          <option value="שכיר">שכיר</option>
+          <option value="קבלן">קבלן</option>
+          <option value="שעתי">שעתי</option>
+          <option value="מנהל">מנהל</option>
+          <option value="אחר">אחר</option>
+        </select>
+      </div>
+      <div class="form-group"><label>הערות</label><textarea id="emp-modal-notes" rows="3" placeholder="הערות..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeEmpModal()">ביטול</button>
+      <button class="btn-add" onclick="saveEmpDetails()">שמור</button>
+    </div>
+  </div>
+</div>
+
 <!-- מודל אירוע -->
 <div class="modal-overlay" id="event-modal" style="display:none" onclick="if(event.target===this)closeEventModal()">
   <div class="modal">
@@ -501,8 +531,9 @@ function renderEmpCards(){
     return `<div class="emp-card">
       <div class="emp-card-header" onclick="toggleCard('${emp.id}')">
         <div><div class="emp-card-name">👤 ${emp.name}</div>
-        <div class="emp-card-meta">${totalEvents} אירועים החודש${total>0?' · '+fmt(total):''}</div></div>
+        <div class="emp-card-meta">${emp.role||''}${emp.phone?' · '+emp.phone:''} · ${totalEvents} אירועים החודש${total>0?' · '+fmt(total):''}</div></div>
         <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn-outline" style="font-size:12px" onclick="event.stopPropagation();openEmpModal('${emp.id}')">✏️ עריכה</button>
           <button class="btn-del" onclick="event.stopPropagation();deleteEmp('${emp.id}')">🗑</button>
           <span id="toggle-icon-${emp.id}">▼</span>
         </div>
@@ -753,6 +784,33 @@ function showPage(id,el){
   if(page)page.classList.add('active');
   if(el)el.classList.add('active');
   document.querySelectorAll('[data-page="'+id+'"]').forEach(b=>b.classList.add('active'));
+}
+
+// מודל עובד
+let currentEmpId=null;
+function openEmpModal(empId){
+  currentEmpId=empId;
+  const emp=cachedEmps.find(e=>e.id===empId);
+  if(!emp)return;
+  document.getElementById('emp-modal-name').value=emp.name||'';
+  document.getElementById('emp-modal-phone').value=emp.phone||'';
+  document.getElementById('emp-modal-email').value=emp.email||'';
+  document.getElementById('emp-modal-role').value=emp.role||'';
+  document.getElementById('emp-modal-notes').value=emp.notes||'';
+  document.getElementById('emp-modal').style.display='flex';
+}
+function closeEmpModal(){document.getElementById('emp-modal').style.display='none';currentEmpId=null;}
+async function saveEmpDetails(){
+  if(!currentEmpId)return;
+  const name=document.getElementById('emp-modal-name').value.trim();
+  const phone=document.getElementById('emp-modal-phone').value.trim();
+  const email=document.getElementById('emp-modal-email').value.trim();
+  const role=document.getElementById('emp-modal-role').value;
+  const notes=document.getElementById('emp-modal-notes').value;
+  if(!name){alert('נא להכניס שם');return;}
+  await sb.from('employees').update({name,phone,email,role,notes}).eq('id',currentEmpId);
+  closeEmpModal();
+  await loadAll();
 }
 
 sb.auth.getSession().then(({data})=>{if(data.session)enterApp(data.session.user);});
