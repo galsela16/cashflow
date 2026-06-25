@@ -647,7 +647,9 @@ function renderAll() {
   const dbTaxRate = $('tax-rate-db'); if(dbTaxRate) dbTaxRate.value = $('tax-rate').value;
   updatePFIncome(income);
 
-  renderCatBars(expense, salary);
+  // לגרף — כל השכר (שולם + ממתין)
+  const totalWorkerSalaryForChart = salary + pendingEmpSalary + pendingWorkerSalary;
+  renderCatBars(expense, totalWorkerSalaryForChart);
   renderEmpStatus(monthDetailIds);
   renderTxTable();
   renderEmpCards(monthDetailIds);
