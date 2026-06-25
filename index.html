@@ -225,13 +225,13 @@ tr:last-child td{border-bottom:none}
       <select id="yearSel" onchange="updateMonth()"></select>
     </div>
 
-    <!-- summary pills -->
-    <div class="summary-pills">
-      <div class="pill"><span class="pill-label">💰 יתרה נטו</span><span class="pill-value" id="d-net">—</span></div>
-      <div class="pill pill-amber"><span class="pill-label">📊 צפי רווח</span><span class="pill-value" id="d-pending">—</span></div>
-      <div class="pill pill-tax"><span class="pill-label">🧾 מס על נכנס</span><span class="pill-value" style="color:var(--red)" id="d-tax">—</span></div>
-      <div class="pill pill-tax"><span class="pill-label">🧾 מס צפוי</span><span class="pill-value" style="color:var(--red)" id="d-tax-pending">—</span></div>
-      <div class="pill"><span class="pill-label">% מס</span><input type="number" id="tax-rate" value="20" min="0" max="100" class="tax-input" oninput="updateTax()" /><span class="pill-label">%</span></div>
+    <!-- hidden elements needed by JS -->
+    <div style="display:none">
+      <span id="d-net">—</span>
+      <span id="d-pending">—</span>
+      <span id="d-tax">—</span>
+      <span id="d-tax-pending">—</span>
+      <input type="number" id="tax-rate" value="20" />
     </div>
 
     <!-- 3 main cards -->
@@ -260,14 +260,18 @@ tr:last-child td{border-bottom:none}
 
     <!-- dashboard -->
     <div id="page-dashboard" class="page active">
+      <!-- pills row -->
+      <div class="summary-pills" style="margin-bottom:1rem">
+        <div class="pill"><span class="pill-label">💰 יתרה נטו</span><span class="pill-value" id="d-net-db">—</span></div>
+        <div class="pill pill-amber"><span class="pill-label">📊 צפי רווח</span><span class="pill-value" id="d-pending-db">—</span></div>
+        <div class="pill pill-tax"><span class="pill-label">🧾 מס על נכנס</span><span class="pill-value" style="color:var(--red)" id="d-tax-db">—</span></div>
+        <div class="pill pill-tax"><span class="pill-label">🧾 מס צפוי</span><span class="pill-value" style="color:var(--red)" id="d-tax-pending-db">—</span></div>
+        <div class="pill"><span class="pill-label">% מס</span><input type="number" id="tax-rate-db" value="20" min="0" max="100" class="tax-input" oninput="updateTaxFromDB()" /><span class="pill-label">%</span></div>
+      </div>
       <!-- detail cards -->
-      <div class="cards-row" style="margin-bottom:10px">
+      <div class="cards-row" style="margin-bottom:1rem">
         <div class="card"><div class="card-label">✅ יצא לעובדים</div><div class="card-value c-blue" id="d-salary-db">—</div><div class="card-sub">שולם בפועל</div></div>
         <div class="card card-soft-blue"><div class="card-label">🕐 צפוי לעובדים</div><div class="card-value c-blue" id="d-pending-salary-db">—</div><div class="card-sub">טרם שולם</div></div>
-      </div>
-      <div class="cards-row" style="margin-bottom:1rem">
-        <div class="card"><div class="card-label">💰 יתרה נטו</div><div class="card-value" id="d-net-db">—</div><div class="card-sub">בפועל</div></div>
-        <div class="card card-soft-amber"><div class="card-label">📊 צפי רווח</div><div class="card-value" id="d-pending-db">—</div><div class="card-sub">הכנסות פחות שכר</div></div>
       </div>
       <div class="section"><div class="section-title">הוצאות לפי קטגוריה</div><div id="cat-bars"><div class="empty">טוען...</div></div></div>
       <div class="section"><div class="section-title">סטטוס עובדים החודש</div><div id="emp-status"></div></div>
@@ -629,8 +633,10 @@ function renderAll() {
   // update dashboard cards
   const salDbEl = $('d-salary-db'); if(salDbEl) salDbEl.textContent = fmt(salary);
   const pSalDbEl = $('d-pending-salary-db'); if(pSalDbEl) pSalDbEl.textContent = fmt(pendingEmpSalary + pendingWorkerSalary);
-  const netDbEl = $('d-net-db'); if(netDbEl) { netDbEl.textContent = fmt(net); netDbEl.className = 'card-value ' + (net >= 0 ? 'c-green' : 'c-red'); }
-  const pendDbEl = $('d-pending-db'); if(pendDbEl) { pendDbEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendDbEl.className = 'card-value ' + (pendingNet >= 0 ? 'c-green' : 'c-red'); }
+  const netDbEl = $('d-net-db'); if(netDbEl) { netDbEl.textContent = fmt(net); netDbEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)'; }
+  const pendDbEl = $('d-pending-db'); if(pendDbEl) { pendDbEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendDbEl.style.color = pendingNet >= 0 ? 'var(--green)' : 'var(--red)'; }
+  // sync tax rate from dashboard
+  const dbTaxRate = $('tax-rate-db'); if(dbTaxRate) dbTaxRate.value = $('tax-rate').value;
   updatePFIncome(income);
 
   renderCatBars(expense);
@@ -640,6 +646,19 @@ function renderAll() {
   renderClientsList();
   renderEventsList();
   renderAlerts(income, expense, salary, net, pendingIncome);
+}
+
+function updateTaxFromDB() {
+  // sync rate to hidden input and recalculate
+  const dbRate = $('tax-rate-db');
+  const hiddenRate = $('tax-rate');
+  if (dbRate && hiddenRate) hiddenRate.value = dbRate.value;
+  updateTax();
+  // update dashboard tax displays
+  const rate = parseFloat(dbRate ? dbRate.value : 20) || 20;
+  const rec = cachedRecurring.reduce((s, r) => s + r.amount, 0);
+  const taxDbEl = $('d-tax-db'); if(taxDbEl) taxDbEl.textContent = fmt(Math.max(0, lastIncome - rec) * rate / 100);
+  const taxPendDbEl = $('d-tax-pending-db'); if(taxPendDbEl) taxPendDbEl.textContent = fmt(Math.max(0, lastPendingIncome - rec) * rate / 100);
 }
 
 // שומר את ערכי ההכנסה האחרונים לחישוב מס
@@ -655,6 +674,9 @@ function updateTax(inc, pendInc) {
   $('d-tax').textContent = fmt(taxable * rate / 100);
   const pendTaxable = Math.max(0, lastPendingIncome - rec);
   $('d-tax-pending').textContent = fmt(pendTaxable * rate / 100);
+  // update dashboard tax
+  const taxDbEl = $('d-tax-db'); if(taxDbEl) taxDbEl.textContent = fmt(taxable * rate / 100);
+  const taxPendDbEl = $('d-tax-pending-db'); if(taxPendDbEl) taxPendDbEl.textContent = fmt(pendTaxable * rate / 100);
 }
 
 function updatePFIncome(amt) {
