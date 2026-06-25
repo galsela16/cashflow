@@ -609,18 +609,19 @@ function renderAll() {
   const txIncome = cachedTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const eventIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1')).reduce((s, d) => s + (d.price || 0), 0);
   const income = txIncome + eventIncome;
-  const expense = cachedTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const txExpense = cachedTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const expense = txExpense + salary; // הוצאות עסק + שכר עובדים
   const paidEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, e) => s + e.amount, 0);
   const paidWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, w) => s + w.amount, 0);
   const salary = paidEmpSalary + paidWorkerSalary;
-  const net = income - expense - salary;
+  const net = income - expense; // expense כבר כולל שכר
 
   const pendingIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd')).reduce((s, d) => s + (d.price || 0), 0);
   const pendingEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05de\u05de\u05ea\u05d9\u05df').reduce((s, e) => s + e.amount, 0);
   const pendingWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === '\u05de\u05de\u05ea\u05d9\u05df').reduce((s, w) => s + w.amount, 0);
   const totalClientIncome = income + pendingIncome;
   const totalWorkerSalary = salary + pendingEmpSalary + pendingWorkerSalary;
-  const pendingNet = totalClientIncome - totalWorkerSalary;
+  const pendingNet = totalClientIncome - (expense + pendingEmpSalary + pendingWorkerSalary);
 
   $('d-income').textContent = fmt(income);
   $('d-expense').textContent = fmt(expense);
