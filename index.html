@@ -647,7 +647,7 @@ function renderAll() {
   const dbTaxRate = $('tax-rate-db'); if(dbTaxRate) dbTaxRate.value = $('tax-rate').value;
   updatePFIncome(income);
 
-  renderCatBars(expense);
+  renderCatBars(expense, salary);
   renderEmpStatus(monthDetailIds);
   renderTxTable();
   renderEmpCards(monthDetailIds);
@@ -763,11 +763,11 @@ function updatePFIncome(amt) {
   if (el) { el.textContent = fmt(amt || 0); calcPF(); }
 }
 
-function renderCatBars(totalExp) {
+function renderCatBars(totalExp, workerSalary) {
   const cats = {};
   cachedTx.filter(t => t.type === 'expense').forEach(t => { cats[t.category] = (cats[t.category] || 0) + t.amount; });
   // הוסף שכר עובדים כקטגוריה
-  const workerTotal = lastSalary;
+  const workerTotal = workerSalary || 0;
   if (workerTotal > 0) cats['שכר עובדים'] = (cats['שכר עובדים'] || 0) + workerTotal;
   const el = $('cat-bars');
   if (!Object.keys(cats).length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d4\u05d7\u05d5\u05d3\u05e9</div>'; return; }
