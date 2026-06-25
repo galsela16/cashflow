@@ -614,6 +614,7 @@ function renderAll() {
   const paidEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, e) => s + e.amount, 0);
   const paidWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, w) => s + w.amount, 0);
   const salary = paidEmpSalary + paidWorkerSalary;
+  lastSalary = salary;
   const expense = txExpense + salary;
   const net = income - expense;
 
