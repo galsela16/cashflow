@@ -765,6 +765,9 @@ function updatePFIncome(amt) {
 function renderCatBars(totalExp) {
   const cats = {};
   cachedTx.filter(t => t.type === 'expense').forEach(t => { cats[t.category] = (cats[t.category] || 0) + t.amount; });
+  // הוסף שכר עובדים כקטגוריה
+  const workerTotal = lastSalary;
+  if (workerTotal > 0) cats['שכר עובדים'] = (cats['שכר עובדים'] || 0) + workerTotal;
   const el = $('cat-bars');
   if (!Object.keys(cats).length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d4\u05d7\u05d5\u05d3\u05e9</div>'; return; }
   const colors = { '\u05e9\u05db\u05d9\u05e8\u05d5\u05ea': '#185FA5', '\u05e6\u05d9\u05d5\u05d3': '#0F6E56', '\u05e9\u05d9\u05d5\u05d5\u05e7': '#854F0B', '\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd': '#993C1D', '\u05d0\u05d7\u05e8': '#533C89' };
