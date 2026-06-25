@@ -234,21 +234,21 @@ tr:last-child td{border-bottom:none}
       <div class="pill"><span class="pill-label">% מס</span><input type="number" id="tax-rate" value="20" min="0" max="100" class="tax-input" oninput="updateTax()" /><span class="pill-label">%</span></div>
     </div>
 
-    <!-- cards -->
-    <div class="cards-row">
+    <!-- 3 main cards -->
+    <div class="cards-row-3" style="margin-bottom:1.25rem">
       <div class="card"><div class="card-label">✅ נכנס מלקוחות</div><div class="card-value c-green" id="d-income">—</div><div class="card-sub">שולם בפועל</div></div>
       <div class="card card-soft-green"><div class="card-label">🕐 צפוי מלקוחות</div><div class="card-value c-green" id="d-pending-income">—</div><div class="card-sub">טרם שולם</div></div>
-    </div>
-    <div class="cards-row-3">
-      <div class="card"><div class="card-label">✅ יצא לעובדים</div><div class="card-value c-blue" id="d-salary">—</div><div class="card-sub">שולם בפועל</div></div>
-      <div class="card card-soft-blue"><div class="card-label">🕐 צפוי לעובדים</div><div class="card-value c-blue" id="d-pending-salary">—</div><div class="card-sub">טרם שולם</div></div>
       <div class="card"><div class="card-label">💸 הוצאות</div><div class="card-value c-red" id="d-expense">—</div><div class="card-sub">הוצאות עסק</div></div>
     </div>
-    <div style="display:none"><span id="d-net2"></span><span id="d-pending2"></span></div>
+    <!-- hidden elements for js compatibility -->
+    <div style="display:none">
+      <span id="d-salary"></span><span id="d-pending-salary"></span>
+      <span id="d-net2"></span><span id="d-pending2"></span>
+    </div>
 
     <!-- tabs -->
     <div class="tabs">
-      <button class="tab active" onclick="showPage('dashboard',this)">📊 סיכום</button>
+      <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
       <button class="tab" onclick="showPage('events',this)">🎯 אירועים</button>
       <button class="tab" onclick="showPage('employees',this)">👥 עובדים</button>
@@ -260,6 +260,15 @@ tr:last-child td{border-bottom:none}
 
     <!-- dashboard -->
     <div id="page-dashboard" class="page active">
+      <!-- detail cards -->
+      <div class="cards-row" style="margin-bottom:10px">
+        <div class="card"><div class="card-label">✅ יצא לעובדים</div><div class="card-value c-blue" id="d-salary-db">—</div><div class="card-sub">שולם בפועל</div></div>
+        <div class="card card-soft-blue"><div class="card-label">🕐 צפוי לעובדים</div><div class="card-value c-blue" id="d-pending-salary-db">—</div><div class="card-sub">טרם שולם</div></div>
+      </div>
+      <div class="cards-row" style="margin-bottom:1rem">
+        <div class="card"><div class="card-label">💰 יתרה נטו</div><div class="card-value" id="d-net-db">—</div><div class="card-sub">בפועל</div></div>
+        <div class="card card-soft-amber"><div class="card-label">📊 צפי רווח</div><div class="card-value" id="d-pending-db">—</div><div class="card-sub">הכנסות פחות שכר</div></div>
+      </div>
       <div class="section"><div class="section-title">הוצאות לפי קטגוריה</div><div id="cat-bars"><div class="empty">טוען...</div></div></div>
       <div class="section"><div class="section-title">סטטוס עובדים החודש</div><div id="emp-status"></div></div>
     </div>
@@ -617,6 +626,11 @@ function renderAll() {
   const pend2El = $('d-pending2'); pend2El.textContent = pendEl.textContent; pend2El.className = 'card-value ' + (pendingNet >= 0 ? 'c-green' : 'c-red');
 
   updateTax(income, pendingIncome);
+  // update dashboard cards
+  const salDbEl = $('d-salary-db'); if(salDbEl) salDbEl.textContent = fmt(salary);
+  const pSalDbEl = $('d-pending-salary-db'); if(pSalDbEl) pSalDbEl.textContent = fmt(pendingEmpSalary + pendingWorkerSalary);
+  const netDbEl = $('d-net-db'); if(netDbEl) { netDbEl.textContent = fmt(net); netDbEl.className = 'card-value ' + (net >= 0 ? 'c-green' : 'c-red'); }
+  const pendDbEl = $('d-pending-db'); if(pendDbEl) { pendDbEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendDbEl.className = 'card-value ' + (pendingNet >= 0 ? 'c-green' : 'c-red'); }
   updatePFIncome(income);
 
   renderCatBars(expense);
