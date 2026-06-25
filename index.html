@@ -235,12 +235,19 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <!-- 3 main cards -->
-    <div class="cards-row-3" style="margin-bottom:1.25rem">
-      <div class="card"><div class="card-label">✅ נכנס מלקוחות</div><div class="card-value c-green" id="d-income">—</div><div class="card-sub">שולם בפועל</div></div>
-      <div class="card card-soft-green"><div class="card-label">🕐 צפוי מלקוחות</div><div class="card-value c-green" id="d-pending-income">—</div><div class="card-sub">טרם שולם</div></div>
-      <div class="card"><div class="card-label">💸 הוצאות</div><div class="card-value c-red" id="d-expense">—</div><div class="card-sub">הוצאות עסק</div></div>
+    <div class="cards-row-3" style="margin-bottom:10px">
+      <div class="card" style="cursor:pointer" onclick="toggleTxPanel('income')"><div class="card-label">&#9989; נכנס מלקוחות</div><div class="card-value c-green" id="d-income">&#8212;</div><div class="card-sub">שולם בפועל &#9660;</div></div>
+      <div class="card card-soft-green" style="cursor:pointer" onclick="toggleTxPanel('pending')"><div class="card-label">&#128336; צפוי מלקוחות</div><div class="card-value c-green" id="d-pending-income">&#8212;</div><div class="card-sub">טרם שולם &#9660;</div></div>
+      <div class="card" style="cursor:pointer" onclick="toggleTxPanel('expense')"><div class="card-label">&#128184; הוצאות</div><div class="card-value c-red" id="d-expense">&#8212;</div><div class="card-sub">הוצאות עסק &#9660;</div></div>
     </div>
-    <!-- hidden elements for js compatibility -->
+    <!-- TX panel -->
+    <div id="tx-panel" style="display:none;background:var(--surface);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:14px;font-weight:600" id="tx-panel-title">פירוט</div>
+        <button class="btn-del" onclick="document.getElementById('tx-panel').style.display='none'">&#10005;</button>
+      </div>
+      <div id="tx-panel-content"></div>
+    </div>
     <div style="display:none">
       <span id="d-salary"></span><span id="d-pending-salary"></span>
       <span id="d-net2"></span><span id="d-pending2"></span>
