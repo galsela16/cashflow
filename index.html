@@ -646,6 +646,59 @@ function renderAll() {
   renderAlerts(income, expense, salary, net, pendingIncome);
 }
 
+function toggleTxPanel(type) {
+  const panel = $('tx-panel');
+  const title = $('tx-panel-title');
+  const content_el = $('tx-panel-content');
+  
+  // אם כבר פתוח באותו סוג — סגור
+  if (panel.style.display !== 'none' && panel.dataset.type === type) {
+    panel.style.display = 'none';
+    return;
+  }
+  
+  panel.dataset.type = type;
+  let rows = [], titleText = '';
+  
+  if (type === 'income') {
+    titleText = '✅ נכנס מלקוחות — פירוט';
+    // עסקאות הכנסה + אירועים ששולמו
+    const month = getMonth();
+    const monthDetails = cachedEventDetails.filter(d => d.month === month || (d.event_date && d.event_date.slice(0,7) === month));
+    const paidEvents = monthDetails.filter(d => d.price > 0 && (d.status === 'בוצע תשלום' || d.status === 'בוצע תשלום + חשבונית מס'));
+    const txIncome = cachedTx.filter(t => t.type === 'income');
+    rows = [
+      ...txIncome.map(t => ({ name: t.description, amount: t.amount, sub: t.category })),
+      ...paidEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: c ? c.name : 'אירוע' }; })
+    ];
+  } else if (type === 'pending') {
+    titleText = '🕐 צפוי מלקוחות — פירוט';
+    const month = getMonth();
+    const monthDetails = cachedEventDetails.filter(d => d.month === month || (d.event_date && d.event_date.slice(0,7) === month));
+    const pendingEvents = monthDetails.filter(d => d.price > 0 && (d.status === 'לא יצאה דרישת תשלום' || d.status === 'יצאה דרישת תשלום'));
+    rows = pendingEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: (c ? c.name + ' · ' : '') + d.status }; });
+  } else if (type === 'expense') {
+    titleText = '💸 הוצאות — פירוט';
+    rows = cachedTx.filter(t => t.type === 'expense').map(t => ({ name: t.description, amount: t.amount, sub: t.category }));
+  }
+  
+  if (!rows.length) {
+    content_el.innerHTML = '<div class="empty">אין פריטים</div>';
+  } else {
+    content_el.innerHTML = rows.map(r => 
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
+      '<div><div style="font-weight:500">' + r.name + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--muted)">' + r.sub + '</div>' : '') + '</div>' +
+      '<div style="font-weight:600">' + fmt(r.amount) + '</div></div>'
+    ).join('') +
+    '<div style="display:flex;justify-content:space-between;padding:10px 0;font-size:13px;font-weight:600;color:var(--muted)">' +
+    '<span>סה"כ</span><span>' + fmt(rows.reduce((s,r) => s+r.amount, 0)) + '</span></div>';
+  }
+  
+  title.textContent = titleText;
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 function updateTaxFromDB() {
   // sync rate to hidden input and recalculate
   const dbRate = $('tax-rate-db');
