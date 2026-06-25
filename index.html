@@ -592,6 +592,8 @@ async function loadAll() {
   ]);
   cachedTx = txR.data || []; cachedEmps = empR.data || []; cachedEmpEvents = evR.data || [];
   cachedClients = clientR.data || []; cachedEventDetails = detailR.data || []; cachedEventWorkers = workerR.data || [];
+  // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
+  await autoImportRecurring(month, uid, cachedTx);
   renderAll();
 }
 
@@ -1017,6 +1019,28 @@ async function addClient() {
   $('btn-add-client').disabled = false; await loadAll();
 }
 async function deleteClient(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7 \u05dc\u05e7\u05d5\u05d7?')) return; await sb.from('clients').delete().eq('id', id); await loadAll(); }
+
+// ── AUTO IMPORT RECURRING ──
+async function autoImportRecurring(month, uid, existingTx) {
+  if (!cachedRecurring.length) return;
+  // בדוק אם כבר יובאו הוצאות קבועות לחודש זה
+  const alreadyImported = existingTx.some(t => t.description && t.description.includes('(קבועה)'));
+  if (alreadyImported) return;
+  // ייבא אוטומטית
+  await sb.from('transactions').insert(
+    cachedRecurring.map(r => ({
+      user_id: uid,
+      month,
+      description: r.description + ' (קבועה)',
+      amount: r.amount,
+      type: 'expense',
+      category: r.category
+    }))
+  );
+  // טען מחדש את העסקאות
+  const txR = await sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false });
+  cachedTx = txR.data || [];
+}
 
 // ── RECURRING ──
 async function loadRecurring() {
