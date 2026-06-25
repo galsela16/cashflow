@@ -686,7 +686,22 @@ function toggleTxPanel(type) {
     rows = pendingEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: (c ? c.name + ' · ' : '') + d.status }; });
   } else if (type === 'expense') {
     titleText = '💸 הוצאות — פירוט';
-    rows = cachedTx.filter(t => t.type === 'expense').map(t => ({ name: t.description, amount: t.amount, sub: t.category }));
+    const month = getMonth();
+    const monthDetailIds = cachedEventDetails.filter(d => d.month === month || (d.event_date && d.event_date.slice(0,7) === month)).map(d => d.id);
+    // עסקאות הוצאה
+    const txExpense = cachedTx.filter(t => t.type === 'expense').map(t => ({ name: t.description, amount: t.amount, sub: t.category }));
+    // תשלומים לעובדים מאירועי עובדים
+    const empPayments = cachedEmpEvents.filter(e => e.status === 'שולם').map(e => {
+      const emp = cachedEmps.find(em => em.id === e.employee_id);
+      return { name: emp ? emp.name : 'עובד', amount: e.amount, sub: 'שכר עובד · ' + (e.event_name || '') };
+    });
+    // תשלומים לעובדים מאירועים
+    const workerPayments = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === 'שולם').map(w => {
+      const emp = cachedEmps.find(em => em.id === w.employee_id);
+      const det = cachedEventDetails.find(d => d.id === w.event_detail_id);
+      return { name: emp ? emp.name : 'עובד', amount: w.amount, sub: 'שכר עובד · ' + (det ? det.event_title : '') };
+    });
+    rows = [...txExpense, ...empPayments, ...workerPayments];
   }
   
   if (!rows.length) {
