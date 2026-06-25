@@ -611,12 +611,11 @@ function renderAll() {
   const eventIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1')).reduce((s, d) => s + (d.price || 0), 0);
   const income = txIncome + eventIncome;
   const txExpense = cachedTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  lastSalary = salary;
-  const expense = txExpense + salary; // הוצאות עסק + שכר עובדים
   const paidEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, e) => s + e.amount, 0);
   const paidWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, w) => s + w.amount, 0);
   const salary = paidEmpSalary + paidWorkerSalary;
-  const net = income - expense; // expense כבר כולל שכר
+  const expense = txExpense + salary;
+  const net = income - expense;
 
   const pendingIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd')).reduce((s, d) => s + (d.price || 0), 0);
   const pendingEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05de\u05de\u05ea\u05d9\u05df').reduce((s, e) => s + e.amount, 0);
