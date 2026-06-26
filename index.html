@@ -214,6 +214,7 @@ tr:last-child td{border-bottom:none}
     <div class="topbar-title">💰 תזרים ושכר</div>
     <div class="topbar-user">
       <span id="user-email-display"></span>
+      <span id="plan-badge" style="padding:4px 10px;border-radius:100px;font-size:12px;font-weight:600;color:#fff;background:#0d9c6e"></span>
       <button class="btn-logout" onclick="logout()">יציאה</button>
     </div>
   </div>
@@ -258,7 +259,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
       <button class="tab" onclick="showPage('events',this)">🎯 אירועים</button>
-      <button class="tab" onclick="showPage('employees',this)">👥 עובדים</button>
+      <button class="tab" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
       <button class="tab" onclick="showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" onclick="showPage('recurring',this)">🔄 קבועות</button>
       <button class="tab" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
@@ -414,9 +415,22 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="bnav-icon">📊</span>סיכום</button>
     <button class="bnav-item" onclick="showPage('transactions',this)" data-page="transactions"><span class="bnav-icon">💸</span>הכנסות</button>
     <button class="bnav-item" onclick="showPage('events',this)" data-page="events"><span class="bnav-icon">🎯</span>אירועים</button>
-    <button class="bnav-item" onclick="showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
+    <button class="bnav-item" onclick="checkAccess('employees') && showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
     <button class="bnav-item" onclick="showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
     <button class="bnav-item" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
+  </div>
+</div>
+
+<!-- Upgrade Modal -->
+<div class="modal-overlay" id="upgrade-modal" style="display:none" onclick="if(event.target===this)closeUpgradeModal()">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <div class="modal-body" style="padding:2rem">
+      <div style="font-size:48px;margin-bottom:16px">⭐</div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:8px">שדרג לפרו</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:24px">ניהול עובדים זמין בתוכנית פרו בלבד בסך ₪16 לחודש</div>
+      <a href="https://cashflow-landing-indol.vercel.app/#pricing" target="_blank" class="btn-add" style="display:block;margin-bottom:12px;text-decoration:none;text-align:center">שדרג עכשיו →</a>
+      <button class="btn-outline" onclick="closeUpgradeModal()">ביטול</button>
+    </div>
   </div>
 </div>
 
@@ -498,6 +512,8 @@ let gcalEvents = [], allRenderedEvents = [];
 let modalWorkers = [], currentEditDetailId = null, currentEventDate = null, isNewManualEvent = false;
 let lastSalary = 0;
 let currentEmpId = null;
+let userPlan = 'trial'; // trial, basic, pro
+let trialDaysLeft = 30;
 
 const fmt = n => '\u20aa' + Math.round(n).toLocaleString('he-IL');
 const $ = id => document.getElementById(id);
@@ -551,6 +567,71 @@ async function doAuth() {
 function showMsg(t, type) { const m = $('auth-msg'); m.textContent = t; m.className = 'msg ' + type; }
 async function logout() { await sb.auth.signOut(); $('auth-screen').style.display = 'flex'; $('app-screen').style.display = 'none'; currentUser = null; }
 
+// ── SUBSCRIPTION ──
+async function loadSubscription() {
+  const uid = currentUser.id;
+  const res = await sb.from('subscriptions').select('*').eq('user_id', uid).maybeSingle();
+  
+  if (!res.data) {
+    // משתמש חדש — צור רשומת ניסיון
+    await sb.from('subscriptions').insert({ user_id: uid, plan: 'trial', status: 'active' });
+    userPlan = 'trial';
+    trialDaysLeft = 30;
+  } else {
+    userPlan = res.data.plan;
+    // חשב ימי ניסיון שנותרו
+    if (userPlan === 'trial') {
+      const start = new Date(res.data.trial_start);
+      const now = new Date();
+      const daysPassed = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+      trialDaysLeft = Math.max(0, 30 - daysPassed);
+      if (trialDaysLeft === 0) userPlan = 'expired';
+    }
+  }
+  updatePlanUI();
+}
+
+function updatePlanUI() {
+  // הצג תווית תוכנית
+  const planBadge = document.getElementById('plan-badge');
+  if (planBadge) {
+    if (userPlan === 'trial') planBadge.textContent = 'ניסיון · ' + trialDaysLeft + ' ימים';
+    else if (userPlan === 'basic') planBadge.textContent = 'בסיסי';
+    else if (userPlan === 'pro') planBadge.textContent = 'פרו ⭐';
+    else if (userPlan === 'expired') planBadge.textContent = 'פג תוקף';
+    planBadge.style.background = userPlan === 'pro' ? '#2855e0' : userPlan === 'expired' ? '#c0392b' : '#0d9c6e';
+  }
+
+  // חסום עובדים לבסיסי
+  const empTabs = document.querySelectorAll('[data-page="employees"], .tab-employees');
+  empTabs.forEach(t => {
+    if (userPlan === 'basic') {
+      t.style.opacity = '0.5';
+      t.title = 'זמין בתוכנית פרו בלבד';
+    }
+  });
+}
+
+function checkAccess(feature) {
+  if (feature === 'employees' && userPlan === 'basic') {
+    showUpgradeModal();
+    return false;
+  }
+  if (userPlan === 'expired') {
+    showUpgradeModal();
+    return false;
+  }
+  return true;
+}
+
+function showUpgradeModal() {
+  document.getElementById('upgrade-modal').style.display = 'flex';
+}
+
+function closeUpgradeModal() {
+  document.getElementById('upgrade-modal').style.display = 'none';
+}
+
 function enterApp(user) {
   currentUser = user;
   $('auth-screen').style.display = 'none';
@@ -560,6 +641,7 @@ function enterApp(user) {
   loadAll();
   loadRecurring();
   loadPFSettings();
+  loadSubscription();
 }
 
 // ── MONTHS ──
