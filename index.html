@@ -18,8 +18,8 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
-#app-screen{background:linear-gradient(145deg,#0f2744 0%,#0d4a5a 30%,#0e6b5e 60%,#1a7a50 100%);min-height:100vh;position:relative}
-#app-screen::before{content:'';position:fixed;inset:0;background:linear-gradient(145deg,rgba(15,39,68,.82) 0%,rgba(13,74,90,.78) 35%,rgba(14,107,94,.72) 65%,rgba(26,122,80,.78) 100%);pointer-events:none;z-index:0}
+#app-screen{background:linear-gradient(145deg,#1a3a5c 0%,#1a5f72 30%,#1a8a78 60%,#22916a 100%);min-height:100vh;position:relative}
+#app-screen::before{content:'';position:fixed;inset:0;background:linear-gradient(145deg,rgba(26,58,92,.55) 0%,rgba(26,95,114,.5) 35%,rgba(26,138,120,.45) 65%,rgba(34,145,106,.5) 100%);pointer-events:none;z-index:0}
 #app-screen .topbar,#app-screen .main,#app-screen .bottom-nav{position:relative;z-index:1}
 #app-screen .topbar{background:rgba(10,25,50,.75);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.1);box-shadow:none}
 #app-screen .topbar-title{color:#7dd3fc}
@@ -112,8 +112,9 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .c-green{color:var(--green)} .c-red{color:var(--red)} .c-blue{color:var(--blue)}
 
 /* tabs */
-.tabs{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap}
-.tab{padding:8px 16px;border:none;border-radius:100px;background:var(--surface);cursor:pointer;font-size:13px;color:var(--muted);box-shadow:var(--shadow)}
+.tabs{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:8px 14px;border:none;border-radius:100px;background:var(--surface);cursor:pointer;font-size:13px;color:var(--muted);box-shadow:var(--shadow);white-space:nowrap;flex-shrink:0}
 .tab:hover{background:var(--blue-bg);color:var(--blue)}
 .tab.active{background:var(--blue);color:#fff;font-weight:500;box-shadow:0 2px 8px rgba(37,99,235,.25)}
 .page{display:none}.page.active{display:block}
