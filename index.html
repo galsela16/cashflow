@@ -609,7 +609,10 @@ let trialDaysLeft = 30;
 
 const fmt = n => '\u20aa' + Math.round(n).toLocaleString('he-IL');
 const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const getMonth = () => $('yearSel').value + '-' + $('monthSel').value.padStart(2, '0');
+// מחזיר את פרטי האירועים של החודש הנבחר (משותף לכמה פונקציות)
+const getMonthDetails = (month) => { const m = month || getMonth(); return cachedEventDetails.filter(d => d.month === m || (d.event_date && d.event_date.slice(0, 7) === m)); };
 
 const HEB_DAYS = ['\u05e8\u05d0\u05e9\u05d5\u05df','\u05e9\u05e0\u05d9','\u05e9\u05dc\u05d9\u05e9\u05d9','\u05e8\u05d1\u05d9\u05e2\u05d9','\u05d7\u05de\u05d9\u05e9\u05d9','\u05e9\u05d9\u05e9\u05d9','\u05e9\u05d1\u05ea'];
 const HEB_MON = ['\u05d9\u05e0\u05d5\u05d0\u05e8','\u05e4\u05d1\u05e8\u05d5\u05d0\u05e8','\u05de\u05e8\u05e5','\u05d0\u05e4\u05e8\u05d9\u05dc','\u05de\u05d0\u05d9','\u05d9\u05d5\u05e0\u05d9','\u05d9\u05d5\u05dc\u05d9','\u05d0\u05d5\u05d2\u05d5\u05e1\u05d8','\u05e1\u05e4\u05d8\u05de\u05d1\u05e8','\u05d0\u05d5\u05e7\u05d8\u05d5\u05d1\u05e8','\u05e0\u05d5\u05d1\u05de\u05d1\u05e8','\u05d3\u05e6\u05de\u05d1\u05e8'];
@@ -767,16 +770,17 @@ function closeUpgradeModal() {
   document.getElementById('upgrade-modal').style.display = 'none';
 }
 
-function enterApp(user) {
+async function enterApp(user) {
   currentUser = user;
   $('auth-screen').style.display = 'none';
   $('app-screen').style.display = 'block';
   $('user-email-display').textContent = user.email;
   initMonths();
-  loadAll();
-  loadRecurring();
   loadPFSettings();
   loadSubscription();
+  // טען קודם הוצאות קבועות, ורק אז loadAll (שתלוי בהן לייבוא אוטומטי)
+  await loadRecurring();
+  await loadAll();
 }
 
 // ── MONTHS ──
@@ -803,16 +807,23 @@ function updateMonth() { loadAll(); }
 // ── LOAD ──
 async function loadAll() {
   const month = getMonth(), uid = currentUser.id;
-  const [txR, empR, evR, clientR, detailR, workerR] = await Promise.all([
+  const [txR, empR, evR, clientR, detailR] = await Promise.all([
     sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false }),
     sb.from('employees').select('*').eq('user_id', uid).order('name'),
     sb.from('employee_events').select('*').eq('user_id', uid).eq('month', month),
     sb.from('clients').select('*').eq('user_id', uid).order('name'),
-    sb.from('event_details').select('*').eq('user_id', uid).order('event_date', { ascending: false }),
-    sb.from('event_workers').select('*')
+    sb.from('event_details').select('*').eq('user_id', uid).order('event_date', { ascending: false })
   ]);
   cachedTx = txR.data || []; cachedEmps = empR.data || []; cachedEmpEvents = evR.data || [];
-  cachedClients = clientR.data || []; cachedEventDetails = detailR.data || []; cachedEventWorkers = workerR.data || [];
+  cachedClients = clientR.data || []; cachedEventDetails = detailR.data || [];
+  // event_workers מסונן לפי האירועים של המשתמש בלבד (אבטחה + ביצועים)
+  const detailIds = cachedEventDetails.map(d => d.id);
+  if (detailIds.length) {
+    const workerR = await sb.from('event_workers').select('*').in('event_detail_id', detailIds);
+    cachedEventWorkers = workerR.data || [];
+  } else {
+    cachedEventWorkers = [];
+  }
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
   await autoImportRecurring(month, uid, cachedTx);
   renderAll();
@@ -821,7 +832,7 @@ async function loadAll() {
 // ── RENDER ALL ──
 function renderAll() {
   const month = getMonth();
-  const monthDetails = cachedEventDetails.filter(d => d.month === month || (d.event_date && d.event_date.slice(0, 7) === month));
+  const monthDetails = getMonthDetails(month);
   const monthDetailIds = monthDetails.map(d => d.id);
 
   const txIncome = cachedTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
@@ -890,8 +901,7 @@ function toggleTxPanel(type) {
   if (type === 'income') {
     titleText = '✅ נכנס מלקוחות — פירוט';
     // עסקאות הכנסה + אירועים ששולמו
-    const month = getMonth();
-    const monthDetails = cachedEventDetails.filter(d => d.month === month || (d.event_date && d.event_date.slice(0,7) === month));
+    const monthDetails = getMonthDetails();
     const paidEvents = monthDetails.filter(d => d.price > 0 && (d.status === 'בוצע תשלום' || d.status === 'בוצע תשלום + חשבונית מס'));
     const txIncome = cachedTx.filter(t => t.type === 'income');
     rows = [
@@ -900,14 +910,12 @@ function toggleTxPanel(type) {
     ];
   } else if (type === 'pending') {
     titleText = '🕐 צפוי מלקוחות — פירוט';
-    const month = getMonth();
-    const monthDetails = cachedEventDetails.filter(d => d.month === month || (d.event_date && d.event_date.slice(0,7) === month));
+    const monthDetails = getMonthDetails();
     const pendingEvents = monthDetails.filter(d => d.price > 0 && (d.status === 'לא יצאה דרישת תשלום' || d.status === 'יצאה דרישת תשלום'));
     rows = pendingEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: (c ? c.name + ' · ' : '') + d.status }; });
   } else if (type === 'expense') {
     titleText = '💸 הוצאות — פירוט';
-    const month = getMonth();
-    const monthDetailIds = cachedEventDetails.filter(d => d.month === month || (d.event_date && d.event_date.slice(0,7) === month)).map(d => d.id);
+    const monthDetailIds = getMonthDetails().map(d => d.id);
     // עסקאות הוצאה
     const txExpense = cachedTx.filter(t => t.type === 'expense').map(t => ({ name: t.description, amount: t.amount, sub: t.category }));
     // תשלומים לעובדים מאירועי עובדים
@@ -932,7 +940,7 @@ function toggleTxPanel(type) {
   } else {
     content_el.innerHTML = rows.map(r => 
       '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
-      '<div><div style="font-weight:500">' + r.name + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--muted)">' + r.sub + '</div>' : '') + '</div>' +
+      '<div><div style="font-weight:500">' + esc(r.name) + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--muted)">' + esc(r.sub) + '</div>' : '') + '</div>' +
       '<div style="font-weight:600">' + fmt(r.amount) + '</div></div>'
     ).join('') +
     '<div style="display:flex;justify-content:space-between;padding:10px 0;font-size:13px;font-weight:600;color:var(--muted)">' +
@@ -991,7 +999,7 @@ function renderCatBars(totalExp, workerSalary) {
   const colors = { '\u05e9\u05db\u05d9\u05e8\u05d5\u05ea': '#185FA5', '\u05e6\u05d9\u05d5\u05d3': '#0F6E56', '\u05e9\u05d9\u05d5\u05d5\u05e7': '#854F0B', '\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd': '#993C1D', '\u05d0\u05d7\u05e8': '#533C89' };
   el.innerHTML = Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
     const pct = totalExp > 0 ? Math.round(amt / totalExp * 100) : 0;
-    return '<div class="bar-wrap"><div class="bar-label"><span>' + cat + '</span><span>' + fmt(amt) + ' (' + pct + '%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + (colors[cat] || '#888') + '"></div></div></div>';
+    return '<div class="bar-wrap"><div class="bar-label"><span>' + esc(cat) + '</span><span>' + fmt(amt) + ' (' + pct + '%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + (colors[cat] || '#888') + '"></div></div></div>';
   }).join('');
 }
 
@@ -1006,14 +1014,14 @@ function renderEmpStatus(monthDetailIds) {
     const hasLate = evs.some(e => e.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8') || ewks.some(w => w.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8');
     const status = (evs.length + ewks.length) === 0 ? '\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd' : allPaid ? '\u05e9\u05d5\u05dc\u05dd' : hasLate ? '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' : '\u05de\u05de\u05ea\u05d9\u05df';
     const cls = status === '\u05e9\u05d5\u05dc\u05dd' ? 'paid' : status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : status === '\u05de\u05de\u05ea\u05d9\u05df' ? 'pending' : '';
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><div><span style="font-size:13px;font-weight:500">' + emp.name + '</span>' + (total > 0 ? '<span style="font-size:12px;color:var(--muted);margin-right:8px">' + fmt(total) + '</span>' : '') + '</div>' + (cls ? '<span class="badge badge-' + cls + '">' + status + '</span>' : '<span style="font-size:12px;color:var(--muted)">' + status + '</span>') + '</div>';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><div><span style="font-size:13px;font-weight:500">' + esc(emp.name) + '</span>' + (total > 0 ? '<span style="font-size:12px;color:var(--muted);margin-right:8px">' + fmt(total) + '</span>' : '') + '</div>' + (cls ? '<span class="badge badge-' + cls + '">' + status + '</span>' : '<span style="font-size:12px;color:var(--muted)">' + status + '</span>') + '</div>';
   }).join('');
 }
 
 function renderTxTable() {
   const tb = $('tx-table');
   if (!cachedTx.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">\u05d0\u05d9\u05df \u05e8\u05e9\u05d5\u05de\u05d5\u05ea</td></tr>'; return; }
-  tb.innerHTML = cachedTx.map(t => '<tr><td>' + t.description + '</td><td style="color:var(--muted);font-size:12px">' + t.category + '</td><td><span class="badge badge-' + t.type + '">' + (t.type === 'income' ? '\u05d4\u05db\u05e0\u05e1\u05d4' : '\u05d4\u05d5\u05e6\u05d0\u05d4') + '</span></td><td style="font-weight:600">' + fmt(t.amount) + '</td><td><button class="btn-del" onclick="deleteTx(\'' + t.id + '\')">&#128465;</button></td></tr>').join('');
+  tb.innerHTML = cachedTx.map(t => '<tr><td>' + esc(t.description) + '</td><td style="color:var(--muted);font-size:12px">' + esc(t.category) + '</td><td><span class="badge badge-' + t.type + '">' + (t.type === 'income' ? '\u05d4\u05db\u05e0\u05e1\u05d4' : '\u05d4\u05d5\u05e6\u05d0\u05d4') + '</span></td><td style="font-weight:600">' + fmt(t.amount) + '</td><td><button class="btn-del" onclick="deleteTx(\'' + t.id + '\')">&#128465;</button></td></tr>').join('');
 }
 
 function renderEventsList() {
@@ -1041,16 +1049,16 @@ function renderEventsList() {
     const profit = detail && detail.price ? detail.price - workerTotal : null;
     const statusCls = detail ? (detail.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || detail.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1' ? 'paid' : detail.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' ? 'pending' : 'late') : '';
 
-    let bodyHtml = detail ? '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px"><div><div style="font-size:11px;color:var(--muted)">\u05de\u05d7\u05d9\u05e8 \u05dc\u05dc\u05e7\u05d5\u05d7</div><div style="font-weight:600;color:var(--green)">' + fmt(detail.price || 0) + '</div></div><div><div style="font-size:11px;color:var(--muted)">\u05e2\u05dc\u05d5\u05ea \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd</div><div style="font-weight:600;color:var(--red)">' + fmt(workerTotal) + '</div></div><div><div style="font-size:11px;color:var(--muted)">\u05e8\u05d5\u05d5\u05d7</div><div style="font-weight:600;color:' + (profit !== null && profit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (profit !== null ? fmt(profit) : '\u2014') + '</div></div></div>' + (workers.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">\u05e2\u05d5\u05d1\u05d3\u05d9\u05dd:</div>' + workers.map(w => { const emp = cachedEmps.find(e => e.id === w.employee_id); return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">' + (emp ? emp.name : '\u2014') + '<span>' + fmt(w.amount) + ' \u00b7 <span class="badge badge-' + (w.status === '\u05e9\u05d5\u05dc\u05dd' ? 'paid' : w.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : 'pending') + '">' + w.status + '</span></span></div>'; }).join('') : '') + (detail.notes ? '<div style="font-size:12px;color:var(--muted);margin-top:8px;padding:8px;background:var(--bg);border-radius:var(--radius-sm)">' + detail.notes + '</div>' : '') : '<div style="font-size:13px;color:var(--muted);text-align:center">\u05dc\u05d7\u05e5 \u05e2\u05dc \u270f\ufe0f \u05dc\u05d4\u05d5\u05e1\u05e4\u05ea \u05e4\u05e8\u05d8\u05d9\u05dd</div>';
+    let bodyHtml = detail ? '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px"><div><div style="font-size:11px;color:var(--muted)">\u05de\u05d7\u05d9\u05e8 \u05dc\u05dc\u05e7\u05d5\u05d7</div><div style="font-weight:600;color:var(--green)">' + fmt(detail.price || 0) + '</div></div><div><div style="font-size:11px;color:var(--muted)">\u05e2\u05dc\u05d5\u05ea \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd</div><div style="font-weight:600;color:var(--red)">' + fmt(workerTotal) + '</div></div><div><div style="font-size:11px;color:var(--muted)">\u05e8\u05d5\u05d5\u05d7</div><div style="font-weight:600;color:' + (profit !== null && profit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (profit !== null ? fmt(profit) : '\u2014') + '</div></div></div>' + (workers.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">\u05e2\u05d5\u05d1\u05d3\u05d9\u05dd:</div>' + workers.map(w => { const emp = cachedEmps.find(e => e.id === w.employee_id); return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">' + (emp ? esc(emp.name) : '\u2014') + '<span>' + fmt(w.amount) + ' \u00b7 <span class="badge badge-' + (w.status === '\u05e9\u05d5\u05dc\u05dd' ? 'paid' : w.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : 'pending') + '">' + w.status + '</span></span></div>'; }).join('') : '') + (detail.notes ? '<div style="font-size:12px;color:var(--muted);margin-top:8px;padding:8px;background:var(--bg);border-radius:var(--radius-sm)">' + esc(detail.notes) + '</div>' : '') : '<div style="font-size:13px;color:var(--muted);text-align:center">\u05dc\u05d7\u05e5 \u05e2\u05dc \u270f\ufe0f \u05dc\u05d4\u05d5\u05e1\u05e4\u05ea \u05e4\u05e8\u05d8\u05d9\u05dd</div>';
 
-    return '<div class="event-card"><div class="event-card-header" onclick="toggleEl(\'ev-body-' + i + '\')"><div><div style="font-weight:600;font-size:14px">' + (ev.title || '(\u05dc\u05dc\u05d0 \u05e9\u05dd)') + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + dateStr + (client ? ' \u00b7 ' + client.name : '') + (detail && detail.price ? ' \u00b7 ' + fmt(detail.price) : '') + (ev.source === 'manual' ? ' <span style="background:var(--blue-bg);color:var(--blue);font-size:10px;padding:1px 6px;border-radius:100px">\u05d9\u05d3\u05e0\u05d9</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px">' + (detail ? '<span class="badge badge-' + statusCls + '">' + detail.status + '</span>' : '') + '<button class="btn-sm" onclick="openEditEventModalByTitle(this);return false;" data-title="' + (ev.title||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '" data-date="' + ev.start.slice(0,10) + '" data-source="' + ev.source + '" data-detailid="' + (ev.detailId||'') + '">&#9999;</button>' + (ev.source === 'manual' ? '<button class="btn-del" onclick="deleteManualEventByEl(this);return false;" data-detailid="' + (ev.detailId||'') + '">&#128465;</button>' : '') + '</div></div><div class="event-card-body" id="ev-body-' + i + '">' + bodyHtml + '</div></div>';
+    return '<div class="event-card"><div class="event-card-header" onclick="toggleEl(\'ev-body-' + i + '\')"><div><div style="font-weight:600;font-size:14px">' + esc(ev.title || '(\u05dc\u05dc\u05d0 \u05e9\u05dd)') + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + dateStr + (client ? ' \u00b7 ' + esc(client.name) : '') + (detail && detail.price ? ' \u00b7 ' + fmt(detail.price) : '') + (ev.source === 'manual' ? ' <span style="background:var(--blue-bg);color:var(--blue);font-size:10px;padding:1px 6px;border-radius:100px">\u05d9\u05d3\u05e0\u05d9</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px">' + (detail ? '<span class="badge badge-' + statusCls + '">' + esc(detail.status) + '</span>' : '') + '<button class="btn-sm" onclick="openEditEventModalByTitle(this);return false;" data-title="' + esc(ev.title||'') + '" data-date="' + ev.start.slice(0,10) + '" data-source="' + ev.source + '" data-detailid="' + (ev.detailId||'') + '">&#9999;</button>' + (ev.source === 'manual' ? '<button class="btn-del" onclick="deleteManualEventByEl(this);return false;" data-detailid="' + (ev.detailId||'') + '">&#128465;</button>' : '') + '</div></div><div class="event-card-body" id="ev-body-' + i + '">' + bodyHtml + '</div></div>';
   }).join('');
 }
 
 function renderEmpCards(monthDetailIds) {
   const el = $('emp-cards');
   if (!cachedEmps.length) { el.innerHTML = '<div class="section"><div class="empty">\u05dc\u05d0 \u05e0\u05d5\u05e1\u05e4\u05d5 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd</div></div>'; return; }
-  const ids = monthDetailIds || cachedEventDetails.filter(d => d.month === getMonth() || (d.event_date && d.event_date.slice(0, 7) === getMonth())).map(d => d.id);
+  const ids = monthDetailIds || getMonthDetails().map(d => d.id);
   el.innerHTML = cachedEmps.map(emp => {
     const evs = cachedEmpEvents.filter(e => e.employee_id === emp.id);
     const ewks = cachedEventWorkers.filter(w => w.employee_id === emp.id && ids.includes(w.event_detail_id));
@@ -1058,12 +1066,12 @@ function renderEmpCards(monthDetailIds) {
 
     const evRows = ewks.map(w => {
       const det = cachedEventDetails.find(d => d.id === w.event_detail_id);
-      return '<tr><td style="font-size:13px">' + (det ? det.event_title : '\u05d0\u05d9\u05e8\u05d5\u05e2') + ' <span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:1px 5px;border-radius:100px">\u05de\u05d0\u05d9\u05e8\u05d5\u05e2</span></td><td style="font-size:12px;color:var(--muted)">' + (det ? det.event_date || '\u2014' : '\u2014') + '</td><td style="font-weight:600">' + fmt(w.amount) + '</td><td><select class="status-select" onchange="updateEventWorkerStatus(\'' + w.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option' + (w.status === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></td><td></td></tr>';
+      return '<tr><td style="font-size:13px">' + (det ? esc(det.event_title) : '\u05d0\u05d9\u05e8\u05d5\u05e2') + ' <span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:1px 5px;border-radius:100px">\u05de\u05d0\u05d9\u05e8\u05d5\u05e2</span></td><td style="font-size:12px;color:var(--muted)">' + (det ? det.event_date || '\u2014' : '\u2014') + '</td><td style="font-weight:600">' + fmt(w.amount) + '</td><td><select class="status-select" onchange="updateEventWorkerStatus(\'' + w.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option' + (w.status === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></td><td></td></tr>';
     }).join('');
 
-    const empEvRows = evs.map(ev => '<tr><td style="font-size:13px">' + ev.event_name + '</td><td style="font-size:12px;color:var(--muted)">' + (ev.date || '\u2014') + '</td><td style="font-weight:600">' + fmt(ev.amount) + '</td><td><select class="status-select" onchange="updateEmpEventStatus(\'' + ev.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option' + (ev.status === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></td><td><button class="btn-del" onclick="deleteEmpEvent(\'' + ev.id + '\')">&#128465;</button></td></tr>').join('');
+    const empEvRows = evs.map(ev => '<tr><td style="font-size:13px">' + esc(ev.event_name) + '</td><td style="font-size:12px;color:var(--muted)">' + (ev.date || '\u2014') + '</td><td style="font-weight:600">' + fmt(ev.amount) + '</td><td><select class="status-select" onchange="updateEmpEventStatus(\'' + ev.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option' + (ev.status === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></td><td><button class="btn-del" onclick="deleteEmpEvent(\'' + ev.id + '\')">&#128465;</button></td></tr>').join('');
 
-    return '<div class="emp-card"><div class="emp-card-header" onclick="toggleCard(\'' + emp.id + '\')"><div><div class="emp-card-name">&#128100; ' + emp.name + '</div><div class="emp-card-meta">' + (emp.role || '') + (emp.phone ? ' \u00b7 ' + emp.phone : '') + ' \u00b7 ' + (evs.length + ewks.length) + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9' + (total > 0 ? ' \u00b7 ' + fmt(total) : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-outline" style="font-size:12px" onclick="event.stopPropagation();openEmpModal(\'' + emp.id + '\')">✏️</button><button class="btn-del" onclick="event.stopPropagation();deleteEmp(\'' + emp.id + '\')">&#128465;</button><span id="toggle-icon-' + emp.id + '">&#9660;</span></div></div><div class="emp-card-body collapsed" id="card-body-' + emp.id + '"><div class="event-form"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">+ \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2</div><div class="form-row"><input type="text" id="ev-event-' + emp.id + '" placeholder="\u05e9\u05dd \u05d4\u05d0\u05d9\u05e8\u05d5\u05e2" /><input type="date" id="ev-date-' + emp.id + '" /><input type="number" id="ev-amount-' + emp.id + '" placeholder="\u05e1\u05db\u05d5\u05dd \u20aa" min="0" /></div><button class="btn-sm" onclick="addEmpEvent(\'' + emp.id + '\')">\u05d4\u05d5\u05e1\u05e3</button></div>' + ((evs.length + ewks.length) ? '<table><thead><tr><th>\u05d0\u05d9\u05e8\u05d5\u05e2</th><th>\u05ea\u05d0\u05e8\u05d9\u05da</th><th>\u05e1\u05db\u05d5\u05dd</th><th>\u05e1\u05d8\u05d0\u05d8\u05d5\u05e1</th><th></th></tr></thead><tbody>' + evRows + empEvRows + '</tbody></table>' : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9</div>') + '</div></div>';
+    return '<div class="emp-card"><div class="emp-card-header" onclick="toggleCard(\'' + emp.id + '\')"><div><div class="emp-card-name">&#128100; ' + esc(emp.name) + '</div><div class="emp-card-meta">' + esc(emp.role || '') + (emp.phone ? ' \u00b7 ' + esc(emp.phone) : '') + ' \u00b7 ' + (evs.length + ewks.length) + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9' + (total > 0 ? ' \u00b7 ' + fmt(total) : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-outline" style="font-size:12px" onclick="event.stopPropagation();openEmpModal(\'' + emp.id + '\')">✏️</button><button class="btn-del" onclick="event.stopPropagation();deleteEmp(\'' + emp.id + '\')">&#128465;</button><span id="toggle-icon-' + emp.id + '">&#9660;</span></div></div><div class="emp-card-body collapsed" id="card-body-' + emp.id + '"><div class="event-form"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">+ \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2</div><div class="form-row"><input type="text" id="ev-event-' + emp.id + '" placeholder="\u05e9\u05dd \u05d4\u05d0\u05d9\u05e8\u05d5\u05e2" /><input type="date" id="ev-date-' + emp.id + '" /><input type="number" id="ev-amount-' + emp.id + '" placeholder="\u05e1\u05db\u05d5\u05dd \u20aa" min="0" /></div><button class="btn-sm" onclick="addEmpEvent(\'' + emp.id + '\')">\u05d4\u05d5\u05e1\u05e3</button></div>' + ((evs.length + ewks.length) ? '<table><thead><tr><th>\u05d0\u05d9\u05e8\u05d5\u05e2</th><th>\u05ea\u05d0\u05e8\u05d9\u05da</th><th>\u05e1\u05db\u05d5\u05dd</th><th>\u05e1\u05d8\u05d0\u05d8\u05d5\u05e1</th><th></th></tr></thead><tbody>' + evRows + empEvRows + '</tbody></table>' : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9</div>') + '</div></div>';
   }).join('');
 }
 
@@ -1075,7 +1083,7 @@ function renderClientsList() {
     const totalPrice = cEvs.reduce((s, d) => s + (d.price || 0), 0);
     const totalPaid = cEvs.filter(d => d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0);
     const debt = totalPrice - totalPaid;
-    return '<div class="client-card"><div class="client-card-header" onclick="toggleEl(\'client-body-' + c.id + '\')"><div><div style="font-weight:600;font-size:14px">' + c.name + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + (c.phone || '') + (c.business_id ? ' \u00b7 \u05d7.\u05e4: ' + c.business_id : '') + (totalPrice > 0 ? ' \u00b7 \u05e1\u05d4"\u05db: ' + fmt(totalPrice) : '') + (debt > 0 ? ' \u00b7 <span style="color:var(--red)">\u05d7\u05d5\u05d1: ' + fmt(debt) + '</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-del" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\')">&#128465;</button><span>&#9660;</span></div></div><div class="client-card-body" id="client-body-' + c.id + '"><div class="client-info">' + (c.phone ? '<div class="client-info-item"><label>\u05d8\u05dc\u05e4\u05d5\u05df</label>' + c.phone + '</div>' : '') + (c.email ? '<div class="client-info-item"><label>\u05d0\u05d9\u05de\u05d9\u05d9\u05dc</label>' + c.email + '</div>' : '') + (c.business_id ? '<div class="client-info-item"><label>\u05d7.\u05e4 / \u05e2.\u05de</label>' + c.business_id + '</div>' : '') + '<div class="client-info-item"><label>\u05e1\u05d4"\u05db</label>' + fmt(totalPrice) + '</div><div class="client-info-item"><label>\u05e9\u05d5\u05dc\u05dd</label><span style="color:var(--green)">' + fmt(totalPaid) + '</span></div>' + (debt > 0 ? '<div class="client-info-item"><label>\u05d9\u05ea\u05e8\u05d4</label><span style="color:var(--red)">' + fmt(debt) + '</span></div>' : '') + '</div>' + (cEvs.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea:</div>' + cEvs.map(d => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>' + d.event_title + '</span><span>' + (d.price ? fmt(d.price) : '\u2014') + ' \u00b7 <span class="badge badge-' + (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1' ? 'paid' : d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' ? 'pending' : 'late') + '">' + d.status + '</span></span></div>').join('') : '<div style="font-size:13px;color:var(--muted);text-align:center">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd</div>') + '</div></div>';
+    return '<div class="client-card"><div class="client-card-header" onclick="toggleEl(\'client-body-' + c.id + '\')"><div><div style="font-weight:600;font-size:14px">' + esc(c.name) + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + esc(c.phone || '') + (c.business_id ? ' \u00b7 \u05d7.\u05e4: ' + esc(c.business_id) : '') + (totalPrice > 0 ? ' \u00b7 \u05e1\u05d4"\u05db: ' + fmt(totalPrice) : '') + (debt > 0 ? ' \u00b7 <span style="color:var(--red)">\u05d7\u05d5\u05d1: ' + fmt(debt) + '</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-del" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\')">&#128465;</button><span>&#9660;</span></div></div><div class="client-card-body" id="client-body-' + c.id + '"><div class="client-info">' + (c.phone ? '<div class="client-info-item"><label>\u05d8\u05dc\u05e4\u05d5\u05df</label>' + esc(c.phone) + '</div>' : '') + (c.email ? '<div class="client-info-item"><label>\u05d0\u05d9\u05de\u05d9\u05d9\u05dc</label>' + esc(c.email) + '</div>' : '') + (c.business_id ? '<div class="client-info-item"><label>\u05d7.\u05e4 / \u05e2.\u05de</label>' + esc(c.business_id) + '</div>' : '') + '<div class="client-info-item"><label>\u05e1\u05d4"\u05db</label>' + fmt(totalPrice) + '</div><div class="client-info-item"><label>\u05e9\u05d5\u05dc\u05dd</label><span style="color:var(--green)">' + fmt(totalPaid) + '</span></div>' + (debt > 0 ? '<div class="client-info-item"><label>\u05d9\u05ea\u05e8\u05d4</label><span style="color:var(--red)">' + fmt(debt) + '</span></div>' : '') + '</div>' + (cEvs.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea:</div>' + cEvs.map(d => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>' + esc(d.event_title) + '</span><span>' + (d.price ? fmt(d.price) : '\u2014') + ' \u00b7 <span class="badge badge-' + (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1' ? 'paid' : d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' ? 'pending' : 'late') + '">' + esc(d.status) + '</span></span></div>').join('') : '<div style="font-size:13px;color:var(--muted);text-align:center">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd</div>') + '</div></div>';
   }).join('');
 }
 
@@ -1087,7 +1095,7 @@ function renderAlerts(income, expense, salary, net, pendingIncome) {
   const lateWkrs = cachedEmpEvents.filter(e => e.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8');
   if (lateWkrs.length) alerts.push({ type: 'danger', msg: lateWkrs.length + ' \u05ea\u05e9\u05dc\u05d5\u05de\u05d9\u05dd \u05dc\u05e2\u05d5\u05d1\u05d3\u05d9\u05dd \u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' });
   const debtClients = cachedClients.filter(c => { const evs = cachedEventDetails.filter(d => d.client_id === c.id); const debt = evs.reduce((s, d) => s + (d.price || 0), 0) - evs.filter(d => d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0); return debt > 0; });
-  if (debtClients.length) alerts.push({ type: 'warn', msg: debtClients.length + ' \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05e2\u05dd \u05d9\u05ea\u05e8\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: ' + debtClients.map(c => c.name).join(', ') });
+  if (debtClients.length) alerts.push({ type: 'warn', msg: debtClients.length + ' \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05e2\u05dd \u05d9\u05ea\u05e8\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: ' + debtClients.map(c => esc(c.name)).join(', ') });
   if (!alerts.length) alerts.push({ type: 'ok', msg: '\u05d4\u05db\u05dc \u05ea\u05e7\u05d9\u05df \u2713' });
   $('alerts-box').innerHTML = alerts.map(a => '<div class="alert alert-' + a.type + '">' + a.msg + '</div>').join('');
 }
@@ -1119,10 +1127,35 @@ function openNewEventModal() {
 }
 
 async function openEditEventModalByTitle(btn) {
-  const title = btn.getAttribute('data-title').trim();
-  const date = btn.getAttribute('data-date');
-  const source = btn.getAttribute('data-source');
-  const detailId = btn.getAttribute('data-detailid');
+  await openEditEventModal({
+    title: btn.getAttribute('data-title').trim(),
+    date: btn.getAttribute('data-date'),
+    source: btn.getAttribute('data-source'),
+    detailId: btn.getAttribute('data-detailid')
+  });
+}
+
+async function openEditEventModalByIdx(idx) {
+  const ev = allRenderedEvents[idx];
+  if (!ev) return;
+  await openEditEventModal({
+    title: ev.title,
+    date: ev.start.slice(0, 10),
+    source: ev.source,
+    detailId: ev.detailId
+  });
+}
+
+async function deleteManualEventByEl(btn) {
+  const id = btn.getAttribute('data-detailid');
+  if (!id || !confirm('למחוק אירוע זה?')) return;
+  await sb.from('event_workers').delete().eq('event_detail_id', id);
+  await sb.from('event_details').delete().eq('id', id);
+  await loadAll();
+}
+
+// פונקציה מאוחדת לפתיחת מודל עריכת אירוע
+async function openEditEventModal({ title, date, source, detailId }) {
   currentEventDate = date;
   isNewManualEvent = source === 'manual';
 
@@ -1141,42 +1174,6 @@ async function openEditEventModalByTitle(btn) {
   if (currentEditDetailId) {
     const wRes = await sb.from('event_workers').select('*').eq('event_detail_id', currentEditDetailId);
     modalWorkers = (wRes.data || []).map(w => ({ employee_id: w.employee_id, amount: w.amount, status: w.status }));
-  } else { modalWorkers = []; }
-  renderModalWorkers();
-  $('event-modal').style.display = 'flex';
-}
-
-async function deleteManualEventByEl(btn) {
-  const id = btn.getAttribute('data-detailid');
-  if (!id || !confirm('למחוק אירוע זה?')) return;
-  await sb.from('event_workers').delete().eq('event_detail_id', id);
-  await sb.from('event_details').delete().eq('id', id);
-  await loadAll();
-}
-
-async function openEditEventModalByIdx(idx) {
-  const ev = allRenderedEvents[idx];
-  if (!ev) return;
-  const title = ev.title;
-  const date = ev.start.slice(0, 10);
-  currentEventDate = date;
-  isNewManualEvent = ev.source === 'manual';
-
-  const res = await sb.from('event_details').select('*').eq('user_id', currentUser.id).eq('event_title', title).eq('event_date', date).maybeSingle();
-  const detail = res.data;
-  currentEditDetailId = detail ? detail.id : null;
-
-  $('modal-event-title').textContent = title;
-  $('modal-ev-title').value = title; $('modal-ev-title').style.display = ev.source === 'manual' ? 'block' : 'none';
-  $('modal-ev-date').value = date; $('modal-ev-date').style.display = ev.source === 'manual' ? 'block' : 'none';
-  fillClientSelect(detail ? detail.client_id : null);
-  $('modal-price').value = detail ? detail.price || '' : '';
-  $('modal-status').value = detail ? detail.status || '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' : '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd';
-  $('modal-notes').value = detail ? detail.notes || '' : '';
-
-  if (currentEditDetailId) {
-    const wRes = await sb.from('event_workers').select('*').eq('event_detail_id', currentEditDetailId);
-    modalWorkers = (wRes.data || []).map(w => ({ employee_id: w.employee_id, amount: w.amount, status: w.status }));
   } else {
     modalWorkers = [];
   }
@@ -1186,7 +1183,7 @@ async function openEditEventModalByIdx(idx) {
 
 function fillClientSelect(selectedId) {
   $('modal-client').innerHTML = '<option value="">\u2014 \u05dc\u05dc\u05d0 \u05dc\u05e7\u05d5\u05d7 \u2014</option>' +
-    cachedClients.map(c => '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + c.name + '</option>').join('');
+    cachedClients.map(c => '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('');
 }
 
 function addWorkerRow() {
@@ -1197,7 +1194,7 @@ function addWorkerRow() {
 function renderModalWorkers() {
   $('modal-workers-list').innerHTML = modalWorkers.map((w, i) =>
     '<div class="worker-row"><select onchange="modalWorkers[' + i + '].employee_id=this.value"><option value="">\u05d1\u05d7\u05e8 \u05e2\u05d5\u05d1\u05d3</option>' +
-    cachedEmps.map(e => '<option value="' + e.id + '"' + (w.employee_id === e.id ? ' selected' : '') + '>' + e.name + '</option>').join('') +
+    cachedEmps.map(e => '<option value="' + e.id + '"' + (w.employee_id === e.id ? ' selected' : '') + '>' + esc(e.name) + '</option>').join('') +
     '</select><input type="number" placeholder="\u20aa" value="' + (w.amount || '') + '" oninput="modalWorkers[' + i + '].amount=parseFloat(this.value)||0" />' +
     '<select onchange="modalWorkers[' + i + '].status=this.value">' +
     ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option' + (w.status === s ? ' selected' : '') + '>' + s + '</option>').join('') +
@@ -1318,25 +1315,33 @@ async function addClient() {
 async function deleteClient(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7 \u05dc\u05e7\u05d5\u05d7?')) return; await sb.from('clients').delete().eq('id', id); await loadAll(); }
 
 // ── AUTO IMPORT RECURRING ──
+let _importingMonths = new Set();
 async function autoImportRecurring(month, uid, existingTx) {
   if (!cachedRecurring.length) return;
+  // נעילה — מנע ייבוא כפול אם loadAll רץ פעמיים במקביל
+  if (_importingMonths.has(month)) return;
   // בדוק אם כבר יובאו הוצאות קבועות לחודש זה
   const alreadyImported = existingTx.some(t => t.description && t.description.includes('(קבועה)'));
   if (alreadyImported) return;
-  // ייבא אוטומטית
-  await sb.from('transactions').insert(
-    cachedRecurring.map(r => ({
-      user_id: uid,
-      month,
-      description: r.description + ' (קבועה)',
-      amount: r.amount,
-      type: 'expense',
-      category: r.category
-    }))
-  );
-  // טען מחדש את העסקאות
-  const txR = await sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false });
-  cachedTx = txR.data || [];
+  _importingMonths.add(month);
+  try {
+    // ייבא אוטומטית
+    await sb.from('transactions').insert(
+      cachedRecurring.map(r => ({
+        user_id: uid,
+        month,
+        description: r.description + ' (קבועה)',
+        amount: r.amount,
+        type: 'expense',
+        category: r.category
+      }))
+    );
+    // טען מחדש את העסקאות
+    const txR = await sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false });
+    cachedTx = txR.data || [];
+  } finally {
+    _importingMonths.delete(month);
+  }
 }
 
 // ── RECURRING ──
@@ -1352,7 +1357,7 @@ function renderRecurring() {
   const total = cachedRecurring.reduce((s, r) => s + r.amount, 0);
   if (totalEl) totalEl.textContent = '\u05e1\u05d4"\u05db: ' + fmt(total) + ' / \u05d7\u05d5\u05d3\u05e9';
   if (!cachedRecurring.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea</td></tr>'; return; }
-  tb.innerHTML = cachedRecurring.map(r => '<tr><td style="font-weight:500">' + r.description + '</td><td style="font-size:12px;color:var(--muted)">' + r.category + '</td><td style="font-weight:600;color:var(--red)">' + fmt(r.amount) + '</td><td><button class="btn-del" onclick="deleteRecurring(\'' + r.id + '\')">&#128465;</button></td></tr>').join('');
+  tb.innerHTML = cachedRecurring.map(r => '<tr><td style="font-weight:500">' + esc(r.description) + '</td><td style="font-size:12px;color:var(--muted)">' + esc(r.category) + '</td><td style="font-weight:600;color:var(--red)">' + fmt(r.amount) + '</td><td><button class="btn-del" onclick="deleteRecurring(\'' + r.id + '\')">&#128465;</button></td></tr>').join('');
 }
 async function addRecurring() {
   const desc = $('r-desc').value.trim(), amount = parseFloat($('r-amount').value), category = $('r-cat').value;
