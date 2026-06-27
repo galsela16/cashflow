@@ -18,26 +18,30 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
-#app-screen{background:linear-gradient(145deg,#1a3a5c 0%,#1a5f72 30%,#1a8a78 60%,#22916a 100%);min-height:100vh;position:relative}
-#app-screen::before{content:'';position:fixed;inset:0;background:linear-gradient(145deg,rgba(26,58,92,.55) 0%,rgba(26,95,114,.5) 35%,rgba(26,138,120,.45) 65%,rgba(34,145,106,.5) 100%);pointer-events:none;z-index:0}
+#app-screen{background:linear-gradient(145deg,#3a6b8c 0%,#3a8a9a 30%,#3aaa98 60%,#42b08a 100%);min-height:100vh;position:relative}
+#app-screen::before{content:'';position:fixed;inset:0;background:linear-gradient(145deg,rgba(220,235,245,.62) 0%,rgba(215,240,242,.58) 35%,rgba(218,245,238,.55) 65%,rgba(225,245,235,.6) 100%);pointer-events:none;z-index:0}
 #app-screen .topbar,#app-screen .main,#app-screen .bottom-nav{position:relative;z-index:1}
-#app-screen .topbar{background:rgba(10,25,50,.75);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.1);box-shadow:none}
-#app-screen .topbar-title{color:#7dd3fc}
-#app-screen .topbar-user{color:rgba(255,255,255,.7)}
-#app-screen .btn-logout{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.65)}
-#app-screen .btn-logout:hover{border-color:#7dd3fc;color:#7dd3fc}
-#app-screen .bottom-nav{background:rgba(10,25,50,.85);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.08)}
-#app-screen .card{background:rgba(255,255,255,.93);backdrop-filter:blur(8px)}
-#app-screen .section{background:rgba(255,255,255,.93);backdrop-filter:blur(8px)}
-#app-screen .card-soft-green{background:rgba(232,250,243,.92)}
-#app-screen .card-soft-blue{background:rgba(239,246,255,.92)}
-#app-screen .card-soft-amber{background:rgba(254,243,199,.92)}
-#app-screen .tabs .tab{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);backdrop-filter:blur(4px)}
-#app-screen .tabs .tab:hover{background:rgba(255,255,255,.25);color:#fff}
-#app-screen .tabs .tab.active{background:rgba(255,255,255,.95);color:var(--blue)}
-#app-screen .pill{background:rgba(255,255,255,.93);backdrop-filter:blur(8px)}
-#app-screen .pill-amber{background:rgba(254,243,199,.92)}
-#app-screen .pill-tax{background:rgba(255,240,239,.92)}
+#app-screen .topbar{background:rgba(255,255,255,.7);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.5);box-shadow:0 4px 24px rgba(80,120,150,.1)}
+#app-screen .topbar-title{color:var(--blue)}
+#app-screen .topbar-user{color:var(--muted)}
+#app-screen .btn-logout{border-color:var(--border);color:var(--muted);background:rgba(255,255,255,.5)}
+#app-screen .btn-logout:hover{border-color:var(--blue);color:var(--blue)}
+#app-screen .bottom-nav{background:rgba(255,255,255,.8);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.5);box-shadow:0 -8px 32px rgba(80,120,150,.12)}
+#app-screen .card{background:rgba(255,255,255,.96);backdrop-filter:blur(10px);box-shadow:0 8px 28px rgba(80,120,150,.16),0 2px 8px rgba(80,120,150,.08);transition:transform .2s ease,box-shadow .2s ease}
+#app-screen .card:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(80,120,150,.22),0 4px 12px rgba(80,120,150,.1)}
+#app-screen .section{background:rgba(255,255,255,.96);backdrop-filter:blur(10px);box-shadow:0 8px 28px rgba(80,120,150,.14),0 2px 8px rgba(80,120,150,.07)}
+#app-screen .card-soft-green{background:rgba(232,250,243,.96)}
+#app-screen .card-soft-blue{background:rgba(239,246,255,.96)}
+#app-screen .card-soft-amber{background:rgba(254,243,199,.96)}
+#app-screen .tabs .tab{background:rgba(255,255,255,.75);color:var(--muted);backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(80,120,150,.1);transition:transform .15s ease,box-shadow .15s ease}
+#app-screen .tabs .tab:hover{background:rgba(255,255,255,.95);color:var(--blue);transform:translateY(-2px);box-shadow:0 6px 18px rgba(80,120,150,.15)}
+#app-screen .tabs .tab.active{background:var(--blue);color:#fff;box-shadow:0 6px 20px rgba(37,99,235,.35)}
+#app-screen .pill{background:rgba(255,255,255,.96);backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(80,120,150,.14),0 2px 6px rgba(80,120,150,.07);transition:transform .2s ease,box-shadow .2s ease}
+#app-screen .pill:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(80,120,150,.2)}
+#app-screen .pill-amber{background:rgba(254,243,199,.96)}
+#app-screen .pill-tax{background:rgba(255,240,239,.96)}
+#app-screen .emp-card,#app-screen .client-card,#app-screen .event-card{box-shadow:0 8px 28px rgba(80,120,150,.14),0 2px 8px rgba(80,120,150,.07);transition:transform .2s ease,box-shadow .2s ease}
+#app-screen .emp-card:hover,#app-screen .client-card:hover,#app-screen .event-card:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(80,120,150,.2)}
 
 /* AUTH */
 #auth-screen{min-height:100vh;display:flex;align-items:stretch;background:#0f172a}
@@ -86,9 +90,9 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .btn-logout{padding:6px 14px;border:1.5px solid var(--border);border-radius:100px;background:transparent;cursor:pointer;font-size:13px;color:var(--muted)}
 .main{max-width:800px;margin:0 auto;padding:1.25rem 1rem 5rem}
 .month-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
-.month-bar label{font-size:13px;color:rgba(255,255,255,.7)}
-.month-bar select{padding:7px 10px;border:1px solid rgba(255,255,255,.2);border-radius:var(--radius-sm);background:rgba(255,255,255,.12);color:#fff;font-size:14px;backdrop-filter:blur(4px)}
-.month-bar select option{background:#0f2744;color:#fff}
+.month-bar label{font-size:13px;color:var(--text);font-weight:500}
+.month-bar select{padding:7px 10px;border:1px solid rgba(255,255,255,.6);border-radius:var(--radius-sm);background:rgba(255,255,255,.7);color:var(--text);font-size:14px;backdrop-filter:blur(4px);box-shadow:0 2px 8px rgba(80,120,150,.08)}
+.month-bar select option{background:#fff;color:var(--text)}
 
 /* summary pills */
 .summary-pills{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
