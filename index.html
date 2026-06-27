@@ -319,17 +319,13 @@ tr:last-child td{border-bottom:none}
       </div>
       <div id="tx-panel-content"></div>
     </div>
-    <div style="display:none">
-      <span id="d-salary"></span><span id="d-pending-salary"></span>
-      <span id="d-net2"></span><span id="d-pending2"></span>
-    </div>
 
     <!-- tabs -->
     <div class="tabs">
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
       <button class="tab" onclick="showPage('events',this)">🎯 אירועים</button>
-      <button class="tab" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
+      <button class="tab" data-feature="employees" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
       <button class="tab" onclick="showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" onclick="showPage('recurring',this)">🔄 קבועות</button>
       <button class="tab" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
@@ -468,10 +464,6 @@ tr:last-child td{border-bottom:none}
             <button class="btn-sm" onclick="savePFSettings()">שמור</button>
           </div>
         </div>
-      </div>
-      <div style="text-align:center;margin-top:1rem">
-        <button class="btn-add" style="padding:12px 32px;font-size:15px" onclick="confirmAllocation()">✅ בצעתי הקצאה</button>
-        <div style="font-size:12px;color:var(--muted);margin-top:8px" id="pf-last-allocation"></div>
       </div>
     </div>
 
@@ -740,13 +732,11 @@ function updatePlanUI() {
     planBadge.style.background = userPlan === 'pro' ? '#2855e0' : userPlan === 'expired' ? '#c0392b' : '#0d9c6e';
   }
 
-  // חסום עובדים לבסיסי
-  const empTabs = document.querySelectorAll('[data-page="employees"], .tab-employees');
-  empTabs.forEach(t => {
-    if (userPlan === 'basic') {
-      t.style.opacity = '0.5';
-      t.title = 'זמין בתוכנית פרו בלבד';
-    }
+  // עמעם את טאב העובדים אם התוכנית בסיסית או פגת תוקף
+  const restricted = userPlan === 'basic' || userPlan === 'expired';
+  document.querySelectorAll('[data-page="employees"], [data-feature="employees"]').forEach(t => {
+    t.style.opacity = restricted ? '0.5' : '1';
+    t.title = restricted ? (userPlan === 'expired' ? 'הניסיון הסתיים — נדרש שדרוג' : 'זמין בתוכנית פרו בלבד') : '';
   });
 }
 
@@ -857,13 +847,9 @@ function renderAll() {
   $('d-expense').textContent = fmt(expense);
   $('d-salary').textContent = fmt(salary);
   $('d-pending-income').textContent = fmt(pendingIncome);
-  $('d-pending-salary').textContent = fmt(pendingEmpSalary + pendingWorkerSalary);
 
   const netEl = $('d-net'); netEl.textContent = fmt(net); netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
-  const net2El = $('d-net2'); net2El.textContent = fmt(net); net2El.className = 'card-value ' + (net >= 0 ? 'c-green' : 'c-red');
-
   const pendEl = $('d-pending'); pendEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendEl.style.color = pendingNet >= 0 ? 'var(--green)' : 'var(--red)';
-  const pend2El = $('d-pending2'); pend2El.textContent = pendEl.textContent; pend2El.className = 'card-value ' + (pendingNet >= 0 ? 'c-green' : 'c-red');
 
   updateTax(income, pendingIncome);
   // update dashboard cards
@@ -969,7 +955,7 @@ function updateTaxFromDB() {
 let lastIncome = 0, lastPendingIncome = 0;
 
 function updateTax(inc, pendInc) {
-  const rate = parseFloat($('tax-rate').value) || 17;
+  const rate = parseFloat($('tax-rate').value) || 20;
   const rec = cachedRecurring.reduce((s, r) => s + r.amount, 0);
   // אם קיבלנו ערכים חדשים — שמור אותם
   if (inc !== undefined) lastIncome = inc;
@@ -1135,17 +1121,6 @@ async function openEditEventModalByTitle(btn) {
   });
 }
 
-async function openEditEventModalByIdx(idx) {
-  const ev = allRenderedEvents[idx];
-  if (!ev) return;
-  await openEditEventModal({
-    title: ev.title,
-    date: ev.start.slice(0, 10),
-    source: ev.source,
-    detailId: ev.detailId
-  });
-}
-
 async function deleteManualEventByEl(btn) {
   const id = btn.getAttribute('data-detailid');
   if (!id || !confirm('למחוק אירוע זה?')) return;
@@ -1237,15 +1212,6 @@ async function saveEvent() {
   closeEventModal();
   await loadAll();
   if (gcalEvents.length) renderEventsList();
-}
-
-async function deleteManualEvent(idx) {
-  const ev = allRenderedEvents[idx];
-  const id = ev ? ev.detailId : null;
-  if (!id || !confirm('\u05dc\u05de\u05d7\u05d5\u05e7 \u05d0\u05d9\u05e8\u05d5\u05e2 \u05d6\u05d4?')) return;
-  await sb.from('event_workers').delete().eq('event_detail_id', id);
-  await sb.from('event_details').delete().eq('id', id);
-  await loadAll();
 }
 
 // ── TRANSACTIONS ──
@@ -1391,8 +1357,6 @@ let pfSettings = {
 function loadPFSettings() {
   try { const s = localStorage.getItem('pf_settings'); if (s) pfSettings = JSON.parse(s); } catch (e) {}
   renderPFAccounts(); renderPFSliders();
-  const lastEl = $('pf-last-allocation');
-  if (lastEl && pfSettings.lastAllocation) lastEl.textContent = '\u05d4\u05e7\u05e6\u05d0\u05d4 \u05d0\u05d7\u05e8\u05d5\u05e0\u05d4: ' + new Date(pfSettings.lastAllocation).toLocaleDateString('he-IL');
 }
 function savePFSettings() { localStorage.setItem('pf_settings', JSON.stringify(pfSettings)); renderPFAccounts(); togglePFEdit(); calcPF(); }
 function calcPF() {
@@ -1404,29 +1368,16 @@ function calcPF() {
 }
 function renderPFAccounts() {
   const el = $('pf-accounts'); if (!el) return;
-  el.innerHTML = pfSettings.accounts.map((acc, i) => '<div class="pf-account-row"><div><div class="pf-account-name">' + acc.icon + ' ' + acc.name + '</div><div class="pf-account-pct">' + acc.pct + '%</div></div><div class="pf-amount" style="font-size:20px;font-weight:700;color:' + acc.color + '">' + fmt(0) + '</div></div>').join('');
+  el.innerHTML = pfSettings.accounts.map((acc, i) => '<div class="pf-account-row"><div><div class="pf-account-name">' + acc.icon + ' ' + esc(acc.name) + '</div><div class="pf-account-pct">' + acc.pct + '%</div></div><div class="pf-amount" style="font-size:20px;font-weight:700;color:' + acc.color + '">' + fmt(0) + '</div></div>').join('');
 }
 function renderPFSliders() {
   const el = $('pf-sliders'); if (!el) return;
-  el.innerHTML = pfSettings.accounts.map((acc, i) => '<div class="pf-slider-row"><label><span>' + acc.icon + ' ' + acc.name + '</span><span id="pf-pct-' + i + '" style="font-weight:600">' + acc.pct + '%</span></label><input type="range" min="0" max="100" value="' + acc.pct + '" oninput="updatePFSlider(' + i + ',this.value)" /></div>').join('');
+  el.innerHTML = pfSettings.accounts.map((acc, i) => '<div class="pf-slider-row"><label><span>' + acc.icon + ' ' + esc(acc.name) + '</span><span id="pf-pct-' + i + '" style="font-weight:600">' + acc.pct + '%</span></label><input type="range" min="0" max="100" value="' + acc.pct + '" oninput="updatePFSlider(' + i + ',this.value)" /></div>').join('');
   updatePFTotal();
 }
 function updatePFSlider(i, val) { pfSettings.accounts[i].pct = parseInt(val); $('pf-pct-' + i).textContent = val + '%'; updatePFTotal(); }
 function updatePFTotal() { const total = pfSettings.accounts.reduce((s, a) => s + a.pct, 0); const el = $('pf-total-pct'); if (el) { el.textContent = total + '%'; el.style.color = total === 100 ? 'var(--green)' : 'var(--red)'; } }
 function togglePFEdit() { const el = $('pf-edit'), btn = $('pf-edit-btn'); if (!el) return; const isOpen = el.style.display !== 'none'; el.style.display = isOpen ? 'none' : 'block'; btn.textContent = isOpen ? '\u270f\ufe0f \u05e2\u05e8\u05d5\u05da \u05d0\u05d7\u05d5\u05d6\u05d9\u05dd' : '\u2715 \u05e1\u05d2\u05d5\u05e8'; if (!isOpen) renderPFSliders(); }
-function confirmAllocation() {
-  const incomeEl = $('pf-income-display');
-  const income = incomeEl ? parseFloat(incomeEl.textContent.replace(/[^0-9.]/g, '')) || 0 : 0;
-  if (!income) { alert('\u05d0\u05d9\u05df \u05d4\u05db\u05e0\u05e1\u05d5\u05ea'); return; }
-  const total = pfSettings.accounts.reduce((s, a) => s + a.pct, 0);
-  if (total !== 100) { alert('\u05d4\u05d0\u05d7\u05d5\u05d6\u05d9\u05dd \u05d7\u05d9\u05d9\u05d1\u05d9\u05dd \u05dc\u05e1\u05db\u05d5\u05dd \u05dc-100%'); return; }
-  if (!confirm('\u05dc\u05d0\u05e9\u05e8 \u05d4\u05e7\u05e6\u05d0\u05d4 \u05e9\u05dc ' + fmt(income) + '?')) return;
-  pfSettings.lastAllocation = new Date().toISOString();
-  localStorage.setItem('pf_settings', JSON.stringify(pfSettings));
-  const lastEl = $('pf-last-allocation');
-  if (lastEl) lastEl.textContent = '\u05d4\u05e7\u05e6\u05d0\u05d4 \u05d0\u05d7\u05e8\u05d5\u05e0\u05d4: ' + new Date().toLocaleDateString('he-IL');
-  alert('\u2705 \u05d4\u05e7\u05e6\u05d0\u05d4 \u05d1\u05d5\u05e6\u05e2\u05d4 \u05d1\u05d4\u05e6\u05dc\u05d7\u05d4!');
-}
 
 // ── NAV ──
 function showPage(id, el) {
@@ -1436,8 +1387,8 @@ function showPage(id, el) {
   if (page) page.classList.add('active');
   if (el) el.classList.add('active');
   document.querySelectorAll('[data-page="' + id + '"]').forEach(b => b.classList.add('active'));
-  if (id === 'recurring') loadRecurring();
-  if (id === 'events' && !gcalEvents.length) {}
+  // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
+  if (id === 'recurring') renderRecurring();
 }
 
 function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('collapsed'); icon.textContent = body.classList.contains('collapsed') ? '\u25b6' : '\u25bc'; }
