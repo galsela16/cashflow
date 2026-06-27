@@ -27,21 +27,29 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 #app-screen .btn-logout{border-color:var(--border);color:var(--muted);background:rgba(255,255,255,.5)}
 #app-screen .btn-logout:hover{border-color:var(--blue);color:var(--blue)}
 #app-screen .bottom-nav{background:rgba(255,255,255,.8);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.5);box-shadow:0 -8px 32px rgba(80,120,150,.12)}
-#app-screen .card{background:rgba(255,255,255,.96);backdrop-filter:blur(10px);box-shadow:0 8px 28px rgba(80,120,150,.16),0 2px 8px rgba(80,120,150,.08);transition:transform .2s ease,box-shadow .2s ease}
-#app-screen .card:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(80,120,150,.22),0 4px 12px rgba(80,120,150,.1)}
-#app-screen .section{background:rgba(255,255,255,.96);backdrop-filter:blur(10px);box-shadow:0 8px 28px rgba(80,120,150,.14),0 2px 8px rgba(80,120,150,.07)}
-#app-screen .card-soft-green{background:rgba(232,250,243,.96)}
-#app-screen .card-soft-blue{background:rgba(239,246,255,.96)}
-#app-screen .card-soft-amber{background:rgba(254,243,199,.96)}
-#app-screen .tabs .tab{background:rgba(255,255,255,.75);color:var(--muted);backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(80,120,150,.1);transition:transform .15s ease,box-shadow .15s ease}
-#app-screen .tabs .tab:hover{background:rgba(255,255,255,.95);color:var(--blue);transform:translateY(-2px);box-shadow:0 6px 18px rgba(80,120,150,.15)}
-#app-screen .tabs .tab.active{background:var(--blue);color:#fff;box-shadow:0 6px 20px rgba(37,99,235,.35)}
-#app-screen .pill{background:rgba(255,255,255,.96);backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(80,120,150,.14),0 2px 6px rgba(80,120,150,.07);transition:transform .2s ease,box-shadow .2s ease}
-#app-screen .pill:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(80,120,150,.2)}
-#app-screen .pill-amber{background:rgba(254,243,199,.96)}
-#app-screen .pill-tax{background:rgba(255,240,239,.96)}
-#app-screen .emp-card,#app-screen .client-card,#app-screen .event-card{box-shadow:0 8px 28px rgba(80,120,150,.14),0 2px 8px rgba(80,120,150,.07);transition:transform .2s ease,box-shadow .2s ease}
-#app-screen .emp-card:hover,#app-screen .client-card:hover,#app-screen .event-card:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(80,120,150,.2)}
+#app-screen .card{background:rgba(255,255,255,.97);backdrop-filter:blur(12px);box-shadow:0 16px 44px rgba(70,110,140,.2),0 4px 12px rgba(70,110,140,.1);transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease}
+#app-screen .card:hover{transform:translateY(-6px) scale(1.012);box-shadow:0 26px 60px rgba(70,110,140,.28),0 8px 18px rgba(70,110,140,.14)}
+#app-screen .section{background:rgba(255,255,255,.97);backdrop-filter:blur(12px);box-shadow:0 16px 44px rgba(70,110,140,.16),0 4px 12px rgba(70,110,140,.08)}
+#app-screen .card-soft-green{background:rgba(232,250,243,.97)}
+#app-screen .card-soft-blue{background:rgba(239,246,255,.97)}
+#app-screen .card-soft-amber{background:rgba(254,243,199,.97)}
+#app-screen .tabs .tab{background:rgba(255,255,255,.8);color:var(--muted);backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(70,110,140,.14);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease}
+#app-screen .tabs .tab:hover{background:rgba(255,255,255,.97);color:var(--blue);transform:translateY(-4px);box-shadow:0 10px 26px rgba(70,110,140,.2)}
+#app-screen .tabs .tab.active{background:var(--blue);color:#fff;box-shadow:0 8px 26px rgba(37,99,235,.4)}
+#app-screen .pill{background:rgba(255,255,255,.97);backdrop-filter:blur(12px);box-shadow:0 12px 32px rgba(70,110,140,.18),0 3px 8px rgba(70,110,140,.09);transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease}
+#app-screen .pill:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 18px 40px rgba(70,110,140,.24)}
+#app-screen .pill-amber{background:rgba(254,243,199,.97)}
+#app-screen .pill-tax{background:rgba(255,240,239,.97)}
+#app-screen .emp-card,#app-screen .client-card,#app-screen .event-card{box-shadow:0 16px 44px rgba(70,110,140,.16),0 4px 12px rgba(70,110,140,.08);transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease}
+#app-screen .emp-card:hover,#app-screen .client-card:hover,#app-screen .event-card:hover{transform:translateY(-5px) scale(1.008);box-shadow:0 24px 56px rgba(70,110,140,.24)}
+/* אנימציית כניסה — הכרטיסים "צפים" פנימה */
+@keyframes floatIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+#app-screen .cards-row-3 .card,#app-screen .cards-row .card,#app-screen .summary-pills .pill,#app-screen .section{animation:floatIn .5s ease backwards}
+#app-screen .cards-row-3 .card:nth-child(1){animation-delay:.05s}
+#app-screen .cards-row-3 .card:nth-child(2){animation-delay:.1s}
+#app-screen .cards-row-3 .card:nth-child(3){animation-delay:.15s}
+#app-screen .section:nth-of-type(1){animation-delay:.2s}
+#app-screen .section:nth-of-type(2){animation-delay:.25s}
 
 /* AUTH */
 #auth-screen{min-height:100vh;display:flex;align-items:stretch;background:#0f172a}
@@ -849,7 +857,6 @@ function renderAll() {
 
   $('d-income').textContent = fmt(income);
   $('d-expense').textContent = fmt(expense);
-  $('d-salary').textContent = fmt(salary);
   $('d-pending-income').textContent = fmt(pendingIncome);
 
   const netEl = $('d-net'); netEl.textContent = fmt(net); netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
