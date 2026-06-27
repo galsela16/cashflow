@@ -701,19 +701,26 @@ async function loadSubscription() {
   const res = await sb.from('subscriptions').select('*').eq('user_id', uid).maybeSingle();
   
   if (!res.data) {
-    // משתמש חדש — צור רשומת ניסיון
-    await sb.from('subscriptions').insert({ user_id: uid, plan: 'trial', status: 'active' });
+    // משתמש חדש — צור רשומת ניסיון עם תאריך התחלה
+    const now = new Date().toISOString();
+    await sb.from('subscriptions').insert({ user_id: uid, plan: 'trial', status: 'active', trial_start: now });
     userPlan = 'trial';
     trialDaysLeft = 30;
   } else {
     userPlan = res.data.plan;
-    // חשב ימי ניסיון שנותרו
     if (userPlan === 'trial') {
-      const start = new Date(res.data.trial_start);
-      const now = new Date();
-      const daysPassed = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-      trialDaysLeft = Math.max(0, 30 - daysPassed);
-      if (trialDaysLeft === 0) userPlan = 'expired';
+      // אם trial_start חסר — עדכן אותו עכשיו
+      if (!res.data.trial_start) {
+        const now = new Date().toISOString();
+        await sb.from('subscriptions').update({ trial_start: now }).eq('user_id', uid);
+        trialDaysLeft = 30;
+      } else {
+        const start = new Date(res.data.trial_start);
+        const now = new Date();
+        const daysPassed = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+        trialDaysLeft = Math.max(0, 30 - daysPassed);
+        if (trialDaysLeft === 0) userPlan = 'expired';
+      }
     }
   }
   updatePlanUI();
