@@ -123,13 +123,15 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .card-sub{font-size:10px;color:var(--muted);margin-top:2px}
 .c-green{color:var(--green)} .c-red{color:var(--red)} .c-blue{color:var(--blue)}
 
-/* dashboard hero balance */
-.hero-balance{display:flex;align-items:stretch;background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:var(--radius);padding:1.4rem 1.5rem;margin-bottom:1.25rem;box-shadow:0 16px 44px rgba(37,99,235,.28),0 4px 12px rgba(37,99,235,.16)}
-.hero-item{flex:1;text-align:center}
-.hero-label{font-size:12px;color:rgba(255,255,255,.8);margin-bottom:8px;font-weight:500}
-.hero-value{font-size:30px;font-weight:800;color:#fff;line-height:1.1}
-.hero-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:6px}
-.hero-divider{width:1px;background:rgba(255,255,255,.2);margin:0 1rem}
+/* dashboard hero balance — always visible */
+.hero-balance{position:relative;display:flex;align-items:stretch;background:#fff;border-radius:var(--radius);padding:1.3rem 1.5rem;margin-bottom:1.1rem;box-shadow:0 16px 44px rgba(70,110,140,.16),0 4px 12px rgba(70,110,140,.08);overflow:hidden}
+.hero-balance::before{content:'';position:absolute;top:0;right:0;left:0;height:4px;background:linear-gradient(90deg,var(--green),var(--blue))}
+.hero-balance::after{content:'';position:absolute;bottom:-40px;left:-30px;width:160px;height:160px;background:radial-gradient(circle,rgba(37,99,235,.06),transparent 70%);pointer-events:none}
+.hero-item{flex:1;text-align:center;position:relative;z-index:1}
+.hero-label{font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600}
+.hero-value{font-size:30px;font-weight:800;line-height:1.1;color:var(--text)}
+.hero-sub{font-size:11px;color:var(--muted);margin-top:6px}
+.hero-divider{width:1px;background:var(--border);margin:0 1rem}
 
 /* dashboard groups */
 .dash-group{margin-bottom:1.5rem}
@@ -329,6 +331,21 @@ tr:last-child td{border-bottom:none}
       <input type="number" id="tax-rate" value="20" />
     </div>
 
+    <!-- Always-visible balance hero -->
+    <div class="hero-balance">
+      <div class="hero-item">
+        <div class="hero-label">💰 יתרה נטו</div>
+        <div class="hero-value" id="d-net-db">—</div>
+        <div class="hero-sub">כמה נשאר בפועל</div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-item">
+        <div class="hero-label">📊 צפי רווח</div>
+        <div class="hero-value" id="d-pending-db">—</div>
+        <div class="hero-sub">כולל מה שצפוי</div>
+      </div>
+    </div>
+
     <!-- tabs (navigation) -->
     <div class="tabs">
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
@@ -343,21 +360,6 @@ tr:last-child td{border-bottom:none}
 
     <!-- dashboard -->
     <div id="page-dashboard" class="page active">
-
-      <!-- 1. Main balance hero -->
-      <div class="hero-balance">
-        <div class="hero-item">
-          <div class="hero-label">💰 יתרה נטו</div>
-          <div class="hero-value" id="d-net-db">—</div>
-          <div class="hero-sub">כמה נשאר בפועל</div>
-        </div>
-        <div class="hero-divider"></div>
-        <div class="hero-item">
-          <div class="hero-label">📊 צפי רווח</div>
-          <div class="hero-value" id="d-pending-db">—</div>
-          <div class="hero-sub">כולל מה שצפוי</div>
-        </div>
-      </div>
 
       <!-- 2. Income -->
       <div class="dash-group">
