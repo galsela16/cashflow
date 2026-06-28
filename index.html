@@ -484,10 +484,12 @@ tr:last-child td{border-bottom:none}
     <div id="page-employees" class="page">
       <div class="section">
         <div class="section-title">הוסף עובד</div>
-        <div class="form-row" style="grid-template-columns:1fr auto">
+        <div class="form-row">
           <input type="text" id="e-name" placeholder="שם העובד" />
-          <button class="btn-add" id="btn-add-emp" onclick="addEmployee()">+ הוסף</button>
+          <input type="text" id="e-role" placeholder="תפקיד" />
+          <input type="tel" id="e-phone" placeholder="טלפון" />
         </div>
+        <button class="btn-add" id="btn-add-emp" onclick="addEmployee()">+ הוסף עובד</button>
       </div>
       <div id="emp-cards" class="emp-cards"></div>
     </div>
@@ -1428,8 +1430,8 @@ async function deleteTx(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) r
 async function addEmployee() {
   const name = $('e-name').value.trim(); if (!name) return;
   $('btn-add-emp').disabled = true;
-  await sb.from('employees').insert({ user_id: currentUser.id, name });
-  $('e-name').value = ''; $('btn-add-emp').disabled = false;
+  await sb.from('employees').insert({ user_id: currentUser.id, name, role: $('e-role').value.trim(), phone: $('e-phone').value.trim() });
+  $('e-name').value = ''; $('e-role').value = ''; $('e-phone').value = ''; $('btn-add-emp').disabled = false;
   await loadAll();
 }
 async function deleteEmp(id) {
