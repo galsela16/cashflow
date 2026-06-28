@@ -44,12 +44,12 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 #app-screen .emp-card:hover,#app-screen .client-card:hover,#app-screen .event-card:hover{transform:translateY(-5px);box-shadow:0 24px 56px rgba(70,110,140,.24)}
 /* אנימציית כניסה — הכרטיסים "צפים" פנימה */
 @keyframes floatIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-#app-screen .cards-row-3 .card,#app-screen .cards-row .card,#app-screen .summary-pills .pill,#app-screen .section{animation:floatIn .5s ease backwards}
-#app-screen .cards-row-3 .card:nth-child(1){animation-delay:.05s}
-#app-screen .cards-row-3 .card:nth-child(2){animation-delay:.1s}
-#app-screen .cards-row-3 .card:nth-child(3){animation-delay:.15s}
-#app-screen .section:nth-of-type(1){animation-delay:.2s}
-#app-screen .section:nth-of-type(2){animation-delay:.25s}
+#app-screen .hero-balance,#app-screen .dash-group{animation:floatIn .5s ease backwards}
+#app-screen .hero-balance{animation-delay:.05s}
+#app-screen .dash-group:nth-of-type(1){animation-delay:.1s}
+#app-screen .dash-group:nth-of-type(2){animation-delay:.15s}
+#app-screen .dash-group:nth-of-type(3){animation-delay:.2s}
+#app-screen .dash-group:nth-of-type(4){animation-delay:.25s}
 
 /* AUTH */
 #auth-screen{min-height:100vh;display:flex;align-items:stretch;background:#0f172a}
@@ -122,6 +122,18 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .card-value{font-size:19px;font-weight:600}
 .card-sub{font-size:10px;color:var(--muted);margin-top:2px}
 .c-green{color:var(--green)} .c-red{color:var(--red)} .c-blue{color:var(--blue)}
+
+/* dashboard hero balance */
+.hero-balance{display:flex;align-items:stretch;background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:var(--radius);padding:1.4rem 1.5rem;margin-bottom:1.25rem;box-shadow:0 16px 44px rgba(37,99,235,.28),0 4px 12px rgba(37,99,235,.16)}
+.hero-item{flex:1;text-align:center}
+.hero-label{font-size:12px;color:rgba(255,255,255,.8);margin-bottom:8px;font-weight:500}
+.hero-value{font-size:30px;font-weight:800;color:#fff;line-height:1.1}
+.hero-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:6px}
+.hero-divider{width:1px;background:rgba(255,255,255,.2);margin:0 1rem}
+
+/* dashboard groups */
+.dash-group{margin-bottom:1.5rem}
+.dash-group-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:.6rem;padding-right:2px;opacity:.75}
 
 /* tabs */
 .tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:nowrap;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:10px 2px 8px}
@@ -317,22 +329,7 @@ tr:last-child td{border-bottom:none}
       <input type="number" id="tax-rate" value="20" />
     </div>
 
-    <!-- 3 main cards -->
-    <div class="cards-row-3" style="margin-bottom:10px">
-      <div class="card" style="cursor:pointer" onclick="toggleTxPanel('income')"><div class="card-label">&#9989; נכנס מלקוחות</div><div class="card-value c-green" id="d-income">&#8212;</div><div class="card-sub">שולם בפועל &#9660;</div></div>
-      <div class="card card-soft-green" style="cursor:pointer" onclick="toggleTxPanel('pending')"><div class="card-label">&#128336; צפוי מלקוחות</div><div class="card-value c-green" id="d-pending-income">&#8212;</div><div class="card-sub">טרם שולם &#9660;</div></div>
-      <div class="card" style="cursor:pointer" onclick="toggleTxPanel('expense')"><div class="card-label">&#128184; הוצאות</div><div class="card-value c-red" id="d-expense">&#8212;</div><div class="card-sub">הוצאות עסק &#9660;</div></div>
-    </div>
-    <!-- TX panel -->
-    <div id="tx-panel" style="display:none;background:var(--surface);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:14px;font-weight:600" id="tx-panel-title">פירוט</div>
-        <button class="btn-del" onclick="document.getElementById('tx-panel').style.display='none'">&#10005;</button>
-      </div>
-      <div id="tx-panel-content"></div>
-    </div>
-
-    <!-- tabs -->
+    <!-- tabs (navigation) -->
     <div class="tabs">
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
@@ -346,21 +343,67 @@ tr:last-child td{border-bottom:none}
 
     <!-- dashboard -->
     <div id="page-dashboard" class="page active">
-      <!-- pills row -->
-      <div class="summary-pills" style="margin-bottom:1rem">
-        <div class="pill"><span class="pill-label">💰 יתרה נטו</span><span class="pill-value" id="d-net-db">—</span></div>
-        <div class="pill pill-amber"><span class="pill-label">📊 צפי רווח</span><span class="pill-value" id="d-pending-db">—</span></div>
-        <div class="pill pill-tax"><span class="pill-label">🧾 מס על נכנס</span><span class="pill-value" style="color:var(--red)" id="d-tax-db">—</span></div>
-        <div class="pill pill-tax"><span class="pill-label">🧾 מס צפוי</span><span class="pill-value" style="color:var(--red)" id="d-tax-pending-db">—</span></div>
-        <div class="pill"><span class="pill-label">% מס</span><input type="number" id="tax-rate-db" value="20" min="0" max="100" class="tax-input" oninput="updateTaxFromDB()" /><span class="pill-label">%</span></div>
+
+      <!-- 1. Main balance hero -->
+      <div class="hero-balance">
+        <div class="hero-item">
+          <div class="hero-label">💰 יתרה נטו</div>
+          <div class="hero-value" id="d-net-db">—</div>
+          <div class="hero-sub">כמה נשאר בפועל</div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-item">
+          <div class="hero-label">📊 צפי רווח</div>
+          <div class="hero-value" id="d-pending-db">—</div>
+          <div class="hero-sub">כולל מה שצפוי</div>
+        </div>
       </div>
-      <!-- detail cards -->
-      <div class="cards-row" style="margin-bottom:1rem">
-        <div class="card"><div class="card-label">✅ יצא לעובדים</div><div class="card-value c-blue" id="d-salary-db">—</div><div class="card-sub">שולם בפועל</div></div>
-        <div class="card card-soft-blue"><div class="card-label">🕐 צפוי לעובדים</div><div class="card-value c-blue" id="d-pending-salary-db">—</div><div class="card-sub">טרם שולם</div></div>
+
+      <!-- 2. Income -->
+      <div class="dash-group">
+        <div class="dash-group-title">💵 הכנסות</div>
+        <div class="cards-row" style="margin-bottom:0">
+          <div class="card" style="cursor:pointer" onclick="toggleTxPanel('income')"><div class="card-label">✅ נכנס מלקוחות</div><div class="card-value c-green" id="d-income">—</div><div class="card-sub">שולם בפועל ▼</div></div>
+          <div class="card card-soft-green" style="cursor:pointer" onclick="toggleTxPanel('pending')"><div class="card-label">🕐 צפוי מלקוחות</div><div class="card-value c-green" id="d-pending-income">—</div><div class="card-sub">טרם שולם ▼</div></div>
+        </div>
       </div>
-      <div class="section"><div class="section-title">הוצאות לפי קטגוריה</div><div id="cat-bars"><div class="empty">טוען...</div></div></div>
-      <div class="section"><div class="section-title">סטטוס עובדים החודש</div><div id="emp-status"></div></div>
+
+      <!-- TX panel (shared detail) -->
+      <div id="tx-panel" style="display:none;background:var(--surface);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:600" id="tx-panel-title">פירוט</div>
+          <button class="btn-del" onclick="document.getElementById('tx-panel').style.display='none'">✕</button>
+        </div>
+        <div id="tx-panel-content"></div>
+      </div>
+
+      <!-- 3. Expenses -->
+      <div class="dash-group">
+        <div class="dash-group-title">💸 הוצאות</div>
+        <div class="card" style="cursor:pointer;margin-bottom:10px" onclick="toggleTxPanel('expense')"><div class="card-label">💸 הוצאות עסק</div><div class="card-value c-red" id="d-expense">—</div><div class="card-sub">סה"כ החודש ▼</div></div>
+        <div class="section" style="margin-bottom:0"><div class="section-title">הוצאות לפי קטגוריה</div><div id="cat-bars"><div class="empty">טוען...</div></div></div>
+      </div>
+
+      <!-- 4. Employees -->
+      <div class="dash-group">
+        <div class="dash-group-title">👥 עובדים</div>
+        <div class="cards-row" style="margin-bottom:10px">
+          <div class="card"><div class="card-label">✅ יצא לעובדים</div><div class="card-value c-blue" id="d-salary-db">—</div><div class="card-sub">שולם בפועל</div></div>
+          <div class="card card-soft-blue"><div class="card-label">🕐 צפוי לעובדים</div><div class="card-value c-blue" id="d-pending-salary-db">—</div><div class="card-sub">טרם שולם</div></div>
+        </div>
+        <div class="section" style="margin-bottom:0"><div class="section-title">סטטוס עובדים החודש</div><div id="emp-status"></div></div>
+      </div>
+
+      <!-- 5. Tax -->
+      <div class="dash-group">
+        <div class="dash-group-title">🧾 מס</div>
+        <div class="summary-pills" style="margin-bottom:0">
+          <div class="pill pill-tax"><span class="pill-label">🧾 מס על נכנס</span><span class="pill-value" style="color:var(--red)" id="d-tax-db">—</span></div>
+          <div class="pill pill-tax"><span class="pill-label">🧾 מס צפוי</span><span class="pill-value" style="color:var(--red)" id="d-tax-pending-db">—</span></div>
+          <div class="pill"><span class="pill-label">% מס</span><input type="number" id="tax-rate-db" value="20" min="0" max="100" class="tax-input" oninput="updateTaxFromDB()" /><span class="pill-label">%</span></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- transactions -->
