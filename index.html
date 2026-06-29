@@ -129,4 +129,1916 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 
 /* summary pills */
 .summary-pills{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
-.pill{background:var(--surface);border-radius:100px;padding:8px 16
+.pill{background:var(--surface);border-radius:100px;padding:8px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px}
+.pill-label{font-size:11px;color:var(--muted);font-weight:500}
+.pill-value{font-size:17px;font-weight:700}
+.pill-amber{background:var(--amber-bg)}
+.pill-tax{background:var(--red-soft)}
+.tax-input{width:44px;border:none;background:transparent;font-size:14px;font-weight:600;color:var(--text);text-align:center;outline:none}
+
+/* cards grid */
+.cards-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.cards-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.25rem}
+.card{background:var(--surface);border-radius:var(--radius);padding:0.7rem 1rem;box-shadow:var(--shadow)}
+.card-soft-green{background:var(--green-soft)}
+.card-soft-blue{background:var(--blue-soft)}
+.card-soft-amber{background:var(--amber-bg)}
+.card-label{font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+.card-value{font-size:19px;font-weight:600}
+.card-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.c-green{color:var(--green)} .c-red{color:var(--red)} .c-blue{color:var(--blue)}
+
+/* dashboard hero balance — תוקן ועוצב מחדש שיהיה קומפקטי ואלגנטי */
+.hero-balance{position:relative;display:flex;align-items:stretch;background:#fff;border-radius:var(--radius);padding:0.4rem 0.8rem;margin-bottom:0.9rem;box-shadow:0 16px 44px rgba(70,110,140,.13),0 4px 12px rgba(70,110,140,.06);border:1.5px solid transparent;background-image:linear-gradient(#fff,#fff),linear-gradient(135deg,rgba(27,127,94,.35),rgba(37,99,235,.35));background-origin:border-box;background-clip:padding-box,border-box}
+.hero-item{flex:1;text-align:center;position:relative;z-index:1}
+.hero-label{font-size:11px;color:var(--muted);margin-bottom:2px;font-weight:600}
+.hero-value{font-size:16px;font-weight:800;line-height:1.1;color:var(--text)}
+.hero-sub{font-size:9px;color:var(--muted);margin-top:1px}
+.hero-divider{width:1px;background:var(--border);margin:0 .4rem}
+
+/* dashboard groups */
+.dash-group{margin-bottom:1.5rem}
+.dash-group-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:.6rem;padding-right:2px;opacity:.75}
+
+/* tabs */
+.tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:nowrap;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:10px 2px 8px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:8px 14px;border:none;border-radius:100px;background:var(--surface);cursor:pointer;font-size:13px;color:var(--muted);box-shadow:var(--shadow);white-space:nowrap;flex-shrink:0}
+.tab:hover{background:var(--blue-bg);color:var(--blue)}
+.tab.active{background:var(--blue);color:#fff;font-weight:500;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.page{display:none}.page.active{display:block}
+
+/* section */
+.section{background:var(--surface);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.section-title{font-size:14px;font-weight:600;margin-bottom:1rem}
+
+/* forms */
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:10px}
+.form-row input,.form-row select{padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#f8faff;color:var(--text);font-size:13px;width:100%}
+.form-row input:focus,.form-row select:focus{outline:none;border-color:var(--blue);background:#fff}
+.btn-add{padding:9px 20px;border:none;border-radius:100px;background:var(--blue);color:#fff;cursor:pointer;font-size:13px;font-weight:500;box-shadow:0 2px 8px rgba(37,99,235,.2)}
+.btn-add:disabled{opacity:.5}
+.btn-sm{padding:5px 12px;border:none;border-radius:100px;background:var(--blue);color:#fff;cursor:pointer;font-size:12px;font-weight:500}
+.btn-outline{padding:5px 12px;border:1.5px solid var(--border);border-radius:100px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue)}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:right;color:var(--muted);font-weight:400;padding:6px 0;border-bottom:1px solid var(--border)}
+td{padding:9px 0;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.empty{text-align:center;color:var(--muted);padding:20px;font-size:13px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500}
+.badge-income{background:var(--green-soft);color:var(--green);border:1px solid #a7f3d0}
+.badge-expense{background:var(--red-soft);color:var(--red);border:1px solid #fca5a5}
+.badge-paid{background:var(--green-soft);color:var(--green);border:1px solid #a7f3d0}
+.badge-pending{background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d}
+.badge-late{background:var(--red-soft);color:var(--red);border:1px solid #fca5a5}
+.btn-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:2px 6px;border-radius:4px}
+.btn-del:hover{color:var(--red);background:var(--red-bg)}
+.status-select{padding:4px 8px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#f8faff;color:var(--text)}
+
+/* bar chart */
+.bar-wrap{margin-bottom:10px}
+.bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:3px}
+.bar-bg{height:8px;background:var(--bg);border-radius:100px;overflow:hidden}
+.bar-fill{height:100%;border-radius:100px}
+
+/* alerts */
+.alert{padding:12px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:8px}
+.alert-ok{background:var(--green-bg);color:var(--green)}
+.alert-warn{background:var(--amber-bg);color:var(--amber)}
+.alert-danger{background:var(--red-bg);color:var(--red)}
+
+/* employee cards */
+.emp-cards{display:flex;flex-direction:column;gap:10px}
+.emp-card{background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.emp-card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);cursor:pointer}
+.emp-card-name{font-weight:600;font-size:14px}
+.emp-card-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.emp-card-body{padding:12px 16px;border-top:1px solid var(--border);display:none}
+.emp-card-body.open{display:block}
+.event-form{background:var(--bg);border-radius:var(--radius-sm);padding:10px;margin-bottom:10px}
+
+/* client cards */
+.client-card{background:var(--surface);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow)}
+.client-card-header{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:linear-gradient(135deg,#f0fdf4,#eff6ff)}
+.client-card-body{padding:12px 16px;border-top:1px solid var(--border);display:none}
+.client-card-body.open{display:block}
+.client-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:13px}
+.client-info-item label{color:var(--muted);font-size:11px;display:block}
+
+/* event cards */
+.event-card{background:var(--surface);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow)}
+.event-card-header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.event-card-header:hover{background:var(--bg)}
+.event-card-body{padding:12px 16px;border-top:1px solid var(--border);display:none}
+.event-card-body.open{display:block}
+
+/* view toggle */
+.view-toggle{display:inline-flex;background:var(--bg);border-radius:100px;padding:3px;gap:2px}
+.view-toggle-btn{padding:5px 12px;border:none;background:transparent;border-radius:100px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.view-toggle-btn.active{background:#fff;color:var(--blue);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+/* events list (calendar-style list) */
+.ev-day-group{margin-bottom:1rem}
+.ev-day-header{display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:5px;border-bottom:2px solid var(--border)}
+.ev-day-num{font-size:20px;font-weight:800;color:var(--blue);line-height:1}
+.ev-day-rest{font-size:12px;color:var(--muted)}
+.ev-day-today{background:var(--blue);color:#fff;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:600}
+.ev-row{display:flex;align-items:stretch;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.ev-row:hover{background:var(--bg)}
+.ev-row-bar{width:4px;border-radius:4px;flex-shrink:0}
+.ev-row-main{flex:1;min-width:0}
+.ev-row-title{font-size:13px;font-weight:600;color:var(--text)}
+.ev-row-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.ev-row-side{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.ev-row-body{padding:8px 14px;background:var(--bg);border-radius:var(--radius-sm);margin:4px 0 8px;display:none}
+.ev-row-body.open{display:block}
+
+/* calendar grid */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-weekday{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:6px 0}
+.cal-cell{min-height:78px;background:var(--bg);border-radius:8px;padding:5px;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+.cal-cell.empty-cell{background:transparent}
+.cal-cell-num{font-size:12px;font-weight:600;color:var(--muted);align-self:flex-end}
+.cal-cell.today{background:var(--blue-bg);outline:2px solid var(--blue)}
+.cal-cell.today .cal-cell-num{color:var(--blue)}
+.cal-event{font-size:10px;padding:2px 5px;border-radius:5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.4}
+.cal-event:hover{opacity:.85}
+.cal-more{font-size:9px;color:var(--muted);text-align:center}
+@media(max-width:600px){.cal-cell{min-height:54px}.cal-event{font-size:8px;padding:1px 3px}.cal-cell-num{font-size:10px}}
+
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md)}
+.modal-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface)}
+.modal-title{font-size:15px;font-weight:600}
+.modal-body{padding:1.25rem}
+.modal-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#f8faff;color:var(--text);font-size:13px;font-family:inherit}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--blue);background:#fff}
+.worker-row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.worker-row select{flex:2}
+.worker-row input{flex:1}
+
+/* profit first */
+.pf-account-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.pf-account-row:last-child{border-bottom:none}
+.pf-account-name{font-size:14px;font-weight:500}
+.pf-account-pct{font-size:12px;color:var(--muted)}
+.pf-slider-row{margin-bottom:10px}
+.pf-slider-row label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.pf-slider-row input[type=range]{width:100%;accent-color:var(--blue)}
+
+/* mobile */
+@media(max-width:600px){
+  .tabs{display:none}
+  .cards-row-3{grid-template-columns:1fr 1fr}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:none;display:flex;padding:10px 0 14px;z-index:50;box-shadow:0 -4px 20px rgba(37,99,235,.08);border-radius:20px 20px 0 0}
+  .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0;color:var(--muted);font-size:9px;border:none;background:none}
+  .bnav-item.active{color:var(--blue);font-weight:600}
+  .bnav-icon{font-size:18px}
+  .topbar-user span{display:none}
+  .client-info{grid-template-columns:1fr}
+}
+@media(min-width:601px){.bottom-nav{display:none}}
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+  <div class="auth-left">
+    <div style="position:relative;z-index:1">
+      <div class="auth-left-logo">💰</div>
+      <div class="auth-left-title">ניהול תזרים<br><span>שכר ועסק</span><br>בקליק אחד</div>
+      <div class="auth-left-desc">הפתרון המקיף לעצמאים ועסקים קטנים לניהול הכנסות, הוצאות, עובדים ולקוחות — הכל במקום אחד.</div>
+      <div class="auth-features">
+        <div class="auth-feature"><div class="auth-feature-icon">📊</div>דשבורד תזרים בזמן אמת</div>
+        <div class="auth-feature"><div class="auth-feature-icon">👥</div>ניהול עובדים ושכר</div>
+        <div class="auth-feature"><div class="auth-feature-icon">🎯</div>מעקב אירועים ולקוחות</div>
+        <div class="auth-feature"><div class="auth-feature-icon">🏦</div>שיטת Profit First מובנית</div>
+        <div class="auth-feature"><div class="auth-feature-icon">🔒</div>מאובטח ומוצפן — Supabase</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-card">
+      <div class="auth-card-logo">
+        <div class="auth-card-logo-icon">💰</div>
+        <div class="auth-card-logo-text">Cash<span>Flow</span></div>
+      </div>
+      <div class="auth-heading" id="auth-heading">ברוכים הבאים חזרה</div>
+      <div class="auth-subheading" id="auth-subheading">היכנסו לחשבון שלכם כדי להמשיך</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">כניסה</button>
+        <button class="auth-tab" onclick="switchAuthTab('signup')">הרשמה חינם</button>
+      </div>
+      <div class="field"><label>אימייל</label><input type="email" id="auth-email" placeholder="your@email.com" /></div>
+      <div class="field"><label style="display:flex;justify-content:space-between;align-items:center">סיסמה <button type="button" id="forgot-link" onclick="showForgot()" style="background:none;border:none;color:var(--blue);font-size:12px;cursor:pointer;font-weight:500;padding:0">שכחתי סיסמה</button></label>
+        <div style="position:relative">
+          <input type="password" id="auth-password" placeholder="לפחות 6 תווים" style="padding-left:40px" />
+          <button type="button" id="eye-btn" onclick="togglePass()" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);line-height:1">👁️</button>
+        </div>
+      </div>
+      <div class="field" id="confirm-password-field" style="display:none"><label>אימות סיסמה</label>
+        <div style="position:relative">
+          <input type="password" id="auth-confirm" placeholder="הכנס שוב את הסיסמה" style="padding-left:40px" />
+          <button type="button" onclick="toggleConfirm()" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);line-height:1">👁️</button>
+        </div>
+      </div>
+      <button class="btn-primary" id="auth-btn" onclick="doAuth()">כניסה לחשבון</button>
+      <div class="auth-trust">
+        <span class="auth-trust-icon">🔒</span>
+        <span>מאובטח ומוצפן · ללא כרטיס אשראי · ניסיון חינם 30 יום</span>
+      </div>
+      <div class="msg" id="auth-msg"></div>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-title"><span style="color:var(--text)">cash</span><span style="color:var(--blue)">flow</span></div>
+    <div class="topbar-user">
+      <span id="plan-badge" style="padding:4px 10px;border-radius:100px;font-size:12px;font-weight:600;color:#fff;background:#0d9c6e"></span>
+      <div class="settings-wrap">
+        <button class="settings-btn" onclick="toggleSettingsMenu(event)" id="settings-btn">⚙️</button>
+        <div class="settings-menu" id="settings-menu">
+          <div class="settings-account">
+            <div class="settings-account-icon">👤</div>
+            <div class="settings-account-info">
+              <div class="settings-account-label">חשבון מחובר</div>
+              <div class="settings-account-email" id="user-email-display"></div>
+            </div>
+          </div>
+          <div class="settings-divider"></div>
+          <button class="settings-item" onclick="closeSettingsMenu();showUpgradeModal()"><span>💳</span> בחירת מסלול</button>
+          <button class="settings-item" onclick="closeSettingsMenu();openSettings()"><span>⚙️</span> הגדרות ואפשרויות</button>
+          <button class="settings-item" onclick="closeSettingsMenu();openChangePassword()"><span>🔑</span> שינוי סיסמה</button>
+          <div class="settings-divider"></div>
+          <button class="settings-item settings-item-danger" onclick="closeSettingsMenu();logout()"><span>🚪</span> יציאה</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="month-bar">
+      <label>חודש:</label>
+      <select id="monthSel" onchange="updateMonth()"></select>
+      <select id="yearSel" onchange="updateMonth()"></select>
+    </div>
+
+    <div style="display:none">
+      <span id="d-net">—</span>
+      <span id="d-pending">—</span>
+      <span id="d-tax">—</span>
+      <span id="d-tax-pending">—</span>
+      <input type="number" id="tax-rate" value="20" />
+    </div>
+
+    <div class="hero-balance">
+      <div class="hero-item">
+        <div class="hero-label">💰 יתרה נטו</div>
+        <div class="hero-value" id="d-net-db">—</div>
+        <div class="hero-sub">כמה נשאר בפועל</div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-item">
+        <div class="hero-label">📈 נטו + צפי נכנס</div>
+        <div class="hero-value" id="d-net-with-pending-db">—</div>
+        <div class="hero-sub">אם כל הצפוי ייכנס</div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-item">
+        <div class="hero-label">📊 צפי רווח סופי</div>
+        <div class="hero-value" id="d-pending-db">—</div>
+        <div class="hero-sub">כולל צפי הוצאות ועובדים</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
+      <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
+      <button class="tab" onclick="showPage('recurring',this)">🔄 קבועות</button>
+      <button class="tab" data-feature="events" onclick="checkAccess('events') && showPage('events',this)">🎯 אירועים</button>
+      <button class="tab" data-feature="employees" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
+      <button class="tab" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
+      <button class="tab" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
+      <button class="tab" onclick="showPage('alerts',this)">🔔 התראות</button>
+    </div>
+
+    <div id="page-dashboard" class="page active">
+
+      <div class="dash-group">
+        <div class="dash-group-title">💵 הכנסות</div>
+        <div class="cards-row" style="margin-bottom:0">
+          <div class="card" style="cursor:pointer" onclick="toggleTxPanel('income')"><div class="card-label">✅ נכנס מלקוחות</div><div class="card-value c-green" id="d-income">—</div><div class="card-sub">שולם בפועל ▼</div></div>
+          <div class="card card-soft-green" style="cursor:pointer" onclick="toggleTxPanel('pending')"><div class="card-label">🕐 צפוי מלקוחות</div><div class="card-value c-green" id="d-pending-income">—</div><div class="card-sub">טרם שולם ▼</div></div>
+        </div>
+      </div>
+
+      <div id="tx-panel" style="display:none;background:var(--surface);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:600" id="tx-panel-title">פירוט</div>
+          <button class="btn-del" onclick="document.getElementById('tx-panel').style.display='none'">✕</button>
+        </div>
+        <div id="tx-panel-content"></div>
+      </div>
+
+      <div class="dash-group">
+        <div class="dash-group-title">💸 הוצאות</div>
+        <div class="card" style="cursor:pointer;margin-bottom:10px" onclick="toggleTxPanel('expense')"><div class="card-label">💸 הוצאות עסק</div><div class="card-value c-red" id="d-expense">—</div><div class="card-sub">סה"כ החודש ▼</div></div>
+        <div class="section" style="margin-bottom:0"><div class="section-title">הוצאות לפי קטגוריה</div><div id="cat-bars"><div class="empty">טוען...</div></div></div>
+      </div>
+
+      <div class="dash-group">
+        <div class="dash-group-title">👥 עובדים</div>
+        <div class="cards-row" style="margin-bottom:10px">
+          <div class="card"><div class="card-label">✅ יצא לעובדים</div><div class="card-value c-blue" id="d-salary-db">—</div><div class="card-sub">שולם בפועל</div></div>
+          <div class="card card-soft-blue"><div class="card-label">🕐 צפוי לעובדים</div><div class="card-value c-blue" id="d-pending-salary-db">—</div><div class="card-sub">טרם שולם</div></div>
+        </div>
+        <div class="section" style="margin-bottom:0"><div class="section-title">סטטוס עובדים החודש</div><div id="emp-status"></div></div>
+      </div>
+
+      <div class="dash-group">
+        <div class="dash-group-title">🧾 מס</div>
+        <div class="summary-pills" style="margin-bottom:0">
+          <div class="pill pill-tax"><span class="pill-label">🧾 מס על נכנס</span><span class="pill-value" style="color:var(--red)" id="d-tax-db">—</span></div>
+          <div class="pill pill-tax"><span class="pill-label">🧾 מס צפוי</span><span class="pill-value" style="color:var(--red)" id="d-tax-pending-db">—</span></div>
+          <div class="pill"><span class="pill-label">% מס</span><input type="number" id="tax-rate-db" value="20" min="0" max="100" class="tax-input" oninput="updateTaxFromDB()" /><span class="pill-label">%</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="page-transactions" class="page">
+      <div class="section">
+        <div class="section-title">הוסף רשומה</div>
+        <div class="form-row">
+          <input type="text" id="t-desc" placeholder="תיאור" />
+          <input type="number" id="t-amount" placeholder="סכום ₪" min="0" />
+          <select id="t-type"><option value="income">הכנסה</option><option value="expense">הוצאה</option></select>
+          <select id="t-cat"><option value="שירותים">שירותים</option><option value="שכירות">שכירות</option><option value="ציוד">ציוד</option><option value="שיווק">שיווק</option><option value="אחר">אחר</option></select>
+        </div>
+        <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
+      </div>
+      <div class="section">
+        <div class="section-title">רשומות החודש</div>
+        <table><thead><tr><th>תיאור</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th></th></tr></thead>
+        <tbody id="tx-table"></tbody></table>
+      </div>
+    </div>
+
+    <div id="page-events" class="page">
+      <div class="section" style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="section-title" style="margin-bottom:0">אירועים החודש</div>
+            <div class="view-toggle">
+              <button class="view-toggle-btn active" id="vt-list" onclick="setEventView('list')">☰ רשימה</button>
+              <button class="view-toggle-btn" id="vt-cal" onclick="setEventView('calendar')">📅 יומן</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-outline" onclick="loadGCal(true)">🔄 רענן</button>
+            <button class="btn-add" onclick="openNewEventModal()">+ אירוע ידני</button>
+          </div>
+        </div>
+        <div id="events-list"><div class="empty">טוען אירועים...</div></div>
+        <div id="events-calendar" style="display:none"></div>
+      </div>
+    </div>
+
+    <div id="page-employees" class="page">
+      <div class="section">
+        <div class="section-title">הוסף עובד</div>
+        <div class="form-row">
+          <input type="text" id="e-name" placeholder="שם העובד" />
+          <input type="text" id="e-role" placeholder="תפקיד" />
+          <input type="tel" id="e-phone" placeholder="טלפון" />
+        </div>
+        <button class="btn-add" id="btn-add-emp" onclick="addEmployee()">+ הוסף עובד</button>
+      </div>
+      <div id="emp-cards" class="emp-cards"></div>
+    </div>
+
+    <div id="page-clients" class="page">
+      <div class="section">
+        <div class="section-title">הוסף לקוח</div>
+        <div class="form-row">
+          <input type="text" id="c-name" placeholder="שם הלקוח" />
+          <input type="tel" id="c-phone" placeholder="טלפון" />
+          <input type="email" id="c-email" placeholder="אימייל" />
+          <input type="text" id="c-bizid" placeholder="ח.פ / ע.מ" />
+        </div>
+        <button class="btn-add" id="btn-add-client" onclick="addClient()">+ הוסף לקוח</button>
+      </div>
+      <div id="clients-list"></div>
+    </div>
+
+    <div id="page-recurring" class="page">
+      <div class="section">
+        <div class="section-title">הוסף הוצאה קבועה</div>
+        <div class="form-row">
+          <input type="text" id="r-desc" placeholder="תיאור" />
+          <input type="number" id="r-amount" placeholder="סכום ₪ לחודש" min="0" />
+          <select id="r-cat"><option value="שכירות">שכירות</option><option value="ביטוח">ביטוח</option><option value="תוכנות">תוכנות</option><option value="טלפון">טלפון</option><option value="רכב">רכב</option><option value="שיווק">שיווק</option><option value="אחר">אחר</option></select>
+        </div>
+        <button class="btn-add" id="btn-add-rec" onclick="addRecurring()">+ הוסף</button>
+      </div>
+      <div class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div class="section-title" style="margin-bottom:0">הוצאות קבועות</div>
+          <div style="background:var(--red-soft);border-radius:100px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--red)" id="rec-total">סה"כ: ₪0 / חודש</div>
+        </div>
+        <table><thead><tr><th>תיאור</th><th>קטגוריה</th><th>סכום חודשי</th><th></th></tr></thead>
+        <tbody id="rec-table"></tbody></table>
+      </div>
+
+    </div>
+
+    <div id="page-profitfirst" class="page">
+      <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1rem;color:#fff">
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px">🏦 Profit First</div>
+        <div style="font-size:13px;opacity:.85">פעמיים בחודש — הכנסות שנצברו מחולקות לחשבונות</div>
+      </div>
+      <div class="section">
+        <div class="section-title">💵 הכנסה לחלוקה</div>
+        <div style="background:var(--green-soft);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">נכנס מלקוחות החודש</div>
+            <div style="font-size:28px;font-weight:700;color:var(--green)" id="pf-income-display">₪0</div>
+          </div>
+          <div style="font-size:36px">💰</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">💡 נלקח אוטומטית מ"נכנס מלקוחות"</div>
+      </div>
+      <div class="section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div class="section-title" style="margin-bottom:0">📊 הקצאה לחשבונות</div>
+          <button class="btn-outline" onclick="togglePFEdit()" id="pf-edit-btn">✏️ ערוך אחוזים</button>
+        </div>
+        <div id="pf-accounts"></div>
+        <div id="pf-edit" style="display:none;background:var(--bg);border-radius:var(--radius-sm);padding:12px;margin-top:12px">
+          <div style="font-size:13px;font-weight:500;margin-bottom:10px;color:var(--muted)">ערוך אחוזים (סה"כ = 100%)</div>
+          <div id="pf-sliders"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+            <span style="font-size:13px;color:var(--muted)">סה"כ: <span id="pf-total-pct" style="font-weight:700">100%</span></span>
+            <button class="btn-sm" onclick="savePFSettings()">שמור</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-alerts" class="page">
+      <div id="alerts-box"></div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="bnav-item active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="bnav-icon">📊</span>סיכום</button>
+    <button class="bnav-item" onclick="showPage('transactions',this)" data-page="transactions"><span class="bnav-icon">💸</span>הכנסות</button>
+    <button class="bnav-item" onclick="checkAccess('events') && showPage('events',this)" data-page="events"><span class="bnav-icon">🎯</span>אירועים</button>
+    <button class="bnav-item" onclick="checkAccess('employees') && showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
+    <button class="bnav-item" onclick="checkAccess('clients') && showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
+    <button class="bnav-item" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="upgrade-modal" style="display:none" onclick="if(event.target===this)closeUpgradeModal()">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <div class="modal-body" style="padding:2rem">
+      <div style="font-size:48px;margin-bottom:16px">⭐</div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:8px">שדרג לפרו</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:24px">ניהול עובדים, לקוחות ואירועים זמין בתוכנית פרו בסך ₪16 לחודש</div>
+      <a href="https://project-7bqkz.vercel.app/#pricing" target="_blank" class="btn-add" style="display:block;margin-bottom:12px;text-decoration:none;text-align:center">שדרג עכשיו →</a>
+      <button class="btn-outline" onclick="closeUpgradeModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="forgot-modal" style="display:none" onclick="if(event.target===this)closeForgot()">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title">איפוס סיסמה</div>
+      <button class="btn-del" onclick="closeForgot()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">הכניסו את כתובת האימייל שלכם ונשלח קישור לאפוס הסיסמה.</p>
+      <div class="form-group">
+        <label>אימייל</label>
+        <input type="email" id="forgot-email" placeholder="your@email.com" />
+      </div>
+      <div class="msg" id="forgot-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeForgot()">ביטול</button>
+      <button class="btn-add" id="forgot-btn" onclick="sendReset()">שלח קישור</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settings-modal" style="display:none" onclick="if(event.target===this)closeSettings()">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ הגדרות ואפשרויות</div>
+      <button class="btn-del" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="settings-section">
+        <div class="settings-section-title">🌐 שפה</div>
+        <div class="settings-row">
+          <span>שפת הממשק</span>
+          <div class="view-toggle">
+            <button class="view-toggle-btn active" id="lang-he" onclick="setLanguage('he')">עברית</button>
+            <button class="view-toggle-btn" id="lang-en" onclick="setLanguage('en')">English</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">תרגום מלא של הממשק יתווסף בקרוב</div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">🧾 אחוז מס ברירת מחדל</div>
+        <div class="settings-row">
+          <span>אחוז המס שיחושב על הכנסות</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="settings-tax" min="0" max="100" value="20" style="width:70px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;text-align:center" />
+            <span style="color:var(--muted)">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">🔔 התראות</div>
+        <label class="settings-row" style="cursor:pointer">
+          <span>הצג התראות על חובות ותשלומים</span>
+          <input type="checkbox" id="settings-notif" checked style="width:18px;height:18px;cursor:pointer" />
+        </label>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">🏢 פרטי עסק</div>
+        <div class="form-group">
+          <label>שם העסק</label>
+          <input type="text" id="settings-bizname" placeholder="שם העסק שלך" />
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">📄 מדיניות</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <a href="#" onclick="return false" style="font-size:13px;color:var(--blue);text-decoration:none">מדיניות פרטיות (Privacy Policy)</a>
+          <a href="#" onclick="return false" style="font-size:13px;color:var(--blue);text-decoration:none">מדיניות החזרים (Refund Policy)</a>
+          <a href="#" onclick="return false" style="font-size:13px;color:var(--blue);text-decoration:none">תנאי שימוש (Terms of Service)</a>
+        </div>
+      </div>
+
+      <div class="settings-section" id="admin-section" style="display:none">
+        <div class="settings-section-title">👑 אדמין — בדיקת גרסאות</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">החלף בין מסלולים כדי לבדוק איך האפליקציה נראית. לא משפיע על המנוי האמיתי שלך.</div>
+        <div class="view-toggle" style="width:100%;flex-wrap:wrap">
+          <button class="view-toggle-btn" id="admin-plan-off" onclick="setAdminPlan(null)">אדמין (מלא)</button>
+          <button class="view-toggle-btn" id="admin-plan-trial" onclick="setAdminPlan('trial')">ניסיון</button>
+          <button class="view-toggle-btn" id="admin-plan-basic" onclick="setAdminPlan('basic')">בסיסי</button>
+          <button class="view-toggle-btn" id="admin-plan-pro" onclick="setAdminPlan('pro')">פרו</button>
+        </div>
+      </div>
+
+      <div class="msg" id="settings-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeSettings()">סגור</button>
+      <button class="btn-add" onclick="saveSettings()">שמור הגדרות</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="chpass-modal" style="display:none" onclick="if(event.target===this)closeChangePassword()">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title">שינוי סיסמה</div>
+      <button class="btn-del" onclick="closeChangePassword()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">הכניסו סיסמה חדשה (לפחות 6 תווים).</p>
+      <div class="form-group">
+        <label>שיסמה חדשה</label>
+        <input type="password" id="chpass-new" placeholder="לפחות 6 תווים" />
+      </div>
+      <div class="form-group">
+        <label>אימות סיסמה</label>
+        <input type="password" id="chpass-confirm" placeholder="הכניסו שוב" />
+      </div>
+      <div class="msg" id="chpass-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeChangePassword()">ביטול</button>
+      <button class="btn-add" id="chpass-btn" onclick="saveNewPassword()">עדכן סיסמה</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="event-modal" style="display:none" onclick="if(event.target===this)closeEventModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-event-title">פרטי אירוע</div>
+      <button class="btn-del" onclick="closeEventModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>שם האירוע</label><input type="text" id="modal-ev-title" /></div>
+      <div class="form-group"><label>תאריך</label><input type="date" id="modal-ev-date" /></div>
+      <div class="form-group"><label>לקוח</label><select id="modal-client"></select></div>
+      <div class="form-group"><label>מחיר ללקוח (₪)</label><input type="number" id="modal-price" placeholder="0" min="0" /></div>
+      <div class="form-group"><label>סטטוס תשלום לקוח</label>
+        <select id="modal-status">
+          <option value="לא יצאה דרישת תשלום">לא יצאה דרישת תשלום</option>
+          <option value="יצאה דרישת תשלום">יצאה דרישת תשלום</option>
+          <option value="בוצע תשלום">בוצע תשלום</option>
+          <option value="בוצע תשלום + חשבונית מס">בוצע תשלום + חשבונית מס</option>
+        </select>
+      </div>
+      <div class="form-group"><label>הערות</label><textarea id="modal-notes" rows="2" placeholder="הערות..."></textarea></div>
+      <div class="form-group">
+        <label>עובדים באירוע</label>
+        <div id="modal-workers-list"></div>
+        <button class="btn-outline" style="margin-top:8px;width:100%" onclick="addWorkerRow()">+ הוסף עובד</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeEventModal()">ביטול</button>
+      <button class="btn-add" onclick="saveEvent()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="emp-modal" style="display:none" onclick="if(event.target===this)closeEmpModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">עריכת פרטי עובד</div>
+      <button class="btn-del" onclick="closeEmpModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>שם</label><input type="text" id="emp-modal-name" /></div>
+      <div class="form-group"><label>טלפון</label><input type="tel" id="emp-modal-phone" placeholder="050-0000000" /></div>
+      <div class="form-group"><label>אימייל</label><input type="email" id="emp-modal-email" /></div>
+      <div class="form-group"><label>תפקיד</label>
+        <select id="emp-modal-role">
+          <option value="">-- בחר --</option>
+          <option value="שכיר">שכיר</option>
+          <option value="קבלן">קבלן</option>
+          <option value="שעתי">שעתי</option>
+          <option value="מנהל">מנהל</option>
+          <option value="אחר">אחר</option>
+        </select>
+      </div>
+      <div class="form-group"><label>הערות</label><textarea id="emp-modal-notes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeEmpModal()">ביטול</button>
+      <button class="btn-add" onclick="saveEmpDetails()">שמור</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cnZsb2dxanpwbm9qZnpiYXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk2MjgsImV4cCI6MjA5NzgwNTYyOH0.2I45YWLkTDLjndmyoNImkPLfqOxJV7TVsff2kAOZHpg';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzH60EnHD5wqtRfYR1vv1-5oELqEK7RlcWqwHlvT88xQDfysYupYV3I8FbnsdRWfkNing/exec';
+const { createClient } = supabase;
+const sb = createClient(SB_URL, SB_KEY);
+
+// ── i18n: מילון תרגומים (עברית → אנגלית) ──
+const I18N = {
+  // Auth
+  'ניהול תזרים': 'Cash Flow', 'שכר ועסק': 'Payroll & Business', 'בקליק אחד': 'In One Click',
+  'הפתרון המקיף לעצמאים ועסקים קטנים לניהול הכנסות, הוצאות, עובדים ולקוחות — הכל במקום אחד.': 'The complete solution for freelancers and small businesses to manage income, expenses, employees and clients — all in one place.',
+  'דשבורד תזרים בזמן אמת': 'Real-time cash flow dashboard',
+  'ניהול עובדים ושכר': 'Employee & payroll management',
+  'מעקב אירועים ולקוחות': 'Event & client tracking',
+  'שיטת Profit First מובנית': 'Built-in Profit First method',
+  'מאובטח ומוצפן — Supabase': 'Secure & encrypted — Supabase',
+  'ברוכים הבאים חזרה': 'Welcome back', 'היכנסו לחשבון שלכם כדי להמשיך': 'Sign in to your account to continue',
+  'פתחו חשבון חינם': 'Create a free account', '30 יום ניסיון — ללא כרטיס אשראי': '30-day trial — no credit card',
+  'כניסה': 'Login', 'הרשמה חינם': 'Sign up free', 'כניסה לחשבון': 'Sign in', 'התחילו עכשיו': 'Get started',
+  'אימייל': 'Email', 'סיסמה': 'Password', 'שכחתי סיסמה': 'Forgot password', 'אימות סיסמה': 'Confirm password',
+  'לפחות 6 תווים': 'At least 6 characters', 'הכנס שוב את הסיסמה': 'Re-enter password',
+  'מאובטח ומוצפן · ללא כרטיס אשראי · ניסיון חינם 30 יום': 'Secure & encrypted · No credit card · 30-day free trial',
+  // Topbar / nav
+  'חשבון מחובר': 'Connected account', 'בחירת מסלול': 'Choose plan', 'הגדרות ואפשרויות': 'Settings & options',
+  'שינוי סיסמה': 'Change password', 'יציאה': 'Log out',
+  'דשבורד': 'Dashboard', 'הכנסות/הוצאות': 'Income/Expenses', 'אירועים': 'Events', 'עובדים': 'Employees',
+  'לקוחות': 'Clients', 'קבועות': 'Recurring', 'התראות': 'Alerts',
+  // Dashboard
+  'חודש:': 'Month:', 'יתרה נטו': 'Net balance', 'כמה נשאר בפועל': 'What\'s actually left',
+  'נטו + צפי נכנס': 'Net + Expected In', 'אם כל הצפוי ייכנס': 'If expected comes in',
+  'צפי רווח סופי': 'Final projected profit', 'כולל צפי הוצאות ועובדים': 'Includes exp & payroll',
+  'הכנסות': 'Income', 'נכנס מלקוחות': 'Received from clients', 'שולם בפועל ▼': 'Actually paid ▼',
+  'צפוי מלקוחות': 'Expected from clients', 'טרם שולם ▼': 'Not yet paid ▼',
+  'הוצאות': 'Expenses', 'הוצאות עסק': 'Business expenses', 'סה"כ החודש ▼': 'Total this month ▼',
+  'הוצאות לפי קטגוריה': 'Expenses by category',
+  'יצא לעובדים': 'Paid to employees', 'שולם בפועל': 'Actually paid',
+  'צפוי לעובדים': 'Expected to employees', 'טרם שולם': 'Not yet paid',
+  'סטטוס עובדים החודש': 'Employee status this month', 'מס': 'Tax',
+  'מס על נכנס': 'Tax on received', 'מס צפוי': 'Projected tax', '% מס': 'Tax %',
+  'אין אירועים': 'No events',
+  // Events
+  'אירועים החודש': 'Events this month', '☰ רשימה': '☰ List', '📅 יומן': '📅 Calendar',
+  '🔄 רענן': '🔄 Refresh', '+ אירוע ידני': '+ Manual event', 'טוען אירועים...': 'Loading events...',
+  'מחיר ללקוח': 'Client price', 'עלות עובדים': 'Employee cost', 'רווח': 'Profit',
+  'לחץ על ✏️ להוספת פרטים': 'Click ✏️ to add details', '(ללא שם)': '(No name)', 'היום': 'Today',
+  'אין אירועים החודש. הוסף אירוע ידני או רענן את היומן': 'No events this month. Add a manual event or refresh the calendar',
+  // Employees / Clients
+  'הוסף עובד': 'Add employee', 'שם העובד': 'Employee name', 'תפקיד': 'Role', 'טלפון': 'Phone',
+  '+ הוסף עובד': '+ Add employee', 'הוסף לקוח': 'Add client', 'שם הלקוח': 'Client name',
+  'ח.פ / ע.מ': 'Business ID', '+ הוסף לקוח': '+ Add client', '+ הוסף': '+ Add',
+  'לא נוספו עובדים': 'No employees added', 'אין אירועים החודש': 'No events this month',
+  '+ הוסף אירוע': '+ Add event', 'שם האירוע': 'Event name', 'סכום ₪': 'Amount ₪',
+  'היסטוריית:': 'History:', 'סה"כ': 'Total', 'שולם': 'Paid', 'יתרה': 'Balance',
+  'אין אירועים': 'No events', 'מאירוע': 'from event',
+  // Recurring
+  'הוצאות קבועות': 'Recurring expenses', 'תיאור': 'Description', 'קטגוריה': 'Category', 'סכום': 'Amount',
+  'הוסף הוצאה קבועה': 'Add recurring expense', 'אין הוצאות קבועות': 'No recurring expenses',
+  // Profit First
+  'פעמיים בחודש — הכנסות שנצברו מחולקות לחשבונות': 'Twice a month — accrued income split into accounts',
+  'הכנסה לחלוקה': 'Income to allocate', 'נכנס מלקוחות החודש': 'Received from clients this month',
+  '💡 נלקח אוטומטית מ"נכנס מלקוחות"': '💡 Taken automatically from "Received from clients"',
+  'הקצאה לחשבונות': 'Allocation to accounts', '✏️ ערוך אחוזים': '✏️ Edit percentages',
+  'ערוך אחוזים (סה"כ = 100%)': 'Edit percentages (total = 100%)', 'שמור': 'Save', '✕ סגור': '✕ Close',
+  // Alerts / status
+  'בוצע תשלום': 'Payment made', 'בוצע תשלום + חשבונית מס': 'Payment made + tax invoice',
+  'יצאה דרישת תשלום': 'Payment requested', 'לא יצאה דרישת תשלום': 'No payment requested',
+  'ממתין': 'Pending', 'באיחור': 'Overdue',
+  // Modals
+  'הכנסה': 'Income', 'הוצאה': 'Expense', 'ביטול': 'Cancel', 'מחק': 'Delete', 'הוסף': 'Add', 'עדכן': 'Update',
+  'איפוס סיסמה': 'Reset password',
+  'הכניסו את כתובת האימייל שלכם ונשלח קישור לאיפוס הסיסמה.': 'Enter your email and we\'ll send a password reset link.',
+  'שלח קישור': 'Send link', 'סיסמה חדשה': 'New password', 'הכניסו שוב': 'Re-enter',
+  'הכניסו סיסמה חדשה (לפחות 6 תווים).': 'Enter a new password (at least 6 characters).',
+  'עדכן סיסמה': 'Update password', 'סגור': 'Close', 'שמור הגדרות': 'Save settings',
+  // Settings
+  '⚙️ הגדרות ואפשרויות': '⚙️ Settings & options', '🌐 שפה': '🌐 Language', 'שפת הממשק': 'Interface language',
+  'תרגום מלא של הממשק יתווסף בקרוב': '', '🧾 אחוז מס ברירת מחדל': '🧾 Default tax rate',
+  'אחוז המס שיחושב על הכנסות': 'Tax rate applied to income', '🔔 התראות': '🔔 Alerts',
+  'הצג התראות על חובות ותשלומים': 'Show alerts for debts and payments', '🏢 פרטי עסק': '🏢 Business details',
+  'שם העסק': 'Business name', 'שם העסק שלך': 'Your business name', '📄 מדיניות': '📄 Policies',
+  'מדיניות פרטיות (Privacy Policy)': 'Privacy Policy', 'מדיניות החזרים (Refund Policy)': 'Refund Policy',
+  'תנאי שימוש (Terms of Service)': 'Terms of Service',
+  // Upgrade
+  'שדרג לפרו': 'Upgrade to Pro', 'ניהול עובדים, לקוחות ואירועים זמין בתוכנית פרו בסך ₪16 לחודש': 'Employee, client and event management is available in the Pro plan for ₪16/month',
+  'שדרג עכשיו →': 'Upgrade now →',
+  // Plan badges
+  'בסיסי': 'Basic', 'פרו ⭐': 'Pro ⭐', 'פג תוקף': 'Expired',
+  // Misc
+  '-- בחר --': '-- Select --', '— ללא לקוח —': '— No client —', 'אין פריטים': 'No items',
+  'טוען...': 'Loading...', 'לחץ ▼': 'Click ▼',
+  // Settings additions
+  'אדמין — בדיקת גרסאות': 'Admin — test plans', 'אדמין (מלא)': 'Admin (full)',
+  'החלף בין מסלולים כדי לבדוק איך האפליקציה נראית. לא משפיע על המנוי האמיתי שלך.': 'Switch between plans to test how the app looks. Doesn\'t affect your real subscription.',
+  'עברית': 'Hebrew', 'שפה': 'Language', 'מדיניות': 'Policies', 'פרטי עסק': 'Business details',
+  'אחוז מס ברירת מחדל': 'Default tax rate',
+  // Event/modal additions
+  'אירוע ידני': 'Manual event', 'הערות': 'Notes', 'פירוט': 'Details', 'סיכום': 'Summary',
+  'עובדים באירוע': 'Event workers', 'פרטי אירוע': 'Event details', 'מחיר ללקוח (₪)': 'Client price (₪)',
+  'סטטוס תשלום לקוח': 'Client payment status', 'רענן': 'Refresh', 'יומן': 'Calendar', 'רשימה': 'List',
+  'תאריך': 'Date', 'סוג': 'Type', 'שם': 'Name', 'לקוח': 'Client',
+  // Employee modal
+  'עריכת פרטי עובד': 'Edit employee', 'מנהל': 'Manager', 'קבלן': 'Contractor', 'שכיר': 'Employee',
+  'שעתי': 'Hourly', 'רשומות החודש': 'Records this month', 'הוסף רשומה': 'Add record', 'סכום חודשי': 'Monthly amount',
+  // Profit First
+  'ערוך אחוזים': 'Edit percentages', 'סה"כ:': 'Total:', 'סה"כ: ₪0 / חודש': 'Total: ₪0 / month',
+  'נלקח אוטומטית מ"נכנס מלקוחות"': 'Taken automatically from "Received from clients"',
+  // Categories (display only — value stays Hebrew in DB)
+  'שירותים': 'Services', 'שכירות': 'Rent', 'ציוד': 'Equipment', 'שיווק': 'Marketing', 'אחר': 'Other',
+  'ביטוח': 'Insurance', 'תוכנות': 'Software', 'רכב': 'Vehicle',
+  // Plan names (standalone)
+  'ניסיון': 'Trial', 'בסיסי ': 'Basic ', 'פרו': 'Pro'
+};
+// מיפוי הפוך לסטטוסים (אנגלית → עברית) לשמירה ב-DB
+const STATUS_HE = {}; Object.keys(I18N).forEach(he => { if (I18N[he]) STATUS_HE[I18N[he]] = he; });
+function t(s) { if (currentLang === 'en' && I18N[s] !== undefined && I18N[s] !== '') return I18N[s]; return s; }
+
+let currentUser = null;
+let cachedTx = [], cachedEmps = [], cachedEmpEvents = [], cachedClients = [];
+let cachedEventDetails = [], cachedEventWorkers = [], cachedRecurring = [];
+let gcalEvents = [], allRenderedEvents = [];
+let eventViewMode = 'list';
+let modalWorkers = [], currentEditDetailId = null, currentEventDate = null, isNewManualEvent = false;
+let lastSalary = 0;
+let currentEmpId = null;
+let userPlan = 'trial'; // trial, basic, pro
+let trialDaysLeft = 30;
+
+const fmt = n => '\u20aa' + Math.round(n).toLocaleString('he-IL');
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const getMonth = () => $('yearSel').value + '-' + $('monthSel').value.padStart(2, '0');
+// מחזיר את פרטי האירועים של החודש הנבחר (משותף לכמה פונקציות)
+const getMonthDetails = (month) => { const m = month || getMonth(); return cachedEventDetails.filter(d => d.month === m || (d.event_date && d.event_date.slice(0, 7) === m)); };
+
+const HEB_DAYS = ['\u05e8\u05d0\u05e9\u05d5\u05df','\u05e9\u05e0\u05d9','\u05e9\u05dc\u05d9\u05e9\u05d9','\u05e8\u05d1\u05d9\u05e2\u05d9','\u05d7\u05de\u05d9\u05e9\u05d9','\u05e9\u05d9\u05e9\u05d9','\u05e9\u05d1\u05ea'];
+const HEB_MON = ['\u05d9\u05e0\u05d5\u05d0\u05e8','\u05e4\u05d1\u05e8\u05d5\u05d0\u05e8','\u05de\u05e8\u05e5','\u05d0\u05e4\u05e8\u05d9\u05dc','\u05de\u05d0\u05d9','\u05d9\u05d5\u05e0\u05d9','\u05d9\u05d5\u05dc\u05d9','\u05d0\u05d5\u05d2\u05d5\u05e1\u05d8','\u05e1\u05e4\u05d8\u05de\u05d1\u05e8','\u05d0\u05d5\u05e7\u05d8\u05d5\u05d1\u05e8','\u05e0\u05d5\u05d1\u05de\u05d1\u05e8','\u05d3\u05e6\u05de\u05d1\u05e8'];
+const ENG_MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MON = i => currentLang === 'en' ? ENG_MON[i] : HEB_MON[i];
+const ENG_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// ── AUTH ──
+let authMode = 'login';
+
+function toggleConfirm() {
+  const inp = document.getElementById('auth-confirm');
+  const btn = inp.nextElementSibling;
+  if (!inp) return;
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁️'; }
+}
+
+function togglePass() {
+  const inp = $('auth-password');
+  const btn = $('eye-btn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '\u05d4\u05e1\u05ea\u05e8'; }
+  else { inp.type = 'password'; btn.textContent = '\u05d4\u05e6\u05d2'; }
+}
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  $('confirm-password-field').style.display = mode === 'signup' ? 'block' : 'none';
+  document.querySelectorAll('.auth-tab').forEach((t, i) => {
+    t.classList.toggle('active', (mode === 'login' && i === 0) || (mode === 'signup' && i === 1));
+  });
+  if (mode === 'login') {
+    $('auth-heading').textContent = 'ברוכים הבאים חזרה';
+    $('auth-subheading').textContent = 'היכנסו לחשבון שלכם כדי להמשיך';
+    $('auth-btn').textContent = 'כניסה לחשבון';
+  } else {
+    $('auth-heading').textContent = 'פתחו חשבון חינם';
+    $('auth-subheading').textContent = '30 יום ניסיון — ללא כרטיס אשראי';
+    $('auth-btn').textContent = 'התחילו עכשיו';
+  }
+  $('auth-msg').className = 'msg';
+}
+
+async function doAuth() {
+  const email = $('auth-email').value.trim();
+  const password = $('auth-password').value;
+  if (!email || !password) { showMsg('נא למלא אימייל וסיסמה', 'err'); return; }
+  if (authMode === 'signup') {
+    const confirm = $('auth-confirm').value;
+    if (password.length < 6) { showMsg('הסיסמה חייבת להכיל לפחות 6 תווים', 'err'); return; }
+    if (password !== confirm) { showMsg('הסיסמאות אינן תואמות', 'err'); return; }
+  }
+  const btnLabel = $('auth-btn').textContent;
+  $('auth-btn').disabled = true; $('auth-btn').textContent = '⏳ רגע...';
+  const res = authMode === 'login'
+    ? await sb.auth.signInWithPassword({ email, password })
+    : await sb.auth.signUp({ email, password });
+  $('auth-btn').disabled = false;
+  $('auth-btn').textContent = btnLabel;
+  if (res.error) { showMsg(res.error.message, 'err'); return; }
+  if (authMode === 'signup' && !res.data.session) { showMsg('✅ נשלח מייל אישור! בדקו את תיבת הדואר', 'ok'); return; }
+  enterApp(res.data.user);
+}
+
+function showMsg(t, type) { const m = $('auth-msg'); m.textContent = t; m.className = 'msg ' + type; }
+async function logout() { await sb.auth.signOut(); $('auth-screen').style.display = 'flex'; $('app-screen').style.display = 'none'; currentUser = null; }
+
+// ── FORGOT PASSWORD ──
+function showForgot() {
+  const emailVal = $('auth-email').value.trim();
+  if (emailVal) $('forgot-email').value = emailVal;
+  $('forgot-msg').className = 'msg';
+  $('forgot-modal').style.display = 'flex';
+}
+function closeForgot() { $('forgot-modal').style.display = 'none'; }
+async function sendReset() {
+  const email = $('forgot-email').value.trim();
+  if (!email) { const m=$('forgot-msg'); m.textContent='נא להכניס אימייל'; m.className='msg err'; return; }
+  $('forgot-btn').disabled = true; $('forgot-btn').textContent = '⏳ שולח...';
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  $('forgot-btn').disabled = false; $('forgot-btn').textContent = 'שלח קישור';
+  const m = $('forgot-msg');
+  if (error) { m.textContent = error.message; m.className = 'msg err'; }
+  else { m.textContent = '✅ נשלח! בדקו את תיבת הדואר'; m.className = 'msg ok'; setTimeout(closeForgot, 3000); }
+}
+
+// ── SETTINGS MENU ──
+function toggleSettingsMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = $('settings-menu'), btn = $('settings-btn');
+  const isOpen = menu.classList.contains('open');
+  if (isOpen) { menu.classList.remove('open'); return; }
+  // מקם את התפריט מתחת לאייקון, מיושר לימין שלו, ובתוך גבולות המסך
+  const rect = btn.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 8) + 'px';
+  // יישור הקצה הימני של התפריט לקצה הימני של האייקון
+  let rightEdge = rect.right;
+  let leftPos = rightEdge - 240;
+  if (leftPos < 8) leftPos = 8; // אל תצא משמאל המסך
+  menu.style.left = leftPos + 'px';
+  menu.classList.add('open');
+}
+function closeSettingsMenu() { $('settings-menu').classList.remove('open'); }
+// סגירה בלחיצה מחוץ לתפריט
+document.addEventListener('click', function(e) {
+  const menu = $('settings-menu'), btn = $('settings-btn');
+  if (menu && menu.classList.contains('open') && !menu.contains(e.target) && e.target !== btn) {
+    menu.classList.remove('open');
+  }
+});
+function openSettings() {
+  // טען ערכים נוכחיים
+  const taxEl = $('tax-rate-db'); if (taxEl) $('settings-tax').value = taxEl.value;
+  const savedBiz = localStorage.getItem('cf_bizname'); if (savedBiz) $('settings-bizname').value = savedBiz;
+  const savedNotif = localStorage.getItem('cf_notif'); $('settings-notif').checked = savedNotif !== 'off';
+  // סקשן אדמין — הצג רק לאדמינים, וסמן את הבחירה הנוכחית
+  const adminSec = $('admin-section');
+  if (adminSec) {
+    adminSec.style.display = isAdmin() ? 'block' : 'none';
+    if (isAdmin()) {
+      ['off','trial','basic','pro'].forEach(p => {
+        const btn = $('admin-plan-' + p);
+        if (btn) btn.classList.toggle('active', (p === 'off' && !adminPlanOverride) || p === adminPlanOverride);
+      });
+    }
+  }
+  $('settings-msg').className = 'msg';
+  $('settings-modal').style.display = 'flex';
+}
+function closeSettings() { $('settings-modal').style.display = 'none'; }
+
+// אדמין — החלף מסלול תצוגה לבדיקה
+function setAdminPlan(plan) {
+  adminPlanOverride = plan;
+  if (plan) localStorage.setItem('cf_admin_override', plan);
+  else localStorage.removeItem('cf_admin_override');
+  // עדכן את המסלול הפעיל ורענן
+  userPlan = plan || 'pro';
+  // סמן כפתור פעיל
+  ['off','trial','basic','pro'].forEach(p => {
+    const btn = $('admin-plan-' + p);
+    if (btn) btn.classList.toggle('active', (p === 'off' && !plan) || p === plan);
+  });
+  updatePlanUI();
+  if (typeof renderAll === 'function') renderAll();
+}
+
+let currentLang = localStorage.getItem('cf_lang') || 'he';
+
+// מחיל תרגום על אלמנט בודד וילדיו (טקסט + placeholder)
+function translateNode(root) {
+  // טקסטים בתוך אלמנטים (text nodes)
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const textNodes = [];
+  let n; while (n = walker.nextNode()) textNodes.push(n);
+  textNodes.forEach(node => {
+    const orig = node.nodeValue;
+    if (orig == null) return;
+    const trimmed = orig.trim();
+    if (!trimmed) return;
+    // דלג על טקסט בתוך script/style
+    const pn = node.parentNode;
+    if (pn && (pn.nodeName === 'SCRIPT' || pn.nodeName === 'STYLE')) return;
+    // שמור את המקור הראשוני כדי לאפשר חזרה לעברית
+    if (!node._origText) node._origText = orig;
+    const origFull = node._origText;
+    if (currentLang !== 'en') { node.nodeValue = origFull; return; }
+    // התאמה מדויקת תחילה
+    const base = origFull.trim();
+    if (I18N[base] !== undefined && I18N[base] !== '') {
+      node.nodeValue = origFull.replace(base, I18N[base]);
+      return;
+    }
+    // התאמה עם קידומת emoji/סמלים: "💰 יתרה נטו" → emoji + תרגום
+    const m = base.match(/^([^\u0590-\u05FFa-zA-Z]*)(.+)$/);
+    if (m) {
+      const prefix = m[1], rest = m[2].trim();
+      if (I18N[rest] !== undefined && I18N[rest] !== '') {
+        node.nodeValue = origFull.replace(base, prefix + I18N[rest]);
+        return;
+      }
+    }
+    node.nodeValue = origFull;
+  });
+  // placeholders
+  root.querySelectorAll('[placeholder]').forEach(el => {
+    if (!el._origPlaceholder) el._origPlaceholder = el.getAttribute('placeholder');
+    const base = el._origPlaceholder;
+    el.setAttribute('placeholder', currentLang === 'en' && I18N[base] ? I18N[base] : base);
+  });
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('cf_lang', lang);
+  if ($('lang-he')) $('lang-he').classList.toggle('active', lang === 'he');
+  if ($('lang-en')) $('lang-en').classList.toggle('active', lang === 'en');
+  // כיוון הדף
+  document.documentElement.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+  document.documentElement.setAttribute('lang', lang === 'en' ? 'en' : 'he');
+  // תרגם את כל ה-DOM הסטטי
+  translateNode(document.body);
+  // רנדר מחדש את התצוגות הדינמיות
+  if (currentUser && typeof renderAll === 'function') {
+    renderAll();
+    if (typeof renderEventsList === 'function') renderEventsList();
+    if (typeof renderRecurring === 'function') renderRecurring();
+    if (typeof renderClientsList === 'function') renderClientsList();
+    if (typeof renderEmpCards === 'function') renderEmpCards();
+    if (typeof updatePlanUI === 'function') updatePlanUI();
+    if (typeof initMonths === 'function') initMonths();
+    // תרגם שוב אחרי הרינדור הדינמי (כדי לתפוס טקסט שנוצר ע"י ה-render)
+    translateNode(document.body);
+  }
+}
+
+function saveSettings() {
+  // אחוז מס — סנכרן לשדה הראשי
+  const taxVal = $('settings-tax').value;
+  const taxDb = $('tax-rate-db'), taxMain = $('tax-rate');
+  if (taxDb) taxDb.value = taxVal;
+  if (taxMain) taxMain.value = taxVal;
+  // פרטי עסק + התראות → localStorage
+  localStorage.setItem('cf_bizname', $('settings-bizname').value.trim());
+  localStorage.setItem('cf_notif', $('settings-notif').checked ? 'on' : 'off');
+  // רענן חישובים
+  if (typeof renderAll === 'function') renderAll();
+  const m = $('settings-msg');
+  m.textContent = '✅ ההגדרות נשמרו'; m.className = 'msg ok';
+  setTimeout(closeSettings, 1200);
+}
+
+// ── CHANGE PASSWORD (logged-in user) ──
+function openChangePassword() {
+  $('chpass-new').value = ''; $('chpass-confirm').value = '';
+  $('chpass-msg').className = 'msg';
+  $('chpass-modal').style.display = 'flex';
+}
+function closeChangePassword() { $('chpass-modal').style.display = 'none'; }
+async function saveNewPassword() {
+  const pass = $('chpass-new').value, confirm = $('chpass-confirm').value;
+  const m = $('chpass-msg');
+  if (pass.length < 6) { m.textContent = 'הסיסמה חייבת להכיל לפחות 6 תווים'; m.className = 'msg err'; return; }
+  if (pass !== confirm) { m.textContent = 'הסיסמאות אינן תואמות'; m.className = 'msg err'; return; }
+  $('chpass-btn').disabled = true; $('chpass-btn').textContent = '⏳ מעדכן...';
+  const { error } = await sb.auth.updateUser({ password: pass });
+  $('chpass-btn').disabled = false; $('chpass-btn').textContent = 'עדכן סיסמה';
+  if (error) { m.textContent = error.message; m.className = 'msg err'; }
+  else { m.textContent = '✅ הסיסמה עודכנה בהצלחה!'; m.className = 'msg ok'; setTimeout(closeChangePassword, 2000); }
+}
+
+// ── SUBSCRIPTION ──
+// מיילים של אדמינים — תמיד מקבלים גישת פרו מלאה
+const ADMIN_EMAILS = ['galsela16@gmail.com'];
+function isAdmin() { return currentUser && ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase()); }
+// עקיפת תצוגה לאדמין (לבדיקת גרסאות) — null = ללא עקיפה
+let adminPlanOverride = localStorage.getItem('cf_admin_override') || null;
+
+async function loadSubscription() {
+  const uid = currentUser.id;
+  const res = await sb.from('subscriptions').select('*').eq('user_id', uid).maybeSingle();
+  
+  if (!res.data) {
+    // משתמש חדש — צור רשומת ניסיון עם תאריך התחלה
+    const now = new Date().toISOString();
+    await sb.from('subscriptions').insert({ user_id: uid, plan: 'trial', status: 'active', trial_start: now });
+    userPlan = 'trial';
+    trialDaysLeft = 30;
+  } else {
+    userPlan = res.data.plan;
+    if (userPlan === 'trial') {
+      // אם trial_start חסר — עדכן אותו עכשיו
+      if (!res.data.trial_start) {
+        const now = new Date().toISOString();
+        await sb.from('subscriptions').update({ trial_start: now }).eq('user_id', uid);
+        trialDaysLeft = 30;
+      } else {
+        const start = new Date(res.data.trial_start);
+        const now = new Date();
+        const daysPassed = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+        trialDaysLeft = Math.max(0, 30 - daysPassed);
+        if (trialDaysLeft === 0) userPlan = 'expired';
+      }
+    }
+  }
+  // אדמין — גישת פרו מלאה (אלא אם בחר לעקוף לבדיקה)
+  if (isAdmin()) {
+    userPlan = adminPlanOverride || 'pro';
+  }
+  updatePlanUI();
+}
+
+function updatePlanUI() {
+  // הצג תווית תוכנית
+  const planBadge = document.getElementById('plan-badge');
+  if (planBadge) {
+    if (isAdmin() && !adminPlanOverride) {
+      planBadge.textContent = currentLang === 'en' ? 'Admin 👑' : 'אדמין 👑';
+      planBadge.style.background = '#7c3aed';
+    } else {
+      if (userPlan === 'trial') planBadge.textContent = currentLang === 'en' ? ('Trial · ' + trialDaysLeft + ' days') : ('ניסיון · ' + trialDaysLeft + ' ימים');
+      else if (userPlan === 'basic') planBadge.textContent = currentLang === 'en' ? 'Basic' : 'בסיסי';
+      else if (userPlan === 'pro') planBadge.textContent = currentLang === 'en' ? 'Pro ⭐' : 'פרו ⭐';
+      else if (userPlan === 'expired') planBadge.textContent = currentLang === 'en' ? 'Expired' : 'פג תוקף';
+      planBadge.style.background = userPlan === 'pro' ? '#2855e0' : userPlan === 'expired' ? '#c0392b' : '#0d9c6e';
+      // אם אדמין בעקיפה — סמן זאת
+      if (isAdmin() && adminPlanOverride) planBadge.textContent += currentLang === 'en' ? ' (test)' : ' (בדיקה)';
+    }
+  }
+
+  // עמעם את הטאבים העסקיים (עובדים, לקוחות, אירועים) אם התוכנית בסיסית או פגת תוקף
+  const restricted = userPlan === 'basic' || userPlan === 'expired';
+  ['employees', 'clients', 'events'].forEach(feat => {
+    document.querySelectorAll('[data-page="' + feat + '"], [data-feature="' + feat + '"]').forEach(t => {
+      t.style.opacity = restricted ? '0.5' : '1';
+      t.title = restricted ? (userPlan === 'expired' ? (currentLang === 'en' ? 'Trial ended — upgrade required' : 'הניסיון הסתיים — נדרש שדרוג') : (currentLang === 'en' ? 'Available in Pro plan' : 'זמין בתוכנית פרו')) : '';
+    });
+  });
+}
+
+// פיצ'רים עסקיים — זמינים רק ב-Pro (ב-Basic חסומים)
+const PRO_FEATURES = ['employees', 'clients', 'events'];
+function checkAccess(feature) {
+  if (userPlan === 'expired') {
+    showUpgradeModal();
+    return false;
+  }
+  if (PRO_FEATURES.includes(feature) && userPlan === 'basic') {
+    showUpgradeModal();
+    return false;
+  }
+  return true;
+}
+
+function showUpgradeModal() {
+  document.getElementById('upgrade-modal').style.display = 'flex';
+}
+
+function closeUpgradeModal() {
+  document.getElementById('upgrade-modal').style.display = 'none';
+}
+
+async function enterApp(user) {
+  currentUser = user;
+  $('auth-screen').style.display = 'none';
+  $('app-screen').style.display = 'block';
+  $('user-email-display').textContent = user.email;
+  // אתחל מצב שפה שמור בכפתורי הבחירה
+  if ($('lang-he')) { $('lang-he').classList.toggle('active', currentLang === 'he'); $('lang-en').classList.toggle('active', currentLang === 'en'); }
+  initMonths();
+  loadPFSettings();
+  loadSubscription();
+  // טען קודם הוצאות קבועות, ורק אז loadAll (שתלוי בהן לייבוא אוטומטי)
+  await loadRecurring();
+  await loadAll();
+}
+
+// ── MONTHS ──
+function initMonths() {
+  const now = new Date();
+  const mSel = $('monthSel');
+  const prevMonth = mSel.value; // שמור בחירה קיימת
+  mSel.innerHTML = '';
+  HEB_MON.forEach((name, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i + 1).padStart(2, '0');
+    opt.textContent = MON(i);
+    if (i === now.getMonth()) opt.selected = true;
+    mSel.appendChild(opt);
+  });
+  if (prevMonth) mSel.value = prevMonth; // שחזר בחירה
+  const ySel = $('yearSel'); ySel.innerHTML = '';
+  for (let y = now.getFullYear(); y <= 2099; y++) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    if (y === now.getFullYear()) opt.selected = true;
+    ySel.appendChild(opt);
+  }
+}
+function updateMonth() { loadAll(); }
+
+// ── LOAD ──
+async function loadAll() {
+  const month = getMonth(), uid = currentUser.id;
+  const [txR, empR, evR, clientR, detailR] = await Promise.all([
+    sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false }),
+    sb.from('employees').select('*').eq('user_id', uid).order('name'),
+    sb.from('employee_events').select('*').eq('user_id', uid).eq('month', month),
+    sb.from('clients').select('*').eq('user_id', uid).order('name'),
+    sb.from('event_details').select('*').eq('user_id', uid).order('event_date', { ascending: false })
+  ]);
+  cachedTx = txR.data || []; cachedEmps = empR.data || []; cachedEmpEvents = evR.data || [];
+  cachedClients = clientR.data || []; cachedEventDetails = detailR.data || [];
+  // event_workers מסונן לפי האירועים של המשתמש בלבד (אבטחה + ביצועים)
+  const detailIds = cachedEventDetails.map(d => d.id);
+  if (detailIds.length) {
+    const workerR = await sb.from('event_workers').select('*').in('event_detail_id', detailIds);
+    cachedEventWorkers = workerR.data || [];
+  } else {
+    cachedEventWorkers = [];
+  }
+  // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
+  await autoImportRecurring(month, uid, cachedTx);
+  renderAll();
+  // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
+  loadGCal();
+}
+
+// ── RENDER ALL ──
+function renderAll() {
+  const month = getMonth();
+  const monthDetails = getMonthDetails(month);
+  const monthDetailIds = monthDetails.map(d => d.id);
+
+  const txIncome = cachedTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const eventIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1')).reduce((s, d) => s + (d.price || 0), 0);
+  const income = txIncome + eventIncome;
+  const txExpense = cachedTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const paidEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, e) => s + e.amount, 0);
+  const paidWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, w) => s + w.amount, 0);
+  const salary = paidEmpSalary + paidWorkerSalary;
+  lastSalary = salary;
+  const expense = txExpense + salary;
+  const net = income - expense;
+
+  const pendingIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd')).reduce((s, d) => s + (d.price || 0), 0);
+  const pendingEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05de\u05de\u05ea\u05d9\u05df').reduce((s, e) => s + e.amount, 0);
+  const pendingWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === '\u05de\u05de\u05ea\u05d9\u05df').reduce((s, w) => s + w.amount, 0);
+  const totalClientIncome = income + pendingIncome;
+  const totalWorkerSalary = salary + pendingEmpSalary + pendingWorkerSalary;
+  const pendingNet = totalClientIncome - (expense + pendingEmpSalary + pendingWorkerSalary);
+  
+  // חישוב יתרה נטו + צפי נכנס
+  const netWithPendingIncome = net + pendingIncome;
+
+  $('d-income').textContent = fmt(income);
+  $('d-expense').textContent = fmt(expense);
+  $('d-pending-income').textContent = fmt(pendingIncome);
+
+  const netEl = $('d-net'); netEl.textContent = fmt(net); netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+  const pendEl = $('d-pending'); pendEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendEl.style.color = pendingNet >= 0 ? 'var(--green)' : 'var(--red)';
+
+  updateTax(income, pendingIncome);
+  // update dashboard cards
+  const salDbEl = $('d-salary-db'); if(salDbEl) salDbEl.textContent = fmt(salary);
+  const pSalDbEl = $('d-pending-salary-db'); if(pSalDbEl) pSalDbEl.textContent = fmt(pendingEmpSalary + pendingWorkerSalary);
+  
+  // יתרה נטו
+  const netDbEl = $('d-net-db'); if(netDbEl) { netDbEl.textContent = fmt(net); netDbEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)'; }
+  
+  // כרטיס חדש: יתרה נטו + צפי נכנס
+  const netWithPendingDbEl = $('d-net-with-pending-db'); if(netWithPendingDbEl) { netWithPendingDbEl.textContent = fmt(netWithPendingIncome); netWithPendingDbEl.style.color = netWithPendingIncome >= 0 ? 'var(--green)' : 'var(--red)'; }
+  
+  // צפי רווח סופי
+  const pendDbEl = $('d-pending-db'); if(pendDbEl) { pendDbEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendDbEl.style.color = pendingNet >= 0 ? 'var(--green)' : 'var(--red)'; }
+  
+  // sync tax rate from dashboard
+  const dbTaxRate = $('tax-rate-db'); if(dbTaxRate) dbTaxRate.value = $('tax-rate').value;
+  updatePFIncome(income);
+
+  renderCatBars(expense, salary);
+  renderEmpStatus(monthDetailIds);
+  renderTxTable();
+  renderEmpCards(monthDetailIds);
+  renderClientsList();
+  renderEventsList();
+  renderAlerts(income, expense, salary, net, pendingIncome);
+}
+
+function toggleTxPanel(type) {
+  const panel = $('tx-panel');
+  const title = $('tx-panel-title');
+  const content_el = $('tx-panel-content');
+  
+  // אם כבר פתוח באותו סוג — סגור
+  if (panel.style.display !== 'none' && panel.dataset.type === type) {
+    panel.style.display = 'none';
+    return;
+  }
+  
+  panel.dataset.type = type;
+  let rows = [], titleText = '';
+  
+  if (type === 'income') {
+    titleText = '✅ נכנס מלקוחות — פירוט';
+    // עסקאות הכנסה + אירועים ששולמו
+    const monthDetails = getMonthDetails();
+    const paidEvents = monthDetails.filter(d => d.price > 0 && (d.status === 'בוצע תשלום' || d.status === 'בוצע תשלום + חשבונית מס'));
+    const txIncome = cachedTx.filter(t => t.type === 'income');
+    rows = [
+      ...txIncome.map(t => ({ name: t.description, amount: t.amount, sub: t.category })),
+      ...paidEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: c ? c.name : 'אירוע' }; })
+    ];
+  } else if (type === 'pending') {
+    titleText = '🕐 צפוי מלקוחות — פירוט';
+    const monthDetails = getMonthDetails();
+    const pendingEvents = monthDetails.filter(d => d.price > 0 && (d.status === 'לא יצאה דרישת תשלום' || d.status === 'יצאה דרישת תשלום'));
+    rows = pendingEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: (c ? c.name + ' · ' : '') + d.status }; });
+  } else if (type === 'expense') {
+    titleText = '💸 הוצאות — פירוט';
+    const monthDetailIds = getMonthDetails().map(d => d.id);
+    // עסקאות הוצאה
+    const txExpense = cachedTx.filter(t => t.type === 'expense').map(t => ({ name: t.description, amount: t.amount, sub: t.category }));
+    // תשלומים לעובדים מאירועי עובדים
+    const empPayments = cachedEmpEvents.filter(e => e.status === 'שולם').map(e => {
+      const emp = cachedEmps.find(em => em.id === e.employee_id);
+      return { name: emp ? emp.name : 'עובד', amount: e.amount, sub: 'שכר עובד · ' + (e.event_name || '') };
+    });
+    // תשלומים לעובדים מאירועים
+    const workerPayments = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === 'שולם').map(w => {
+      const emp = cachedEmps.find(em => em.id === w.employee_id);
+      const det = cachedEventDetails.find(d => d.id === w.event_detail_id);
+      return { name: emp ? emp.name : 'עובד', amount: w.amount, sub: 'שכר עובד · ' + (det ? det.event_title : '') };
+    });
+    rows = [...txExpense, ...empPayments, ...workerPayments];
+    // Fix expense card display to include salary
+    const expCardEl = document.getElementById('d-expense');
+    if(expCardEl) expCardEl.textContent = fmt(txExpense.reduce((s,r)=>s+r.amount,0) + empPayments.reduce((s,r)=>s+r.amount,0) + workerPayments.reduce((s,r)=>s+r.amount,0));
+  }
+  
+  if (!rows.length) {
+    content_el.innerHTML = '<div class="empty">אין פריטים</div>';
+  } else {
+    content_el.innerHTML = rows.map(r => 
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
+      '<div><div style="font-weight:500">' + esc(r.name) + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--muted)">' + esc(r.sub) + '</div>' : '') + '</div>' +
+      '<div style="font-weight:600">' + fmt(r.amount) + '</div></div>'
+    ).join('') +
+    '<div style="display:flex;justify-content:space-between;padding:10px 0;font-size:13px;font-weight:600;color:var(--muted)">' +
+    '<span>סה"כ</span><span>' + fmt(rows.reduce((s,r) => s+r.amount, 0)) + '</span></div>';
+  }
+  
+  title.textContent = titleText;
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function updateTaxFromDB() {
+  // sync rate to hidden input and recalculate
+  const dbRate = $('tax-rate-db');
+  const hiddenRate = $('tax-rate');
+  if (dbRate && hiddenRate) hiddenRate.value = dbRate.value;
+  updateTax();
+  // update dashboard tax displays
+  const rate = parseFloat(dbRate ? dbRate.value : 20) || 20;
+  const rec = cachedRecurring.reduce((s, r) => s + r.amount, 0);
+  const taxDbEl = $('d-tax-db'); if(taxDbEl) taxDbEl.textContent = fmt(Math.max(0, lastIncome - rec) * rate / 100);
+  const taxPendDbEl = $('d-tax-pending-db'); if(taxPendDbEl) taxPendDbEl.textContent = fmt(Math.max(0, lastPendingIncome - rec) * rate / 100);
+}
+
+// שומר את ערכי ההכנסה האחרונים לחישוב מס
+let lastIncome = 0, lastPendingIncome = 0;
+
+function updateTax(inc, pendInc) {
+  const rate = parseFloat($('tax-rate').value) || 20;
+  const rec = cachedRecurring.reduce((s, r) => s + r.amount, 0);
+  // אם קיבלנו ערכים חדשים — שמור אותם
+  if (inc !== undefined) lastIncome = inc;
+  if (pendInc !== undefined) lastPendingIncome = pendInc;
+  const taxable = Math.max(0, lastIncome - rec);
+  $('d-tax').textContent = fmt(taxable * rate / 100);
+  const pendTaxable = Math.max(0, lastPendingIncome - rec);
+  $('d-tax-pending').textContent = fmt(pendTaxable * rate / 100);
+  // update dashboard tax
+  const taxDbEl = $('d-tax-db'); if(taxDbEl) taxDbEl.textContent = fmt(taxable * rate / 100);
+  const taxPendDbEl = $('d-tax-pending-db'); if(taxPendDbEl) taxPendDbEl.textContent = fmt(pendTaxable * rate / 100);
+}
+
+function updatePFIncome(amt) {
+  const el = $('pf-income-display');
+  if (el) { el.textContent = fmt(amt || 0); calcPF(); }
+}
+
+function renderCatBars(totalExp, workerSalary) {
+  const cats = {};
+  cachedTx.filter(t => t.type === 'expense').forEach(t => { cats[t.category] = (cats[t.category] || 0) + t.amount; });
+  // הוסף שכר עובדים כקטגוריה
+  const workerTotal = workerSalary || 0;
+  if (workerTotal > 0) cats['שכר עובדים'] = (cats['שכר עובדים'] || 0) + workerTotal;
+  const el = $('cat-bars');
+  if (!Object.keys(cats).length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d4\u05d7\u05d5\u05d3\u05e9</div>'; return; }
+  const colors = { '\u05e9\u05db\u05d9\u05e8\u05d5\u05ea': '#185FA5', '\u05e6\u05d9\u05d5\u05d3': '#0F6E56', '\u05e9\u05d9\u05e5\u05d5\u05e7': '#854F0B', '\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd': '#993C1D', '\u05d0\u05d7\u05e8': '#533C89' };
+  el.innerHTML = Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
+    const pct = totalExp > 0 ? Math.round(amt / totalExp * 100) : 0;
+    return '<div class="bar-wrap"><div class="bar-label"><span>' + esc(cat) + '</span><span>' + fmt(amt) + ' (' + pct + '%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + (colors[cat] || '#888') + '"></div></div></div>';
+  }).join('');
+}
+
+function renderEmpStatus(monthDetailIds) {
+  const el = $('emp-status');
+  if (!cachedEmps.length) { el.innerHTML = '<div class="empty">\u05dc\u05d0 \u05e0\u05d5\u05e1\u05e4\u05d5 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd</div>'; return; }
+  el.innerHTML = cachedEmps.map(emp => {
+    const evs = cachedEmpEvents.filter(e => e.employee_id === emp.id);
+    const ewks = cachedEventWorkers.filter(w => w.employee_id === emp.id && monthDetailIds.includes(w.event_detail_id));
+    const total = evs.reduce((s, e) => s + e.amount, 0) + ewks.reduce((s, w) => s + w.amount, 0);
+    const count = evs.length + ewks.length;
+    const allPaid = count > 0 && evs.every(e => e.status === '\u05e9\u05d5\u05dc\u05dd') && ewks.every(w => w.status === '\u05e9\u05d5\u05dc\u05dd');
+    const hasLate = evs.some(e => e.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8') || ewks.some(w => w.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8');
+    const status = count === 0 ? '\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd' : allPaid ? '\u05e9\u05d5\u05dc\u05dd' : hasLate ? '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' : '\u05de\u05de\u05ea\u05d9\u05df';
+    const cls = status === '\u05e9\u05d5\u05dc\u05dd' ? 'paid' : status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : status === '\u05de\u05de\u05ea\u05d9\u05df' ? 'pending' : '';
+    // רשימת אירועים מפורטת — מאירועים (event_workers) ומאירועי עובד ישירים
+    const statusBadge = s => '<span class="badge badge-' + (s === '\u05e9\u05d5\u05dc\u05dd' ? 'paid' : s === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : 'pending') + '">' + s + '</span>';
+    let detailRows = '';
+    ewks.forEach(w => {
+      const det = cachedEventDetails.find(d => d.id === w.event_detail_id);
+      detailRows += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;color:var(--muted)"><span>' + (det ? esc(det.event_title) : '\u05d0\u05d9\u05e8\u05d5\u05e2') + (det && det.event_date ? ' \u00b7 ' + det.event_date : '') + '</span><span>' + fmt(w.amount) + ' ' + statusBadge(w.status) + '</span></div>';
+    });
+    evs.forEach(e => {
+      detailRows += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;color:var(--muted)"><span>' + esc(e.event_name) + (e.date ? ' \u00b7 ' + e.date : '') + '</span><span>' + fmt(e.amount) + ' ' + statusBadge(e.status) + '</span></div>';
+    });
+    const expandable = count > 0;
+    return '<div style="border-bottom:1px solid var(--border)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;' + (expandable ? 'cursor:pointer' : '') + '"' + (expandable ? ' onclick="toggleDisplay(\'empst-' + emp.id + '\')"' : '') + '>' +
+      '<div><span style="font-size:13px;font-weight:500">' + esc(emp.name) + '</span>' + (total > 0 ? '<span style="font-size:12px;color:var(--muted);margin-right:8px">' + fmt(total) + '</span>' : '') + (expandable ? '<span style="font-size:11px;color:var(--muted);margin-right:6px">(' + count + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd) \u25be</span>' : '') + '</div>' +
+      (cls ? statusBadge(status) : '<span style="font-size:12px;color:var(--muted)">' + status + '</span>') +
+      '</div>' +
+      (expandable ? '<div id="empst-' + emp.id + '" style="display:none;padding:4px 12px 10px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:6px">' + detailRows + '</div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function renderTxTable() {
+  const tb = $('tx-table');
+  if (!cachedTx.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">\u05d0\u05d9\u05df \u05e8\u05e9\u05d5\u05de\u05d5\u05ea</td></tr>'; return; }
+  tb.innerHTML = cachedTx.map(t => '<tr><td>' + esc(t.description) + '</td><td style="color:var(--muted);font-size:12px">' + esc(t.category) + '</td><td><span class="badge badge-' + t.type + '">' + (t.type === 'income' ? '\u05d4\u05db\u05e0\u05e1\u05d4' : '\u05d4\u05d5\u05e6\u05d0\u05d4') + '</span></td><td style="font-weight:600">' + fmt(t.amount) + '</td><td><button class="btn-del" onclick="deleteTx(\'' + t.id + '\')">&#128465;</button></td></tr>').join('');
+}
+
+// בונה את מבנה הנתונים המשותף לשתי התצוגות
+function buildEventsData() {
+  const month = getMonth();
+  const manualEvents = cachedEventDetails.filter(d => d.month === month && d.is_manual);
+  const allEvents = [
+    ...gcalEvents.map(ev => ({ title: ev.title, start: ev.start, allDay: ev.allDay, source: 'gcal' })),
+    ...manualEvents.map(d => ({ title: d.event_title, start: d.event_date + 'T00:00:00', allDay: true, source: 'manual', detailId: d.id }))
+  ].sort((a, b) => a.start > b.start ? 1 : -1);
+  allRenderedEvents = allEvents;
+  return allEvents;
+}
+
+// מחזיר את הפרטים המלאים של אירוע (detail, client, workers, סטטוס, צבע)
+function getEventInfo(ev) {
+  const detail = ev.source === 'manual'
+    ? cachedEventDetails.find(d => d.id === ev.detailId)
+    : cachedEventDetails.find(d => d.event_title === ev.title && d.event_date === ev.start.slice(0, 10));
+  const client = detail && detail.client_id ? cachedClients.find(c => c.id === detail.client_id) : null;
+  const workers = detail ? cachedEventWorkers.filter(w => w.event_detail_id === detail.id) : [];
+  const workerTotal = workers.reduce((s, w) => s + w.amount, 0);
+  const profit = detail && detail.price ? detail.price - workerTotal : null;
+  const statusCls = detail ? (detail.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || detail.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1' ? 'paid' : detail.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' ? 'pending' : 'late') : '';
+  const barColor = !detail ? '#94a3b8' : statusCls === 'paid' ? 'var(--green)' : statusCls === 'pending' ? 'var(--amber)' : 'var(--red)';
+  return { detail, client, workers, workerTotal, profit, statusCls, barColor };
+}
+
+// גוף מורחב של אירוע (משותף)
+function eventBodyHtml(info) {
+  const { detail, workers, workerTotal, profit } = info;
+  if (!detail) return '<div style="font-size:13px;color:var(--muted);text-align:center">\u05dc\u05d7\u05e5 \u05e2\u05dc \u270f\ufe0f \u05dc\u05d4\u05d5\u05e1\u05e4\u05ea \u05e4\u05e8\u05d8\u05d9\u05dd</div>';
+  return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px"><div><div style="font-size:11px;color:var(--muted)">\u05de\u05d7\u05d9\u05e8 \u05dc\u05dc\u05e7\u05d5\u05d7</div><div style="font-weight:600;color:var(--green)">' + fmt(detail.price || 0) + '</div></div><div><div style="font-size:11px;color:var(--muted)">\u05e2\u05dc\u05d5\u05ea \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd</div><div style="font-weight:600;color:var(--red)">' + fmt(workerTotal) + '</div></div><div><div style="font-size:11px;color:var(--muted)">\u05e8\u05d5\u05d5\u05d7</div><div style="font-weight:600;color:' + (profit !== null && profit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (profit !== null ? fmt(profit) : '\u2014') + '</div></div></div>' + (workers.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">\u05e2\u05d5\u05d1\u05d3\u05d9\u05dd:</div>' + workers.map(w => { const emp = cachedEmps.find(e => e.id === w.employee_id); return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">' + (emp ? esc(emp.name) : '\u2014') + '<span>' + fmt(w.amount) + ' \u00b7 <span class="badge badge-' + (w.status === '\u05e9\u05d5\u05dc\u05dd' ? 'paid' : w.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : 'pending') + '">' + w.status + '</span></span></div>'; }).join('') : '') + (detail.notes ? '<div style="font-size:12px;color:var(--muted);margin-top:8px;padding:8px;background:var(--bg);border-radius:var(--radius-sm)">' + esc(detail.notes) + '</div>' : '');
+}
+
+// כפתורי עריכה/מחיקה (משותף)
+function eventActionsHtml(ev, info) {
+  return (info.detail ? '<span class="badge badge-' + info.statusCls + '">' + esc(info.detail.status) + '</span>' : '') + '<button class="btn-sm" onclick="event.stopPropagation();openEditEventModalByTitle(this);return false;" data-title="' + esc(ev.title||'') + '" data-date="' + ev.start.slice(0,10) + '" data-source="' + ev.source + '" data-detailid="' + (ev.detailId||'') + '">&#9999;</button>' + (ev.source === 'manual' ? '<button class="btn-del" onclick="event.stopPropagation();deleteManualEventByEl(this);return false;" data-detailid="' + (ev.detailId||'') + '">&#128465;</button>' : '');
+}
+
+function renderEventsList() {
+  if (eventViewMode === 'calendar') { renderEventsCalendar(); return; }
+  const el = $('events-list');
+  const allEvents = buildEventsData();
+  if (!allEvents.length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9. \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2 \u05d9\u05d3\u05e0\u05d9 \u05d0\u05d5 \u05e8\u05e2\u05e0\u05df \u05d0\u05ea \u05d4\u05d9\u05d5\u05de\u05df</div>'; return; }
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  // קבץ לפי תאריך
+  const groups = {};
+  allEvents.forEach((ev, i) => { const d = ev.start.slice(0, 10); (groups[d] = groups[d] || []).push({ ev, i }); });
+
+  el.innerHTML = Object.keys(groups).sort().map(dateKey => {
+    const date = new Date(dateKey + 'T00:00:00');
+    const isToday = dateKey === todayStr;
+    const dayHeader = '<div class="ev-day-header"><span class="ev-day-num">' + date.getDate() + '</span><span class="ev-day-rest">' + MON(date.getMonth()) + ' \u00b7 ' + (currentLang === 'en' ? ENG_DAYS[date.getDay()] : '\u05d9\u05d5\u05dd ' + HEB_DAYS[date.getDay()]) + '</span>' + (isToday ? '<span class="ev-day-today">' + (currentLang === 'en' ? 'Today' : '\u05d4\u05d9\u05d5\u05dd') + '</span>' : '') + '</div>';
+    const rows = groups[dateKey].map(({ ev, i }) => {
+      const info = getEventInfo(ev);
+      return '<div class="ev-row" onclick="toggleEl(\'evr-' + i + '\')"><div class="ev-row-bar" style="background:' + info.barColor + '"></div><div class="ev-row-main"><div class="ev-row-title">' + esc(ev.title || '(\u05dc\u05dc\u05d0 \u05e9\u05dd)') + '</div><div class="ev-row-meta">' + (info.client ? esc(info.client.name) : '') + (info.detail && info.detail.price ? (info.client ? ' \u00b7 ' : '') + fmt(info.detail.price) : '') + (ev.source === 'manual' ? ' \u00b7 \u05d9\u05d3\u05e0\u05d9' : '') + '</div></div><div class="ev-row-side">' + eventActionsHtml(ev, info) + '</div></div><div class="ev-row-body" id="evr-' + i + '">' + eventBodyHtml(info) + '</div>';
+    }).join('');
+    return '<div class="ev-day-group">' + dayHeader + rows + '</div>';
+  }).join('');
+}
+
+function renderEventsCalendar() {
+  const el = $('events-calendar');
+  const allEvents = buildEventsData();
+  const [year, mon] = getMonth().split('-').map(Number);
+  const firstDay = new Date(year, mon - 1, 1).getDay();
+  const daysInMonth = new Date(year, mon, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  // מפה תאריך → אירועים
+  const byDate = {};
+  allEvents.forEach((ev, i) => { const d = Number(ev.start.slice(8, 10)); (byDate[d] = byDate[d] || []).push({ ev, i }); });
+
+  const weekdays = ['\u05d0','\u05d1','\u05d2','\u05d3','\u05d4','\u05d5','\u05e9'];
+  let cells = weekdays.map(w => '<div class="cal-weekday">' + w + '</div>').join('');
+  // תאים ריקים עד תחילת החודש
+  for (let i = 0; i < firstDay; i++) cells += '<div class="cal-cell empty-cell"></div>';
+  // ימי החודש
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = year + '-' + String(mon).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    const isToday = dateStr === todayStr;
+    const dayEvents = byDate[day] || [];
+    const shown = dayEvents.slice(0, 3);
+    const evHtml = shown.map(({ ev, i }) => {
+      const info = getEventInfo(ev);
+      return '<div class="cal-event" style="background:' + info.barColor + '" onclick="openEventFromCal(' + i + ')" title="' + esc(ev.title || '') + '">' + esc(ev.title || '(\u05dc\u05dc\u05d0 \u05e9\u05dd)') + '</div>';
+    }).join('');
+    const more = dayEvents.length > 3 ? '<div class="cal-more">+' + (dayEvents.length - 3) + ' \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd</div>' : '';
+    cells += '<div class="cal-cell' + (isToday ? ' today' : '') + '"><span class="cal-cell-num">' + day + '</span>' + evHtml + more + '</div>';
+  }
+  el.innerHTML = '<div class="cal-grid">' + cells + '</div>';
+}
+
+// פתיחת אירוע מתוך תא ביומן — פותח את מודל העריכה
+function openEventFromCal(idx) {
+  const ev = allRenderedEvents[idx];
+  if (!ev) return;
+  openEditEventModal({ title: ev.title, date: ev.start.slice(0, 10), source: ev.source, detailId: ev.detailId });
+}
+
+function setEventView(mode) {
+  eventViewMode = mode;
+  $('vt-list').classList.toggle('active', mode === 'list');
+  $('vt-cal').classList.toggle('active', mode === 'calendar');
+  $('events-list').style.display = mode === 'list' ? 'block' : 'none';
+  $('events-calendar').style.display = mode === 'calendar' ? 'block' : 'none';
+  renderEventsList();
+}
+
+function renderEmpCards(monthDetailIds) {
+  const el = $('emp-cards');
+  if (!cachedEmps.length) { el.innerHTML = '<div class="section"><div class="empty">\u05dc\u05d0 \u05e0\u05d5\u05e1\u05e4\u05d5 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd</div></div>'; return; }
+  const ids = monthDetailIds || getMonthDetails().map(d => d.id);
+  el.innerHTML = cachedEmps.map(emp => {
+    const evs = cachedEmpEvents.filter(e => e.employee_id === emp.id);
+    const ewks = cachedEventWorkers.filter(w => w.employee_id === emp.id && ids.includes(w.event_detail_id));
+    const total = evs.reduce((s, e) => s + e.amount, 0) + ewks.reduce((s, w) => s + w.amount, 0);
+
+    const evRows = ewks.map(w => {
+      const det = cachedEventDetails.find(d => d.id === w.event_detail_id);
+      return '<tr><td style="font-size:13px">' + (det ? esc(det.event_title) : '\u05d0\u05d9\u05e8\u05d5\u05e2') + ' <span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:1px 5px;border-radius:100px">\u05de\u05d0\u05d9\u05e8\u05d5\u05e2</span></td><td style="font-size:12px;color:var(--muted)">' + (det ? det.event_date || '\u2014' : '\u2014') + '</td><td style="font-weight:600">' + fmt(w.amount) + '</td><td><select class="status-select" onchange="updateEventWorkerStatus(\'' + w.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option value="' + s + '"' + (w.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') + '</select></td><td></td></tr>';
+    }).join('');
+
+    const empEvRows = evs.map(ev => '<tr><td style="font-size:13px">' + esc(ev.event_name) + '</td><td style="font-size:12px;color:var(--muted)">' + (ev.date || '\u2014') + '</td><td style="font-weight:600">' + fmt(ev.amount) + '</td><td><select class="status-select" onchange="updateEmpEventStatus(\'' + ev.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option value="' + s + '"' + (ev.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') + '</select></td><td><button class="btn-del" onclick="deleteEmpEvent(\'' + ev.id + '\')">&#128465;</button></td></tr>').join('');
+
+    return '<div class="emp-card"><div class="emp-card-header" onclick="toggleCard(\'' + emp.id + '\')"><div><div class="emp-card-name">&#128100; ' + esc(emp.name) + '</div><div class="emp-card-meta">' + esc(emp.role || '') + (emp.phone ? ' \u00b7 ' + esc(emp.phone) : '') + ' \u00b7 ' + (evs.length + ewks.length) + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9' + (total > 0 ? ' \u00b7 ' + fmt(total) : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-outline" style="font-size:12px" onclick="event.stopPropagation();openEmpModal(\'' + emp.id + '\')">✏️</button><button class="btn-del" onclick="event.stopPropagation();deleteEmp(\'' + emp.id + '\')">&#128465;</button><span id="toggle-icon-' + emp.id + '">&#9660;</span></div></div><div class="emp-card-body" id="card-body-' + emp.id + '"><div class="event-form"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">+ \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2</div><div class="form-row"><input type="text" id="ev-event-' + emp.id + '" placeholder="\u05e9\u05dd \u05d4\u05d0\u05d9\u05e8\u05d5\u05e2" /><input type="date" id="ev-date-' + emp.id + '" /><input type="number" id="ev-amount-' + emp.id + '" placeholder="\u05e1\u05db\u05d5\u05dd \u20aa" min="0" /></div><button class="btn-sm" onclick="addEmpEvent(\'' + emp.id + '\')">\u05d4\u05d5\u05e1\u05e3</button></div>' + ((evs.length + ewks.length) ? '<table><thead><tr><th>\u05d0\u05d9\u05e8\u05d5\u05e2</th><th>\u05ea\u05d0\u05e8\u05d9\u05da</th><th>\u05e9\u05db\u05d5\u05dd</th><th>\u05e1\u05d8\u05d0\u05d8\u05d5\u05e1</th><th></th></tr></thead><tbody>' + evRows + empEvRows + '</tbody></table>' : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9</div>') + '</div></div>';
+  }).join('');
+}
+
+function renderClientsList() {
+  const el = $('clients-list');
+  if (!cachedClients.length) { el.innerHTML = '<div class="section"><div class="empty">\u05dc\u05d0 \u05e0\u05d5\u05e1\u05e4\u05d5 \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea</div></div>'; return; }
+  el.innerHTML = cachedClients.map(c => {
+    const cEvs = cachedEventDetails.filter(d => d.client_id === c.id);
+    const totalPrice = cEvs.reduce((s, d) => s + (d.price || 0), 0);
+    const totalPaid = cEvs.filter(d => d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0);
+    const debt = totalPrice - totalPaid;
+    return '<div class="client-card"><div class="client-card-header" onclick="toggleEl(\'client-body-' + c.id + '\')"><div><div style="font-weight:600;font-size:14px">' + esc(c.name) + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + esc(c.phone || '') + (c.business_id ? ' \u00b7 \u05d7.\u05e4: ' + esc(c.business_id) : '') + (totalPrice > 0 ? ' \u00b7 \u05e1\u05d4"\u05db: ' + fmt(totalPrice) : '') + (debt > 0 ? ' \u00b7 <span style="color:var(--red)">\u05d7\u05d5\u05d1: ' + fmt(debt) + '</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-del" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\')">&#128465;</button><span>&#9660;</span></div></div><div class="client-card-body" id="client-body-' + c.id + '"><div class="client-info">' + (c.phone ? '<div class="client-info-item"><label>\u05d8\u05dc\u05e4\u05d5\u05df</label>' + esc(c.phone) + '</div>' : '') + (c.email ? '<div class="client-info-item"><label>\u05d0\u05d9\u05de\u05d9\u05d9\u05dc</label>' + esc(c.email) + '</div>' : '') + (c.business_id ? '<div class="client-info-item"><label>\u05d7.\u05e4 / \u05e2.\u05de</label>' + esc(c.business_id) + '</div>' : '') + '<div class="client-info-item"><label>\u05e1\u05d4"\u05db</label>' + fmt(totalPrice) + '</div><div class="client-info-item"><label>\u05e9\u05d5\u05dc\u05dd</label><span style="color:var(--green)">' + fmt(totalPaid) + '</span></div>' + (debt > 0 ? '<div class="client-info-item"><label>\u05d9\u05ea\u05e8\u05d4</label><span style="color:var(--red)">' + fmt(debt) + '</span></div>' : '') + '</div>' + (cEvs.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea:</div>' + cEvs.map(d => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>' + esc(d.event_title) + '</span><span>' + (d.price ? fmt(d.price) : '\u2014') + ' \u00b7 <span class="badge badge-' + (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1' ? 'paid' : d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' ? 'pending' : 'late') + '">' + esc(d.status) + '</span></span></div>').join('') : '<div style="font-size:13px;color:var(--muted);text-align:center">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd</div>') + '</div></div>';
+  }).join('');
+}
+
+function renderAlerts(income, expense, salary, net, pendingIncome) {
+  const alerts = [];
+  if (net < 0) alerts.push({ type: 'danger', msg: '\u05d9\u05ea\u05e8\u05d4 \u05e9\u05dc\u05d9\u05dc\u05d9\u05ea: ' + fmt(net) });
+  const lateEvs = cachedEventDetails.filter(d => d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd');
+  if (lateEvs.length) alerts.push({ type: 'warn', msg: lateEvs.length + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05e2\u05dd \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd \u05e9\u05d8\u05e8\u05dd \u05e9\u05d5\u05dc\u05de\u05d4' });
+  const lateWkrs = cachedEmpEvents.filter(e => e.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8');
+  if (lateWkrs.length) alerts.push({ type: 'danger', msg: lateWkrs.length + ' \u05ea\u05e9\u05dc\u05d5\u05de\u05d9\u05dd \u05dc\u05e2\u05d5\u05d1\u05d3\u05d9\u05dd \u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' });
+  const debtClients = cachedClients.filter(c => { const evs = cachedEventDetails.filter(d => d.client_id === c.id); const debt = evs.reduce((s, d) => s + (d.price || 0), 0) - evs.filter(d => d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0); return debt > 0; });
+  if (debtClients.length) alerts.push({ type: 'warn', msg: debtClients.length + ' \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05e2\u05dd \u05d9\u05ea\u05e8\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: ' + debtClients.map(c => esc(c.name)).join(', ') });
+  if (!alerts.length) alerts.push({ type: 'ok', msg: '\u05d4\u05db\u05dc \u05ea\u05e7\u05d9\u05df \u2713' });
+  $('alerts-box').innerHTML = alerts.map(a => '<div class="alert alert-' + a.type + '">' + a.msg + '</div>').join('');
+}
+
+// ── GOOGLE CALENDAR ──
+async function loadGCal(showLoading) {
+  const el = $('events-list');
+  // הצג "טוען" רק אם המשתמש נמצא בעמוד אירועים וביקש טעינה מפורשת
+  if (showLoading && el) el.innerHTML = '<div class="empty">\u05d8\u05d5\u05e2\u05df...</div>';
+  try {
+    const res = await fetch(GAS_URL + '?month=' + getMonth());
+    const data = await res.json();
+    gcalEvents = Array.isArray(data) ? data : [];
+    renderEventsList();
+  } catch (err) {
+    // בכישלון — אל תמחק אירועים קיימים, ועדיין הצג את האירועים הידניים
+    if (!Array.isArray(gcalEvents)) gcalEvents = [];
+    renderEventsList();
+    if (showLoading && el) el.innerHTML = '<div class="empty" style="color:var(--red)">\u05e9\u05d2\u05d9\u05d0\u05ea \u05d7\u05d9\u05d1\u05d5\u05e8 \u05dc\u05d9\u05d5\u05de\u05df</div>';
+  }
+}
+
+// ── EVENT MODAL ──
+function openNewEventModal() {
+  isNewManualEvent = true; currentEditDetailId = null; currentEventDate = null; modalWorkers = [];
+  $('modal-event-title').textContent = '\u05d0\u05d9\u05e8\u05d5\u05e2 \u05d7\u05d3\u05e9';
+  $('modal-ev-title').value = ''; $('modal-ev-title').style.display = 'block';
+  $('modal-ev-date').value = new Date().toISOString().slice(0, 10); $('modal-ev-date').style.display = 'block';
+  fillClientSelect(null);
+  $('modal-price').value = ''; $('modal-status').value = '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd'; $('modal-notes').value = '';
+  renderModalWorkers();
+  $('event-modal').style.display = 'flex';
+}
+
+async function openEditEventModalByTitle(btn) {
+  await openEditEventModal({
+    title: btn.getAttribute('data-title').trim(),
+    date: btn.getAttribute('data-date'),
+    source: btn.getAttribute('data-source'),
+    detailId: btn.getAttribute('data-detailid')
+  });
+}
+
+async function deleteManualEventByEl(btn) {
+  const id = btn.getAttribute('data-detailid');
+  if (!id || !confirm('למחוק אירוע זה?')) return;
+  await sb.from('event_workers').delete().eq('event_detail_id', id);
+  await sb.from('event_details').delete().eq('id', id);
+  await loadAll();
+}
+
+// פונקציה מאוחדת לפתיחת מודל עריכת אירוע
+async function openEditEventModal({ title, date, source, detailId }) {
+  currentEventDate = date;
+  isNewManualEvent = source === 'manual';
+
+  const res = await sb.from('event_details').select('*').eq('user_id', currentUser.id).eq('event_title', title).eq('event_date', date).maybeSingle();
+  const detail = res.data;
+  currentEditDetailId = detail ? detail.id : (detailId || null);
+
+  $('modal-event-title').textContent = title;
+  $('modal-ev-title').value = title; $('modal-ev-title').style.display = source === 'manual' ? 'block' : 'none';
+  $('modal-ev-date').value = date; $('modal-ev-date').style.display = source === 'manual' ? 'block' : 'none';
+  fillClientSelect(detail ? detail.client_id : null);
+  $('modal-price').value = detail ? detail.price || '' : '';
+  $('modal-status').value = detail ? detail.status || 'לא יצאה דרישת תשלום' : 'לא יצאה דרישת תשלום';
+  $('modal-notes').value = detail ? detail.notes || '' : '';
+
+  if (currentEditDetailId) {
+    const wRes = await sb.from('event_workers').select('*').eq('event_detail_id', currentEditDetailId);
+    modalWorkers = (wRes.data || []).map(w => ({ employee_id: w.employee_id, amount: w.amount, status: w.status }));
+  } else {
+    modalWorkers = [];
+  }
+  renderModalWorkers();
+  $('event-modal').style.display = 'flex';
+}
+
+function fillClientSelect(selectedId) {
+  $('modal-client').innerHTML = '<option value="">\u2014 \u05dc\u05dc\u05d0 \u05dc\u05e7\u05d5\u05d7 \u2014</option>' +
+    cachedClients.map(c => '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('');
+}
+
+function addWorkerRow() {
+  modalWorkers.push({ employee_id: '', amount: 0, status: '\u05de\u05de\u05ea\u05d9\u05df' });
+  renderModalWorkers();
+}
+
+function renderModalWorkers() {
+  $('modal-workers-list').innerHTML = modalWorkers.map((w, i) =>
+    '<div class="worker-row"><select onchange="modalWorkers[' + i + '].employee_id=this.value"><option value="">\u05d1\u05d7\u05e8 \u05e2\u05d5\u05d1\u05d3</option>' +
+    cachedEmps.map(e => '<option value="' + e.id + '"' + (w.employee_id === e.id ? ' selected' : '') + '>' + esc(e.name) + '</option>').join('') +
+    '</select><input type="number" placeholder="\u20aa" value="' + (w.amount || '') + '" oninput="modalWorkers[' + i + '].amount=parseFloat(this.value)||0" />' +
+    '<select onchange="modalWorkers[' + i + '].status=this.value">' +
+    ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option value="' + s + '"' + (w.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') +
+    '</select><button class="btn-del" onclick="modalWorkers.splice(' + i + ',1);renderModalWorkers()">✕</button></div>'
+  ).join('');
+}
+
+function closeEventModal() { $('event-modal').style.display = 'none'; modalWorkers = []; currentEditDetailId = null; currentEventDate = null; }
+
+async function saveEvent() {
+  const uid = currentUser.id;
+  const title = $('modal-ev-title').value.trim() || $('modal-event-title').textContent;
+  const date = currentEventDate || $('modal-ev-date').value || new Date().toISOString().slice(0, 10);
+  const clientId = $('modal-client').value || null;
+  const price = parseFloat($('modal-price').value) || 0;
+  const status = $('modal-status').value;
+  const notes = $('modal-notes').value;
+  const eventMonth = date ? date.slice(0, 7) : getMonth();
+  if (!title) return;
+
+  let detailId = currentEditDetailId;
+  if (!detailId) {
+    const existing = await sb.from('event_details').select('id').eq('user_id', uid).eq('event_title', title).eq('event_date', date).maybeSingle();
+    if (existing.data) detailId = existing.data.id;
+  }
+
+  if (detailId) {
+    await sb.from('event_details').update({ event_title: title, event_date: date, client_id: clientId, price, status, notes, month: eventMonth }).eq('id', detailId);
+  } else {
+    const res = await sb.from('event_details').insert({ user_id: uid, event_title: title, event_date: date, client_id: clientId, price, status, notes, month: eventMonth, is_manual: isNewManualEvent }).select();
+    detailId = res.data && res.data[0] ? res.data[0].id : null;
+  }
+
+  if (detailId) {
+    await sb.from('event_workers').delete().eq('event_detail_id', detailId);
+    const valid = modalWorkers.filter(w => w.employee_id && w.amount > 0);
+    if (valid.length) await sb.from('event_workers').insert(valid.map(w => ({ event_detail_id: detailId, employee_id: w.employee_id, amount: w.amount, status: w.status || '\u05de\u05de\u05ea\u05d9\u05df' })));
+  }
+
+  closeEventModal();
+  await loadAll();
+  if (gcalEvents.length) renderEventsList();
+}
+
+// ── TRANSACTIONS ──
+async function addTx() {
+  const desc = $('t-desc').value.trim(), amount = parseFloat($('t-amount').value), type = $('t-type').value, category = $('t-cat').value;
+  if (!desc || !amount || amount <= 0) return;
+  $('btn-add-tx').disabled = true;
+  await sb.from('transactions').insert({ user_id: currentUser.id, month: getMonth(), description: desc, amount, type, category });
+  $('t-desc').value = ''; $('t-amount').value = '';
+  $('btn-add-tx').disabled = false;
+  await loadAll();
+}
+async function deleteTx(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from('transactions').delete().eq('id', id); await loadAll(); }
+
+// ── EMPLOYEES ──
+async function addEmployee() {
+  const name = $('e-name').value.trim(); if (!name) return;
+  $('btn-add-emp').disabled = true;
+  await sb.from('employees').insert({ user_id: currentUser.id, name, role: $('e-role').value.trim(), phone: $('e-phone').value.trim() });
+  $('e-name').value = ''; $('e-role').value = ''; $('e-phone').value = ''; $('btn-add-emp').disabled = false;
+  await loadAll();
+}
+async function deleteEmp(id) {
+  if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7 \u05e2\u05d5\u05d1\u05d3?')) return;
+  await sb.from('employee_events').delete().eq('employee_id', id);
+  await sb.from('employees').delete().eq('id', id);
+  await loadAll();
+}
+async function addEmpEvent(empId) {
+  const name = $('ev-event-' + empId).value.trim(), date = $('ev-date-' + empId).value, amount = parseFloat($('ev-amount-' + empId).value);
+  if (!name || !amount || amount <= 0) { alert('\u05e0\u05d0 \u05dc\u05de\u05dc\u05d0 \u05e9\u05dd \u05d0\u05d9\u05e8\u05d5\u05e2 \u05d5\u05e1\u05db\u05d5\u05dd'); return; }
+  await sb.from('employee_events').insert({ user_id: currentUser.id, employee_id: empId, event_name: name, date: date || null, amount, month: getMonth(), status: '\u05de\u05de\u05ea\u05d9\u05df' });
+  $('ev-event-' + empId).value = ''; $('ev-date-' + empId).value = ''; $('ev-amount-' + empId).value = '';
+  await loadAll();
+}
+async function deleteEmpEvent(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from('employee_events').delete().eq('id', id); await loadAll(); }
+async function updateEmpEventStatus(id, status) { await sb.from('employee_events').update({ status }).eq('id', id); await loadAll(); }
+async function updateEventWorkerStatus(id, status) { await sb.from('event_workers').update({ status }).eq('id', id); await loadAll(); }
+
+// Employee modal
+function openEmpModal(empId) {
+  currentEmpId = empId;
+  const emp = cachedEmps.find(e => e.id === empId); if (!emp) return;
+  $('emp-modal-name').value = emp.name || '';
+  $('emp-modal-phone').value = emp.phone || '';
+  $('emp-modal-email').value = emp.email || '';
+  $('emp-modal-role').value = emp.role || '';
+  $('emp-modal-notes').value = emp.notes || '';
+  $('emp-modal').style.display = 'flex';
+}
+function closeEmpModal() { $('emp-modal').style.display = 'none'; currentEmpId = null; }
+async function saveEmpDetails() {
+  if (!currentEmpId) return;
+  const name = $('emp-modal-name').value.trim(); if (!name) { alert('\u05e0\u05d0 \u05dc\u05d4\u05db\u05e0\u05d9\u05e1 \u05e9\u05dd'); return; }
+  await sb.from('employees').update({ name, phone: $('emp-modal-phone').value.trim(), email: $('emp-modal-email').value.trim(), role: $('emp-modal-role').value, notes: $('emp-modal-notes').value }).eq('id', currentEmpId);
+  closeEmpModal(); await loadAll();
+}
+
+// ── CLIENTS ──
+async function addClient() {
+  const name = $('c-name').value.trim(); if (!name) return;
+  $('btn-add-client').disabled = true;
+  await sb.from('clients').insert({ user_id: currentUser.id, name, phone: $('c-phone').value.trim(), email: $('c-email').value.trim(), business_id: $('c-bizid').value.trim() });
+  $('c-name').value = ''; $('c-phone').value = ''; $('c-email').value = ''; $('c-bizid').value = '';
+  $('btn-add-client').disabled = false; await loadAll();
+}
+async function deleteClient(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7 \u05dc\u05e7\u05d5\u05d7?')) return; await sb.from('clients').delete().eq('id', id); await loadAll(); }
+
+// ── AUTO IMPORT RECURRING ──
+let _importingMonths = new Set();
+async function autoImportRecurring(month, uid, existingTx) {
+  if (!cachedRecurring.length) return;
+  // נעילה — מנע ייבוא כפול אם loadAll רץ פעמיים במקביל
+  if (_importingMonths.has(month)) return;
+  // בדוק אם כבר יובאו הוצאות קבועות לחודש זה
+  const alreadyImported = existingTx.some(t => t.description && t.description.includes('(קבועה)'));
+  if (alreadyImported) return;
+  _importingMonths.add(month);
+  try {
+    // ייבא אוטומטית
+    await sb.from('transactions').insert(
+      cachedRecurring.map(r => ({
+        user_id: uid,
+        month,
+        description: r.description + ' (קבועה)',
+        amount: r.amount,
+        type: 'expense',
+        category: r.category
+      }))
+    );
+    // טען מחדש את העסקאות
+    const txR = await sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false });
+    cachedTx = txR.data || [];
+  } finally {
+    _importingMonths.delete(month);
+  }
+}
+
+// ── RECURRING ──
+async function loadRecurring() {
+  const res = await sb.from('recurring_expenses').select('*').eq('user_id', currentUser.id).order('created_at');
+  cachedRecurring = res.data || [];
+  renderRecurring();
+  updateTax();
+}
+function renderRecurring() {
+  const tb = $('rec-table'), totalEl = $('rec-total');
+  if (!tb) return;
+  const total = cachedRecurring.reduce((s, r) => s + r.amount, 0);
+  if (totalEl) totalEl.textContent = '\u05e1\u05d4"\u05db: ' + fmt(total) + ' / \u05d7\u05d5\u05d3\u05e9';
+  if (!cachedRecurring.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea</td></tr>'; return; }
+  tb.innerHTML = cachedRecurring.map(r => '<tr><td style="font-weight:500">' + esc(r.description) + '</td><td style="font-size:12px;color:var(--muted)">' + esc(r.category) + '</td><td style="font-weight:600;color:var(--red)">' + fmt(r.amount) + '</td><td><button class="btn-del" onclick="deleteRecurring(\'' + r.id + '\')">&#128465;</button></td></tr>').join('');
+}
+async function addRecurring() {
+  const desc = $('r-desc').value.trim(), amount = parseFloat($('r-amount').value), category = $('r-cat').value;
+  if (!desc || !amount || amount <= 0) return;
+  $('btn-add-rec').disabled = true;
+  await sb.from('recurring_expenses').insert({ user_id: currentUser.id, description: desc, amount, category });
+  $('r-desc').value = ''; $('r-amount').value = '';
+  $('btn-add-rec').disabled = false; await loadRecurring();
+}
+async function deleteRecurring(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from('recurring_expenses').delete().eq('id', id); await loadRecurring(); }
+async function importRecurring() {
+  if (!cachedRecurring.length) { alert('\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea'); return; }
+  const month = getMonth();
+  if (!confirm('\u05dc\u05d9\u05d9\u05d1\u05d0 ' + cachedRecurring.length + ' \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05dc\u05d7\u05d5\u05d3\u05e9 ' + month + '?')) return;
+  await sb.from('transactions').insert(cachedRecurring.map(r => ({ user_id: currentUser.id, month, description: r.description + ' (\u05e7\u05d1\u05d5\u05e2\u05d4)', amount: r.amount, type: 'expense', category: r.category })));
+  await loadAll(); showPage('transactions', null);
+  alert('\u2705 ' + cachedRecurring.length + ' \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d9\u05d5\u05d1\u05d0\u05d5!');
+}
+
+// ── PROFIT FIRST ──
+let pfSettings = {
+  accounts: [
+    { name: '\u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05ea\u05e4\u05e2\u05d5\u05dc\u05d9\u05d5\u05ea', icon: '\u2699\ufe0f', pct: 22, color: 'var(--blue)' },
+    { name: '\u05e9\u05db\u05e8 \u05d4\u05e0\u05d4\u05dc\u05d4', icon: '\uD83D\uDC64', pct: 50, color: 'var(--green)' },
+    { name: '\u05de\u05d9\u05e1\u05d9\u05dd', icon: '\uD83E\uDDFE', pct: 18, color: 'var(--red)' },
+    { name: '\u05e8\u05d5\u05d5\u05d7', icon: '\uD83C\uDFC6', pct: 10, color: 'var(--amber)' }
+  ],
+  lastAllocation: null
+};
+
+function loadPFSettings() {
+  try { const s = localStorage.getItem('pf_settings'); if (s) pfSettings = JSON.parse(s); } catch (e) {}
+  renderPFAccounts(); renderPFSliders();
+}
+function savePFSettings() { localStorage.setItem('pf_settings', JSON.stringify(pfSettings)); renderPFAccounts(); togglePFEdit(); calcPF(); }
+function calcPF() {
+  const incomeEl = $('pf-income-display');
+  const income = incomeEl ? parseFloat(incomeEl.textContent.replace(/[^0-9.]/g, '')) || 0 : 0;
+  document.querySelectorAll('.pf-amount').forEach((el, i) => {
+    if (pfSettings.accounts[i]) { el.textContent = fmt(income * pfSettings.accounts[i].pct / 100); el.style.color = pfSettings.accounts[i].color; }
+  });
+}
+function renderPFAccounts() {
+  const el = $('pf-accounts'); if (!el) return;
+  el.innerHTML = pfSettings.accounts.map((acc, i) => '<div class="pf-account-row"><div><div class="pf-account-name">' + acc.icon + ' ' + esc(acc.name) + '</div><div class="pf-account-pct">' + acc.pct + '%</div></div><div class="pf-amount" style="font-size:20px;font-weight:700;color:' + acc.color + '">' + fmt(0) + '</div></div>').join('');
+}
+function renderPFSliders() {
+  const el = $('pf-sliders'); if (!el) return;
+  el.innerHTML = pfSettings.accounts.map((acc, i) => '<div class="pf-slider-row"><label><span>' + acc.icon + ' ' + esc(acc.name) + '</span><span id="pf-pct-' + i + '" style="font-weight:600">' + acc.pct + '%</span></label><input type="range" min="0" max="100" value="' + acc.pct + '" oninput="updatePFSlider(' + i + ',this.value)" /></div>').join('');
+  updatePFTotal();
+}
+function updatePFSlider(i, val) { pfSettings.accounts[i].pct = parseInt(val); $('pf-pct-' + i).textContent = val + '%'; updatePFTotal(); }
+function updatePFTotal() { const total = pfSettings.accounts.reduce((s, a) => s + a.pct, 0); const el = $('pf-total-pct'); if (el) { el.textContent = total + '%'; el.style.color = total === 100 ? 'var(--green)' : 'var(--red)'; } }
+function togglePFEdit() { const el = $('pf-edit'), btn = $('pf-edit-btn'); if (!el) return; const isOpen = el.style.display !== 'none'; el.style.display = isOpen ? 'none' : 'block'; btn.textContent = isOpen ? '\u270f\ufe0f \u05e2\u05e8\u05d5\u05da \u05d0\u05d7\u05d5\u05d6\u05d9\u05dd' : '\u2715 \u05e1\u05d2\u05d5\u05e8'; if (!isOpen) renderPFSliders(); }
+
+// ── NAV ──
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab,.bnav-item').forEach(t => t.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  if (el) el.classList.add('active');
+  document.querySelectorAll('[data-page="' + id + '"]').forEach(b => b.classList.add('active'));
+  // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
+  if (id === 'recurring') renderRecurring();
+}
+
+function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('open'); if (icon) icon.textContent = body.classList.contains('open') ? '\u25b2' : '\u25bc'; }
+function toggleEl(id) { const el = $(id); if (el) el.classList.toggle('open'); }
+function toggleDisplay(id) { const el = $(id); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
+
+// החל את השפה השמורה בטעינה (גם על מסך ההתחברות)
+setLanguage(currentLang);
+sb.auth.getSession().then(function(result) { if (result.data.session) enterApp(result.data.session.user); });
+</script>
+</body>
+</html>
