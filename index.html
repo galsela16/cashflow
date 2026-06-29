@@ -933,6 +933,9 @@ const getMonthDetails = (month) => { const m = month || getMonth(); return cache
 
 const HEB_DAYS = ['\u05e8\u05d0\u05e9\u05d5\u05df','\u05e9\u05e0\u05d9','\u05e9\u05dc\u05d9\u05e9\u05d9','\u05e8\u05d1\u05d9\u05e2\u05d9','\u05d7\u05de\u05d9\u05e9\u05d9','\u05e9\u05d9\u05e9\u05d9','\u05e9\u05d1\u05ea'];
 const HEB_MON = ['\u05d9\u05e0\u05d5\u05d0\u05e8','\u05e4\u05d1\u05e8\u05d5\u05d0\u05e8','\u05de\u05e8\u05e5','\u05d0\u05e4\u05e8\u05d9\u05dc','\u05de\u05d0\u05d9','\u05d9\u05d5\u05e0\u05d9','\u05d9\u05d5\u05dc\u05d9','\u05d0\u05d5\u05d2\u05d5\u05e1\u05d8','\u05e1\u05e4\u05d8\u05de\u05d1\u05e8','\u05d0\u05d5\u05e7\u05d8\u05d5\u05d1\u05e8','\u05e0\u05d5\u05d1\u05de\u05d1\u05e8','\u05d3\u05e6\u05de\u05d1\u05e8'];
+const ENG_MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MON = i => currentLang === 'en' ? ENG_MON[i] : HEB_MON[i];
+const ENG_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
 // ── AUTH ──
 let authMode = 'login';
@@ -1111,6 +1114,8 @@ function setLanguage(lang) {
     if (typeof renderRecurring === 'function') renderRecurring();
     if (typeof renderClientsList === 'function') renderClientsList();
     if (typeof renderEmpCards === 'function') renderEmpCards();
+    if (typeof updatePlanUI === 'function') updatePlanUI();
+    if (typeof initMonths === 'function') initMonths();
     // תרגם שוב אחרי הרינדור הדינמי (כדי לתפוס טקסט שנוצר ע"י ה-render)
     translateNode(document.body);
   }
@@ -1186,10 +1191,10 @@ function updatePlanUI() {
   // הצג תווית תוכנית
   const planBadge = document.getElementById('plan-badge');
   if (planBadge) {
-    if (userPlan === 'trial') planBadge.textContent = 'ניסיון · ' + trialDaysLeft + ' ימים';
-    else if (userPlan === 'basic') planBadge.textContent = 'בסיסי';
-    else if (userPlan === 'pro') planBadge.textContent = 'פרו ⭐';
-    else if (userPlan === 'expired') planBadge.textContent = 'פג תוקף';
+    if (userPlan === 'trial') planBadge.textContent = currentLang === 'en' ? ('Trial · ' + trialDaysLeft + ' days') : ('ניסיון · ' + trialDaysLeft + ' ימים');
+    else if (userPlan === 'basic') planBadge.textContent = currentLang === 'en' ? 'Basic' : 'בסיסי';
+    else if (userPlan === 'pro') planBadge.textContent = currentLang === 'en' ? 'Pro ⭐' : 'פרו ⭐';
+    else if (userPlan === 'expired') planBadge.textContent = currentLang === 'en' ? 'Expired' : 'פג תוקף';
     planBadge.style.background = userPlan === 'pro' ? '#2855e0' : userPlan === 'expired' ? '#c0392b' : '#0d9c6e';
   }
 
@@ -1239,14 +1244,17 @@ async function enterApp(user) {
 // ── MONTHS ──
 function initMonths() {
   const now = new Date();
-  const mSel = $('monthSel'); mSel.innerHTML = '';
+  const mSel = $('monthSel');
+  const prevMonth = mSel.value; // שמור בחירה קיימת
+  mSel.innerHTML = '';
   HEB_MON.forEach((name, i) => {
     const opt = document.createElement('option');
     opt.value = String(i + 1).padStart(2, '0');
-    opt.textContent = name;
+    opt.textContent = MON(i);
     if (i === now.getMonth()) opt.selected = true;
     mSel.appendChild(opt);
   });
+  if (prevMonth) mSel.value = prevMonth; // שחזר בחירה
   const ySel = $('yearSel'); ySel.innerHTML = '';
   for (let y = now.getFullYear(); y <= 2099; y++) {
     const opt = document.createElement('option');
@@ -1544,7 +1552,7 @@ function renderEventsList() {
   el.innerHTML = Object.keys(groups).sort().map(dateKey => {
     const date = new Date(dateKey + 'T00:00:00');
     const isToday = dateKey === todayStr;
-    const dayHeader = '<div class="ev-day-header"><span class="ev-day-num">' + date.getDate() + '</span><span class="ev-day-rest">' + HEB_MON[date.getMonth()] + ' \u00b7 \u05d9\u05d5\u05dd ' + ['\u05e8\u05d0\u05e9\u05d5\u05df','\u05e9\u05e0\u05d9','\u05e9\u05dc\u05d9\u05e9\u05d9','\u05e8\u05d1\u05d9\u05e2\u05d9','\u05d7\u05de\u05d9\u05e9\u05d9','\u05e9\u05d9\u05e9\u05d9','\u05e9\u05d1\u05ea'][date.getDay()] + '</span>' + (isToday ? '<span class="ev-day-today">\u05d4\u05d9\u05d5\u05dd</span>' : '') + '</div>';
+    const dayHeader = '<div class="ev-day-header"><span class="ev-day-num">' + date.getDate() + '</span><span class="ev-day-rest">' + MON(date.getMonth()) + ' \u00b7 ' + (currentLang === 'en' ? ENG_DAYS[date.getDay()] : '\u05d9\u05d5\u05dd ' + HEB_DAYS[date.getDay()]) + '</span>' + (isToday ? '<span class="ev-day-today">' + (currentLang === 'en' ? 'Today' : '\u05d4\u05d9\u05d5\u05dd') + '</span>' : '') + '</div>';
     const rows = groups[dateKey].map(({ ev, i }) => {
       const info = getEventInfo(ev);
       return '<div class="ev-row" onclick="toggleEl(\'evr-' + i + '\')"><div class="ev-row-bar" style="background:' + info.barColor + '"></div><div class="ev-row-main"><div class="ev-row-title">' + esc(ev.title || '(\u05dc\u05dc\u05d0 \u05e9\u05dd)') + '</div><div class="ev-row-meta">' + (info.client ? esc(info.client.name) : '') + (info.detail && info.detail.price ? (info.client ? ' \u00b7 ' : '') + fmt(info.detail.price) : '') + (ev.source === 'manual' ? ' \u00b7 \u05d9\u05d3\u05e0\u05d9' : '') + '</div></div><div class="ev-row-side">' + eventActionsHtml(ev, info) + '</div></div><div class="ev-row-body" id="evr-' + i + '">' + eventBodyHtml(info) + '</div>';
