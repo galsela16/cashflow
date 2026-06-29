@@ -96,6 +96,29 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .topbar-title{font-size:17px;font-weight:600;color:var(--blue)}
 .topbar-user{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:10px}
 .btn-logout{padding:6px 14px;border:1.5px solid var(--border);border-radius:100px;background:transparent;cursor:pointer;font-size:13px;color:var(--muted)}
+
+/* settings dropdown */
+.settings-wrap{position:relative}
+.settings-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border);background:rgba(255,255,255,.6);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1}
+.settings-btn:hover{border-color:var(--blue);background:#fff;transform:rotate(30deg)}
+.settings-menu{position:absolute;top:46px;left:0;width:240px;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.18);padding:8px;z-index:150;display:none;animation:settingsIn .15s ease}
+.settings-menu.open{display:block}
+@keyframes settingsIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.settings-account{display:flex;align-items:center;gap:10px;padding:10px 10px 12px}
+.settings-account-icon{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1e3a5f,#2563eb);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.settings-account-info{min-width:0}
+.settings-account-label{font-size:11px;color:var(--muted)}
+.settings-account-email{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.settings-divider{height:1px;background:var(--border);margin:4px 0}
+.settings-item{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:13.5px;color:var(--text);text-align:right;transition:background .12s}
+.settings-item:hover{background:var(--bg)}
+.settings-item span{font-size:16px;width:20px;text-align:center}
+.settings-item-danger{color:var(--red)}
+.settings-item-danger:hover{background:var(--red-soft)}
+.settings-section{padding:14px 0;border-bottom:1px solid var(--border)}
+.settings-section:last-of-type{border-bottom:none}
+.settings-section-title{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text)}
+.settings-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text)}
 .main{max-width:800px;margin:0 auto;padding:1.25rem 1rem 5rem}
 .month-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
 .month-bar label{font-size:13px;color:var(--text);font-weight:500}
@@ -341,10 +364,25 @@ tr:last-child td{border-bottom:none}
   <div class="topbar">
     <div class="topbar-title">💰 תזרים ושכר</div>
     <div class="topbar-user">
-      <span id="user-email-display"></span>
       <span id="plan-badge" style="padding:4px 10px;border-radius:100px;font-size:12px;font-weight:600;color:#fff;background:#0d9c6e"></span>
-      <button class="btn-logout" onclick="openChangePassword()">🔑 סיסמה</button>
-      <button class="btn-logout" onclick="logout()">יציאה</button>
+      <div class="settings-wrap">
+        <button class="settings-btn" onclick="toggleSettingsMenu(event)" id="settings-btn">⚙️</button>
+        <div class="settings-menu" id="settings-menu">
+          <div class="settings-account">
+            <div class="settings-account-icon">👤</div>
+            <div class="settings-account-info">
+              <div class="settings-account-label">חשבון מחובר</div>
+              <div class="settings-account-email" id="user-email-display"></div>
+            </div>
+          </div>
+          <div class="settings-divider"></div>
+          <button class="settings-item" onclick="closeSettingsMenu();showUpgradeModal()"><span>💳</span> בחירת מסלול</button>
+          <button class="settings-item" onclick="closeSettingsMenu();openSettings()"><span>⚙️</span> הגדרות ואפשרויות</button>
+          <button class="settings-item" onclick="closeSettingsMenu();openChangePassword()"><span>🔑</span> שינוי סיסמה</button>
+          <div class="settings-divider"></div>
+          <button class="settings-item settings-item-danger" onclick="closeSettingsMenu();logout()"><span>🚪</span> יציאה</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -617,6 +655,77 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal" style="display:none" onclick="if(event.target===this)closeSettings()">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ הגדרות ואפשרויות</div>
+      <button class="btn-del" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- שפה -->
+      <div class="settings-section">
+        <div class="settings-section-title">🌐 שפה</div>
+        <div class="settings-row">
+          <span>שפת הממשק</span>
+          <div class="view-toggle">
+            <button class="view-toggle-btn active" id="lang-he" onclick="setLanguage('he')">עברית</button>
+            <button class="view-toggle-btn" id="lang-en" onclick="setLanguage('en')">English</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">תרגום מלא של הממשק יתווסף בקרוב</div>
+      </div>
+
+      <!-- אחוז מס -->
+      <div class="settings-section">
+        <div class="settings-section-title">🧾 אחוז מס ברירת מחדל</div>
+        <div class="settings-row">
+          <span>אחוז המס שיחושב על הכנסות</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="settings-tax" min="0" max="100" value="20" style="width:70px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;text-align:center" />
+            <span style="color:var(--muted)">%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- התראות -->
+      <div class="settings-section">
+        <div class="settings-section-title">🔔 התראות</div>
+        <label class="settings-row" style="cursor:pointer">
+          <span>הצג התראות על חובות ותשלומים</span>
+          <input type="checkbox" id="settings-notif" checked style="width:18px;height:18px;cursor:pointer" />
+        </label>
+      </div>
+
+      <!-- פרטי עסק -->
+      <div class="settings-section">
+        <div class="settings-section-title">🏢 פרטי עסק</div>
+        <div class="form-group">
+          <label>שם העסק</label>
+          <input type="text" id="settings-bizname" placeholder="שם העסק שלך" />
+        </div>
+      </div>
+
+      <!-- מדיניות -->
+      <div class="settings-section">
+        <div class="settings-section-title">📄 מדיניות</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <a href="#" onclick="return false" style="font-size:13px;color:var(--blue);text-decoration:none">מדיניות פרטיות (Privacy Policy)</a>
+          <a href="#" onclick="return false" style="font-size:13px;color:var(--blue);text-decoration:none">מדיניות החזרים (Refund Policy)</a>
+          <a href="#" onclick="return false" style="font-size:13px;color:var(--blue);text-decoration:none">תנאי שימוש (Terms of Service)</a>
+        </div>
+      </div>
+
+      <div class="msg" id="settings-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeSettings()">סגור</button>
+      <button class="btn-add" onclick="saveSettings()">שמור הגדרות</button>
+    </div>
+  </div>
+</div>
+
 <!-- Change Password Modal -->
 <div class="modal-overlay" id="chpass-modal" style="display:none" onclick="if(event.target===this)closeChangePassword()">
   <div class="modal" style="max-width:380px">
@@ -816,6 +925,54 @@ async function sendReset() {
   else { m.textContent = '✅ נשלח! בדקו את תיבת הדואר'; m.className = 'msg ok'; setTimeout(closeForgot, 3000); }
 }
 
+// ── SETTINGS MENU ──
+function toggleSettingsMenu(e) {
+  if (e) e.stopPropagation();
+  $('settings-menu').classList.toggle('open');
+}
+function closeSettingsMenu() { $('settings-menu').classList.remove('open'); }
+// סגירה בלחיצה מחוץ לתפריט
+document.addEventListener('click', function(e) {
+  const menu = $('settings-menu'), btn = $('settings-btn');
+  if (menu && menu.classList.contains('open') && !menu.contains(e.target) && e.target !== btn) {
+    menu.classList.remove('open');
+  }
+});
+function openSettings() {
+  // טען ערכים נוכחיים
+  const taxEl = $('tax-rate-db'); if (taxEl) $('settings-tax').value = taxEl.value;
+  const savedBiz = localStorage.getItem('cf_bizname'); if (savedBiz) $('settings-bizname').value = savedBiz;
+  const savedNotif = localStorage.getItem('cf_notif'); $('settings-notif').checked = savedNotif !== 'off';
+  $('settings-msg').className = 'msg';
+  $('settings-modal').style.display = 'flex';
+}
+function closeSettings() { $('settings-modal').style.display = 'none'; }
+
+let currentLang = localStorage.getItem('cf_lang') || 'he';
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('cf_lang', lang);
+  $('lang-he').classList.toggle('active', lang === 'he');
+  $('lang-en').classList.toggle('active', lang === 'en');
+  // התרגום המלא של הממשק יתווסף בשלב הבא
+}
+
+function saveSettings() {
+  // אחוז מס — סנכרן לשדה הראשי
+  const taxVal = $('settings-tax').value;
+  const taxDb = $('tax-rate-db'), taxMain = $('tax-rate');
+  if (taxDb) taxDb.value = taxVal;
+  if (taxMain) taxMain.value = taxVal;
+  // פרטי עסק + התראות → localStorage
+  localStorage.setItem('cf_bizname', $('settings-bizname').value.trim());
+  localStorage.setItem('cf_notif', $('settings-notif').checked ? 'on' : 'off');
+  // רענן חישובים
+  if (typeof renderAll === 'function') renderAll();
+  const m = $('settings-msg');
+  m.textContent = '✅ ההגדרות נשמרו'; m.className = 'msg ok';
+  setTimeout(closeSettings, 1200);
+}
+
 // ── CHANGE PASSWORD (logged-in user) ──
 function openChangePassword() {
   $('chpass-new').value = ''; $('chpass-confirm').value = '';
@@ -910,6 +1067,8 @@ async function enterApp(user) {
   $('auth-screen').style.display = 'none';
   $('app-screen').style.display = 'block';
   $('user-email-display').textContent = user.email;
+  // אתחל מצב שפה שמור בכפתורי הבחירה
+  if ($('lang-he')) { $('lang-he').classList.toggle('active', currentLang === 'he'); $('lang-en').classList.toggle('active', currentLang === 'en'); }
   initMonths();
   loadPFSettings();
   loadSubscription();
