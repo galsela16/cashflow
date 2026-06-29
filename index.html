@@ -1067,12 +1067,24 @@ function translateNode(root) {
     if (pn && (pn.nodeName === 'SCRIPT' || pn.nodeName === 'STYLE')) return;
     // שמור את המקור הראשוני כדי לאפשר חזרה לעברית
     if (!node._origText) node._origText = orig;
-    const base = node._origText.trim();
-    if (currentLang === 'en' && I18N[base] !== undefined && I18N[base] !== '') {
-      node.nodeValue = node._origText.replace(base, I18N[base]);
-    } else {
-      node.nodeValue = node._origText;
+    const origFull = node._origText;
+    if (currentLang !== 'en') { node.nodeValue = origFull; return; }
+    // התאמה מדויקת תחילה
+    const base = origFull.trim();
+    if (I18N[base] !== undefined && I18N[base] !== '') {
+      node.nodeValue = origFull.replace(base, I18N[base]);
+      return;
     }
+    // התאמה עם קידומת emoji/סמלים: "💰 יתרה נטו" → emoji + תרגום
+    const m = base.match(/^([^\u0590-\u05FFa-zA-Z]*)(.+)$/);
+    if (m) {
+      const prefix = m[1], rest = m[2].trim();
+      if (I18N[rest] !== undefined && I18N[rest] !== '') {
+        node.nodeValue = origFull.replace(base, prefix + I18N[rest]);
+        return;
+      }
+    }
+    node.nodeValue = origFull;
   });
   // placeholders
   root.querySelectorAll('[placeholder]').forEach(el => {
