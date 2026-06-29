@@ -23,7 +23,8 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 #app-screen .topbar{z-index:200}
 #app-screen .main,#app-screen .bottom-nav{position:relative;z-index:1}
 #app-screen .topbar{background:rgba(255,255,255,.7);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.5);box-shadow:0 4px 24px rgba(80,120,150,.1)}
-#app-screen .topbar-title{color:var(--blue)}
+#app-screen .topbar-title span:first-child{color:var(--text)}
+#app-screen .topbar-title span:last-child{color:var(--blue)}
 #app-screen .topbar-user{color:var(--muted)}
 #app-screen .btn-logout{border-color:var(--border);color:var(--muted);background:rgba(255,255,255,.5)}
 #app-screen .btn-logout:hover{border-color:var(--blue);color:var(--blue)}
@@ -94,7 +95,7 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 /* APP */
 #app-screen{display:none}
 .topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(37,99,235,.06)}
-.topbar-title{font-size:17px;font-weight:600;color:var(--blue)}
+.topbar-title{font-size:22px;font-weight:800;letter-spacing:-0.5px}
 .topbar-user{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:10px}
 .btn-logout{padding:6px 14px;border:1.5px solid var(--border);border-radius:100px;background:transparent;cursor:pointer;font-size:13px;color:var(--muted)}
 
@@ -363,7 +364,7 @@ tr:last-child td{border-bottom:none}
 
 <div id="app-screen">
   <div class="topbar">
-    <div class="topbar-title">💰 תזרים ושכר</div>
+    <div class="topbar-title"><span style="color:var(--text)">cash</span><span style="color:var(--blue)">flow</span></div>
     <div class="topbar-user">
       <span id="plan-badge" style="padding:4px 10px;border-radius:100px;font-size:12px;font-weight:600;color:#fff;background:#0d9c6e"></span>
       <div class="settings-wrap">
