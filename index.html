@@ -148,13 +148,13 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .card-sub{font-size:10px;color:var(--muted);margin-top:2px}
 .c-green{color:var(--green)} .c-red{color:var(--red)} .c-blue{color:var(--blue)}
 
-/* dashboard hero balance — always visible */
-.hero-balance{position:relative;display:flex;align-items:stretch;background:#fff;border-radius:var(--radius);padding:0.85rem 1.25rem;margin-bottom:1.1rem;box-shadow:0 16px 44px rgba(70,110,140,.13),0 4px 12px rgba(70,110,140,.06);border:1.5px solid transparent;background-image:linear-gradient(#fff,#fff),linear-gradient(135deg,rgba(27,127,94,.35),rgba(37,99,235,.35));background-origin:border-box;background-clip:padding-box,border-box}
+/* dashboard hero balance — always visible (כווץ ועודכן) */
+.hero-balance{position:relative;display:flex;align-items:stretch;background:#fff;border-radius:var(--radius);padding:0.5rem 1rem;margin-bottom:0.9rem;box-shadow:0 16px 44px rgba(70,110,140,.13),0 4px 12px rgba(70,110,140,.06);border:1.5px solid transparent;background-image:linear-gradient(#fff,#fff),linear-gradient(135deg,rgba(27,127,94,.35),rgba(37,99,235,.35));background-origin:border-box;background-clip:padding-box,border-box}
 .hero-item{flex:1;text-align:center;position:relative;z-index:1}
-.hero-label{font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600}
-.hero-value{font-size:22px;font-weight:800;line-height:1.1;color:var(--text)}
-.hero-sub{font-size:10px;color:var(--muted);margin-top:4px}
-.hero-divider{width:1px;background:var(--border);margin:0 .75rem}
+.hero-label{font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:600}
+.hero-value{font-size:18px;font-weight:800;line-height:1.1;color:var(--text)}
+.hero-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.hero-divider{width:1px;background:var(--border);margin:0 .5rem}
 
 /* dashboard groups */
 .dash-group{margin-bottom:1.5rem}
@@ -1404,7 +1404,7 @@ function renderAll() {
   const totalWorkerSalary = salary + pendingEmpSalary + pendingWorkerSalary;
   const pendingNet = totalClientIncome - (expense + pendingEmpSalary + pendingWorkerSalary);
   
-  // חישוב יתרה נטו + צפי נכנס
+  // חישוב יתרה נטו + צפי נכנס בלבד
   const netWithPendingIncome = net + pendingIncome;
 
   $('d-income').textContent = fmt(income);
@@ -1628,7 +1628,7 @@ function getEventInfo(ev) {
 // גוף מורחב של אירוע (משותף)
 function eventBodyHtml(info) {
   const { detail, workers, workerTotal, profit } = info;
-  if (!detail) return '<div style="font-size:13px;color:var(--muted);text-align:center">\u05dc\u05d7\u05e5 \u05e2\u05dc \u270f\ufe0f \u05dc\u05d4\u05d5\u05e1\u05e4\u05ea \u05e4\u05e8\u05d8\u05d9\u05dd</div>';
+  if (!detail) return '<div style="font-size:13px;color:var(--muted);text-align:center">\u05dc\u05d7\u05e5 \u05e2\u05dc \u270f\ufe0f \u05dc\u05d4\u05d5\u05e6\u05e4\u05ea \u05e4\u05e8\u05d8\u05d9\u05dd</div>';
   return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px"><div><div style="font-size:11px;color:var(--muted)">\u05de\u05d7\u05d9\u05e8 \u05dc\u05dc\u05e7\u05d5\u05d7</div><div style="font-weight:600;color:var(--green)">' + fmt(detail.price || 0) + '</div></div><div><div style="font-size:11px;color:var(--muted)">\u05e2\u05dc\u05d5\u05ea \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd</div><div style="font-weight:600;color:var(--red)">' + fmt(workerTotal) + '</div></div><div><div style="font-size:11px;color:var(--muted)">\u05e8\u05d5\u05d5\u05d7</div><div style="font-weight:600;color:' + (profit !== null && profit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (profit !== null ? fmt(profit) : '\u2014') + '</div></div></div>' + (workers.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">\u05e2\u05d5\u05d1\u05d3\u05d9\u05dd:</div>' + workers.map(w => { const emp = cachedEmps.find(e => e.id === w.employee_id); return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">' + (emp ? esc(emp.name) : '\u2014') + '<span>' + fmt(w.amount) + ' \u00b7 <span class="badge badge-' + (w.status === '\u05e9\u05d5\u05dc\u05dd' ? 'paid' : w.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : 'pending') + '">' + w.status + '</span></span></div>'; }).join('') : '') + (detail.notes ? '<div style="font-size:12px;color:var(--muted);margin-top:8px;padding:8px;background:var(--bg);border-radius:var(--radius-sm)">' + esc(detail.notes) + '</div>' : '');
 }
 
@@ -1641,7 +1641,7 @@ function renderEventsList() {
   if (eventViewMode === 'calendar') { renderEventsCalendar(); return; }
   const el = $('events-list');
   const allEvents = buildEventsData();
-  if (!allEvents.length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9. \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2 \u05d9\u05d3\u05e0\u05d9 \u05d0\u05d5 \u05e8\u05e2\u05e0\u05df \u05d0\u05ea \u05d4\u05d9\u05d5\u05de\u05df</div>'; return; }
+  if (!allEvents.length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9. \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2 \u05d9\u05d3\u05e0\u05d9 \u05d0\u05d5 \u05e8\u05e2\u05e0\u05df \u05d0\u05ea \u05d4\u05d9\u05d5\u05de\u05df</div>'; return; }
 
   const todayStr = new Date().toISOString().slice(0, 10);
   // קבץ לפי תאריך
@@ -1686,7 +1686,7 @@ function renderEventsCalendar() {
       const info = getEventInfo(ev);
       return '<div class="cal-event" style="background:' + info.barColor + '" onclick="openEventFromCal(' + i + ')" title="' + esc(ev.title || '') + '">' + esc(ev.title || '(\u05dc\u05dc\u05d0 \u05e9\u05dd)') + '</div>';
     }).join('');
-    const more = dayEvents.length > 3 ? '<div class="cal-more">+' + (dayEvents.length - 3) + ' \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd</div>' : '';
+    const more = dayEvents.length > 3 ? '<div class="cal-more">+' + (dayEvents.length - 3) + ' \u05e0\u05d5\u05e1\u05e4\u05d5 \u05ded\u05d9\u05dd</div>' : '';
     cells += '<div class="cal-cell' + (isToday ? ' today' : '') + '"><span class="cal-cell-num">' + day + '</span>' + evHtml + more + '</div>';
   }
   el.innerHTML = '<div class="cal-grid">' + cells + '</div>';
@@ -1736,19 +1736,7 @@ function renderClientsList() {
     const totalPrice = cEvs.reduce((s, d) => s + (d.price || 0), 0);
     const totalPaid = cEvs.filter(d => d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0);
     const debt = totalPrice - totalPaid;
-    return '<div class="client-card"><div class="client-card-header" onclick="toggleEl(\'client-body-' + c.id + '\')"><div><div style="font-weight:600;font-size:14px">' + esc(c.name) + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + esc(c.phone || '') + (c.business_id ? ' \u00b7 \u05d7.\u05e4: ' + esc(c.business_id) : '') + (totalPrice > 0 ? ' \u00b7 \u05e1\u05d4"\u05db: ' + fmt(totalPrice) : '') + (debt > 0 ? ' \u00b7 <span style="color:var(--red)">\u05d7\u05d5\u05d1: ' + fmt(debt) + '</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-del" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\')">&#128465;</button><span>&#9660;</span></div></div><div class="client-card-body" id="client-body-' + c.id + '"><div class="client-info">' + (c.phone ? '<div class="client-info-item"><label>\u05d8\u05dc\u05e4\u05d5\u05df</label>' + esc(c.phone) + '</div>' : '') + (c.email ? '<div class="client-info-item"><label>\u05d0\u05d9\u05de\u05d9\u05d9\u05dc</label>' + esc(c.email) + '</div>' : '') + (c.business_id ? '<div class="client-info-item"><label>\u05d7.\u05e4 / \u05e2.\u05de</label>' + esc(c.business_id) + '</div>' : '') + '<div class="client-info-item"><label>\u05e1\u05d4"\u05db</label>' + fmt(totalPrice) + '</div><div class="client-info-item"><label>\u05e9\u05d5\u05dc\u05dd</label><span style="color:var(--green)">' + fmt(totalPaid) + '</span></div>' + (debt > 0 ? '<div class="client-info-item"><label>\u05d9\u05ea\u05e8\u05d4</label><span style="color:var(--red)">' + fmt(debt) + '</span></div>' : '') + '</div>' + (cEvs.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea:</div>' + cEvs.map(d => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>' + esc(d.event_title) + '</span><span>' + (d.price ? fmt(d.price) : '\u2014') + ' \u00b7 <span class="badge badge-' + (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1' ? 'paid' : d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' ? 'pending' : 'late') + '">' + esc(d.status) + '</span></span></div>').join('') : '<div style="font-size:13px;color:var(--muted);text-align:center">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd</div>') + '</div></div>';
-  }).join('');
-}
-
-function renderAlerts(income, expense, salary, net, pendingIncome) {
-  const alerts = [];
-  if (net < 0) alerts.push({ type: 'danger', msg: '\u05d9\u05ea\u05e8\u05d4 \u05e9\u05dc\u05d9\u05dc\u05d9\u05ea: ' + fmt(net) });
-  const lateEvs = cachedEventDetails.filter(d => d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd');
-  if (lateEvs.length) alerts.push({ type: 'warn', msg: lateEvs.length + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05e2\u05dd \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd \u05e9\u05d8\u05e8\u05dd \u05e9\u05d5\u05dc\u05de\u05d4' });
-  const lateWkrs = cachedEmpEvents.filter(e => e.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8');
-  if (lateWkrs.length) alerts.push({ type: 'danger', msg: lateWkrs.length + ' \u05ea\u05e9\u05dc\u05d5\u05de\u05d9\u05dd \u05dc\u05e2\u05d5\u05d1\u05d3\u05d9\u05dd \u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' });
-  const debtClients = cachedClients.filter(c => { const evs = cachedEventDetails.filter(d => d.client_id === c.id); const debt = evs.reduce((s, d) => s + (d.price || 0), 0) - evs.filter(d => d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0); return debt > 0; });
-  if (debtClients.length) alerts.push({ type: 'warn', msg: debtClients.length + ' \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05e2\u05dd \u05d9\u05ea\u05e8\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: ' + debtClients.map(c => esc(c.name)).join(', ') });
+    return '<div class="client-card"><div class="client-card-header" onclick="toggleEl(\'client-body-' + c.id + '\')"><div><div style="font-weight:600;font-size:14px">' + esc(c.name) + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + esc(c.phone || '') + (c.business_id ? ' \u00b7 \u05d7.\u05e4: ' + esc(c.business_id) : '') + (totalPrice > 0 ? ' \u00b7 \u05e1\u05d4"\u05db: ' + fmt(totalPrice) : '') + (debt > 0 ? ' \u00b7 <span style="color:var(--red)">\u05d7\u05d5\u05d1: ' + fmt(debt) + '</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-del" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\')">&#128465;</button><span>&#9660;</span></div></div><div class="client-card-body" id="client-body-' + c.id + '"><div class="client-info">' + (c.phone ? '<div class="client-info-item"><label>\u05d8\u05dc\u05e4\u05d5\u05df</label>' + esc(c.phone) + '</div>' : '') + (c.email ? '<div class="client-info-item"><label>\u05d0\u05d9\u05de\u05d9\u05d9\u05dc</label>' + esc(c.email) + '</div>' : '') + (c.business_id ? '<div class="client-info-item"><label>\u05d7.\u05e4 / \u05e2.\u05de</label>' + esc(c.business_id) + '</div>' : '') + '<div class="client-info-item"><label>\u05e1\u05d4"\u05db</label>' + fmt(totalPrice) + '</div><div class="client-info-item"><label>\u05e9\u05d5\u05dc\u05dd</label><span style="color:var(--green)">' + fmt(totalPaid) + '</span></div>' + (debt > 0 ? '<div class="client-info-item"><label>\u05d9\u05ea\u05e8\u05d4</label><span style="color:var(--red)">' + fmt(debt) + '</span></div>' : '') + '</div>' + (cEvs.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea:</div>' + cEvs.map(d => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>' + esc(d.event_title) + '</span><span>' + (d.price ? fmt(d.price) : '\u2014') + ' \u00b7 <span class="badge badge-' + (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0); return debt > 0; }); return debt > 0; }); if (debtClients.length) alerts.push({ type: 'warn', msg: debtClients.length + ' \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05e2\u05dd \u05d9\u05ea\u05e8\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: ' + debtClients.map(c => esc(c.name)).join(', ') });
   if (!alerts.length) alerts.push({ type: 'ok', msg: '\u05d4\u05db\u05dc \u05ea\u05e7\u05d9\u05df \u2713' });
   $('alerts-box').innerHTML = alerts.map(a => '<div class="alert alert-' + a.type + '">' + a.msg + '</div>').join('');
 }
@@ -2062,7 +2050,7 @@ function showPage(id, el) {
   if (id === 'recurring') renderRecurring();
 }
 
-function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('open'); if (icon) icon.textContent = body.classList.contains('open') ? '\u25b2' : '\u25bc'; }
+function toggleCard(empId) { const body = body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('open'); if (icon) icon.textContent = body.classList.contains('open') ? '\u25b2' : '\u25bc'; }
 function toggleEl(id) { const el = $(id); if (el) el.classList.toggle('open'); }
 function toggleDisplay(id) { const el = $(id); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
 
