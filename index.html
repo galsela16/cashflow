@@ -277,7 +277,7 @@ tr:last-child td{border-bottom:none}
 .modal-body{padding:1.25rem}
 .modal-footer{padding:1rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
 .form-group{margin-bottom:14px}
-.form-group label nudge{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.form-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
 .form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#f8faff;color:var(--text);font-size:13px;font-family:inherit}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--blue);background:#fff}
 .worker-row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
@@ -886,7 +886,7 @@ const I18N = {
   // Employees / Clients
   'הוסף עובד': 'Add employee', 'שם העובד': 'Employee name', 'תפקיד': 'Role', 'טלפון': 'Phone',
   '+ הוסף עובד': '+ Add employee', 'הוסף לקוח': 'Add client', 'שם הלקוח': 'Client name',
-  'ח.פ / ע.ม': 'Business ID', '+ הוסף לקוח': '+ Add client', '+ הוסף': '+ Add',
+  'ח.פ / ע.מ': 'Business ID', '+ הוסף לקוח': '+ Add client', '+ הוסף': '+ Add',
   'לא נוספו עובדים': 'No employees added', 'אין אירועים החודש': 'No events this month',
   '+ הוסף אירוע': '+ Add event', 'שם האירוע': 'Event name', 'סכום ₪': 'Amount ₪',
   'היסטוריית:': 'History:', 'סה"כ': 'Total', 'שולם': 'Paid', 'יתרה': 'Balance',
@@ -947,7 +947,7 @@ const I18N = {
   'שירותים': 'Services', 'שכירות': 'Rent', 'ציוד': 'Equipment', 'שיווק': 'Marketing', 'אחר': 'Other',
   'ביטוח': 'Insurance', 'תוכנות': 'Software', 'רכב': 'Vehicle',
   // Plan names (standalone)
-  'ניסיון': 'Trial', 'בסיסי ': 'Basic ', 'פרו': 'Pro', '-- בחר --': '-- Select --'
+  'ניסיון': 'Trial', 'בסיסי ': 'Basic ', 'פרו': 'Pro'
 };
 // מיפוי הפוך לסטטוסים (אנגלית → עברית) לשמירה ב-DB
 const STATUS_HE = {}; Object.keys(I18N).forEach(he => { if (I18N[he]) STATUS_HE[I18N[he]] = he; });
@@ -1404,7 +1404,7 @@ function renderAll() {
   const totalWorkerSalary = salary + pendingEmpSalary + pendingWorkerSalary;
   const pendingNet = totalClientIncome - (expense + pendingEmpSalary + pendingWorkerSalary);
   
-  // חישוב יתרה נטו + צפי נכנס בלבד
+  // חישוב יתרה נטו + צפי נכנס
   const netWithPendingIncome = net + pendingIncome;
 
   $('d-income').textContent = fmt(income);
@@ -1562,7 +1562,7 @@ function renderCatBars(totalExp, workerSalary) {
 
 function renderEmpStatus(monthDetailIds) {
   const el = $('emp-status');
-  if (!cachedEmps.length) { el.innerHTML = '<div class="empty">\u05dc\u05d0 \u05e0\u05d5\u05e1\u05e4\u05d5 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd</div>'; return; }
+  if (!cachedEmps.length) { el.innerHTML = '<div class="empty">\u05dc\u05dc\u05d0 \u05e0\u05d5\u05e1\u05e4\u05d5 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd</div>'; return; }
   el.innerHTML = cachedEmps.map(emp => {
     const evs = cachedEmpEvents.filter(e => e.employee_id === emp.id);
     const ewks = cachedEventWorkers.filter(w => w.employee_id === emp.id && monthDetailIds.includes(w.event_detail_id));
@@ -1641,7 +1641,7 @@ function renderEventsList() {
   if (eventViewMode === 'calendar') { renderEventsCalendar(); return; }
   const el = $('events-list');
   const allEvents = buildEventsData();
-  if (!allEvents.length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9. \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2 \u05d9\u05d3\u05e0\u05d9 \u05d0\u05d5 \u05e8\u05e2\u05e0\u05df \u05d0\u05ea \u05d4\u05d9\u05d5\u05de\u05df</div>'; return; }
+  if (!allEvents.length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9. \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2 \u05d9\u05d3\u05e0\u05d9 \u05d0\u05d5 \u05e8\u05e2\u05e0\u05df \u05d0\u05ea \u05d4\u05d9\u05d5\u05de\u05df</div>'; return; }
 
   const todayStr = new Date().toISOString().slice(0, 10);
   // קבץ לפי תאריך
@@ -1730,13 +1730,13 @@ function renderEmpCards(monthDetailIds) {
 
 function renderClientsList() {
   const el = $('clients-list');
-  if (!cachedClients.length) { el.innerHTML = '<div class="section"><div class="empty">\u05dc\u05dc\u05d0 \u05e0\u05d5\u05e1\u05e4\u05d5 \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea</div></div>'; return; }
+  if (!cachedClients.length) { el.innerHTML = '<div class="section"><div class="empty">\u05dc\u05d0 \u05e0\u05d5\u05e1\u05e4\u05d5 \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea</div></div>'; return; }
   el.innerHTML = cachedClients.map(c => {
-    const cEvs = cachedEventDetails.filter(d => d.client_id === c.id);
+    const cEvs = cachedEventDetails.filter(d => d.month === getMonth());
     const totalPrice = cEvs.reduce((s, d) => s + (d.price || 0), 0);
     const totalPaid = cEvs.filter(d => d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0);
     const debt = totalPrice - totalPaid;
-    return '<div class="client-card"><div class="client-card-header" onclick="toggleEl(\'client-body-' + c.id + '\')"><div><div style="font-weight:600;font-size:14px">' + esc(c.name) + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + esc(c.phone || '') + (c.business_id ? ' \u00b7 \u05d7.\u05e4: ' + esc(c.business_id) : '') + (totalPrice > 0 ? ' \u00b7 \u05e1\u05d4"\u05db: ' + fmt(totalPrice) : '') + (debt > 0 ? ' \u00b7 <span style="color:var(--red)">\u05d7\u05d5\u05d1: ' + fmt(debt) + '</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-del" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\')">&#128465;</button><span>&#9660;</span></div></div><div class="client-card-body" id="client-body-' + c.id + '"><div class="client-info">' + (c.phone ? '<div class="client-info-item"><label>\u05d8\u05dc\u05e4\u05d5\u05df</label>' + esc(c.phone) + '</div>' : '') + (c.email ? '<div class="client-info-item"><label>\u05d0\u05d9\u05de\u05d9\u05d9\u05dc</label>' + esc(c.email) + '</div>' : '') + (c.business_id ? '<div class="client-info-item"><label>\u05d7.\u05e4 / \u05e2.\u05de</label>' + esc(c.business_id) + '</div>' : '') + '<div class="client-info-item"><label>\u05e1\u05d4"\u05db</label>' + fmt(totalPrice) + '</div><div class="client-info-item"><label>\u05e9\u05d5\u05dc\u05dd</label><span style="color:var(--green)">' + fmt(totalPaid) + '</span></div>' + (debt > 0 ? '<div class="client-info-item"><label>\u05d9\u05ea\u05e8\u05d4</label><span style="color:var(--red)">' + fmt(debt) + '</span></div>' : '') + '</div>' + (cEvs.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">\u05d4\u05d9\u05e1\u05d8\u05d5\u05re\u05d9\u05d9\u05ea:</div>' + cEvs.map(d => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>' + esc(d.event_title) + '</span><span>' + (d.price ? fmt(d.price) : '\u2014') + ' \u00b7 <span class="badge badge-' + (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1' ? 'paid' : d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' ? 'pending' : 'late') + '">' + esc(d.status) + '</span></span></div>').join('') : '<div style="font-size:13px;color:var(--muted);text-align:center">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd</div>') + '</div></div>';
+    return '<div class="client-card"><div class="client-card-header" onclick="toggleEl(\'client-body-' + c.id + '\')"><div><div style="font-weight:600;font-size:14px">' + esc(c.name) + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + esc(c.phone || '') + (c.business_id ? ' \u00b7 \u05d7.\u05e4: ' + esc(c.business_id) : '') + (totalPrice > 0 ? ' \u00b7 \u05e1\u05d4"\u05db: ' + fmt(totalPrice) : '') + (debt > 0 ? ' \u00b7 <span style="color:var(--red)">\u05d7\u05d5\u05d1: ' + fmt(debt) + '</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-del" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\')">&#128465;</button><span>&#9660;</span></div></div><div class="client-card-body" id="client-body-' + c.id + '"><div class="client-info">' + (c.phone ? '<div class="client-info-item"><label>\u05d8\u05dc\u05e4\u05d5\u05df</label>' + esc(c.phone) + '</div>' : '') + (c.email ? '<div class="client-info-item"><label>\u05d0\u05d9\u05de\u05d9\u05d9\u05dc</label>' + esc(c.email) + '</div>' : '') + (c.business_id ? '<div class="client-info-item"><label>\u05d7.\u05e4 / \u05e2.\u05de</label>' + esc(c.business_id) + '</div>' : '') + '<div class="client-info-item"><label>\u05e1\u05d4"\u05db</label>' + fmt(totalPrice) + '</div><div class="client-info-item"><label>\u05e9\u05d5\u05dc\u05dd</label><span style="color:var(--green)">' + fmt(totalPaid) + '</span></div>' + (debt > 0 ? '<div class="client-info-item"><label>\u05d9\u05ea\u05e8\u05d4</label><span style="color:var(--red)">' + fmt(debt) + '</span></div>' : '') + '</div>' + (cEvs.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea:</div>' + cEvs.map(d => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>' + esc(d.event_title) + '</span><span>' + (d.price ? fmt(d.price) : '\u2014') + ' \u00b7 <span class="badge badge-' + (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1' ? 'paid' : d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' ? 'pending' : 'late') + '">' + esc(d.status) + '</span></span></div>').join('') : '<div style="font-size:13px;color:var(--muted);text-align:center">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd</div>') + '</div></div>';
   }).join('');
 }
 
@@ -1747,7 +1747,7 @@ function renderAlerts(income, expense, salary, net, pendingIncome) {
   if (lateEvs.length) alerts.push({ type: 'warn', msg: lateEvs.length + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05e2\u05dd \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd \u05e9\u05d8\u05e8\u05dd \u05e9\u05d5\u05dc\u05de\u05d4' });
   const lateWkrs = cachedEmpEvents.filter(e => e.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8');
   if (lateWkrs.length) alerts.push({ type: 'danger', msg: lateWkrs.length + ' \u05ea\u05e9\u05dc\u05d5\u05de\u05d9\u05dd \u05dc\u05e2\u05d5\u05d1\u05d3\u05d9\u05dd \u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' });
-  const debtClients = cachedClients.filter(c => { const evs = cachedEventDetails.filter(d => d.client_id === c.id); const debt = evs.reduce((s, d) => s + (d.price || 0), 0) - evs.filter(d => d.status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : 'paid').reduce((s, d) => s + (d.price || 0), 0); return debt > 0; });
+  const debtClients = cachedClients.filter(c => { const evs = cachedEventDetails.filter(d => d.client_id === c.id); const debt = evs.reduce((s, d) => s + (d.price || 0), 0) - evs.filter(d => d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0); return debt > 0; });
   if (debtClients.length) alerts.push({ type: 'warn', msg: debtClients.length + ' \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea \u05e2\u05dd \u05d9\u05ea\u05e8\u05d4 \u05dc\u05ea\u05e9\u05dc\u05d5\u05dd: ' + debtClients.map(c => esc(c.name)).join(', ') });
   if (!alerts.length) alerts.push({ type: 'ok', msg: '\u05d4\u05db\u05dc \u05ea\u05e7\u05d9\u05df \u2713' });
   $('alerts-box').innerHTML = alerts.map(a => '<div class="alert alert-' + a.type + '">' + a.msg + '</div>').join('');
