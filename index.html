@@ -489,7 +489,7 @@ tr:last-child td{border-bottom:none}
           <input type="text" id="t-desc" placeholder="תיאור" />
           <input type="number" id="t-amount" placeholder="סכום ₪" min="0" />
           <select id="t-type"><option value="income">הכנסה</option><option value="expense">הוצאה</option></select>
-          <select id="t-cat"><option>שירותים</option><option>שכירות</option><option>ציוד</option><option>שיווק</option><option>אחר</option></select>
+          <select id="t-cat"><option value="שירותים">שירותים</option><option value="שכירות">שכירות</option><option value="ציוד">ציוד</option><option value="שיווק">שיווק</option><option value="אחר">אחר</option></select>
         </div>
         <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
       </div>
@@ -557,7 +557,7 @@ tr:last-child td{border-bottom:none}
         <div class="form-row">
           <input type="text" id="r-desc" placeholder="תיאור" />
           <input type="number" id="r-amount" placeholder="סכום ₪ לחודש" min="0" />
-          <select id="r-cat"><option>שכירות</option><option>ביטוח</option><option>תוכנות</option><option>טלפון</option><option>רכב</option><option>שיווק</option><option>אחר</option></select>
+          <select id="r-cat"><option value="שכירות">שכירות</option><option value="ביטוח">ביטוח</option><option value="תוכנות">תוכנות</option><option value="טלפון">טלפון</option><option value="רכב">רכב</option><option value="שיווק">שיווק</option><option value="אחר">אחר</option></select>
         </div>
         <button class="btn-add" id="btn-add-rec" onclick="addRecurring()">+ הוסף</button>
       </div>
@@ -1620,10 +1620,10 @@ function renderEmpCards(monthDetailIds) {
 
     const evRows = ewks.map(w => {
       const det = cachedEventDetails.find(d => d.id === w.event_detail_id);
-      return '<tr><td style="font-size:13px">' + (det ? esc(det.event_title) : '\u05d0\u05d9\u05e8\u05d5\u05e2') + ' <span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:1px 5px;border-radius:100px">\u05de\u05d0\u05d9\u05e8\u05d5\u05e2</span></td><td style="font-size:12px;color:var(--muted)">' + (det ? det.event_date || '\u2014' : '\u2014') + '</td><td style="font-weight:600">' + fmt(w.amount) + '</td><td><select class="status-select" onchange="updateEventWorkerStatus(\'' + w.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option' + (w.status === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></td><td></td></tr>';
+      return '<tr><td style="font-size:13px">' + (det ? esc(det.event_title) : '\u05d0\u05d9\u05e8\u05d5\u05e2') + ' <span style="font-size:10px;background:var(--blue-bg);color:var(--blue);padding:1px 5px;border-radius:100px">\u05de\u05d0\u05d9\u05e8\u05d5\u05e2</span></td><td style="font-size:12px;color:var(--muted)">' + (det ? det.event_date || '\u2014' : '\u2014') + '</td><td style="font-weight:600">' + fmt(w.amount) + '</td><td><select class="status-select" onchange="updateEventWorkerStatus(\'' + w.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option value="' + s + '"' + (w.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') + '</select></td><td></td></tr>';
     }).join('');
 
-    const empEvRows = evs.map(ev => '<tr><td style="font-size:13px">' + esc(ev.event_name) + '</td><td style="font-size:12px;color:var(--muted)">' + (ev.date || '\u2014') + '</td><td style="font-weight:600">' + fmt(ev.amount) + '</td><td><select class="status-select" onchange="updateEmpEventStatus(\'' + ev.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option' + (ev.status === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></td><td><button class="btn-del" onclick="deleteEmpEvent(\'' + ev.id + '\')">&#128465;</button></td></tr>').join('');
+    const empEvRows = evs.map(ev => '<tr><td style="font-size:13px">' + esc(ev.event_name) + '</td><td style="font-size:12px;color:var(--muted)">' + (ev.date || '\u2014') + '</td><td style="font-weight:600">' + fmt(ev.amount) + '</td><td><select class="status-select" onchange="updateEmpEventStatus(\'' + ev.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option value="' + s + '"' + (ev.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') + '</select></td><td><button class="btn-del" onclick="deleteEmpEvent(\'' + ev.id + '\')">&#128465;</button></td></tr>').join('');
 
     return '<div class="emp-card"><div class="emp-card-header" onclick="toggleCard(\'' + emp.id + '\')"><div><div class="emp-card-name">&#128100; ' + esc(emp.name) + '</div><div class="emp-card-meta">' + esc(emp.role || '') + (emp.phone ? ' \u00b7 ' + esc(emp.phone) : '') + ' \u00b7 ' + (evs.length + ewks.length) + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9' + (total > 0 ? ' \u00b7 ' + fmt(total) : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-outline" style="font-size:12px" onclick="event.stopPropagation();openEmpModal(\'' + emp.id + '\')">✏️</button><button class="btn-del" onclick="event.stopPropagation();deleteEmp(\'' + emp.id + '\')">&#128465;</button><span id="toggle-icon-' + emp.id + '">&#9660;</span></div></div><div class="emp-card-body" id="card-body-' + emp.id + '"><div class="event-form"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">+ \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2</div><div class="form-row"><input type="text" id="ev-event-' + emp.id + '" placeholder="\u05e9\u05dd \u05d4\u05d0\u05d9\u05e8\u05d5\u05e2" /><input type="date" id="ev-date-' + emp.id + '" /><input type="number" id="ev-amount-' + emp.id + '" placeholder="\u05e1\u05db\u05d5\u05dd \u20aa" min="0" /></div><button class="btn-sm" onclick="addEmpEvent(\'' + emp.id + '\')">\u05d4\u05d5\u05e1\u05e3</button></div>' + ((evs.length + ewks.length) ? '<table><thead><tr><th>\u05d0\u05d9\u05e8\u05d5\u05e2</th><th>\u05ea\u05d0\u05e8\u05d9\u05da</th><th>\u05e1\u05db\u05d5\u05dd</th><th>\u05e1\u05d8\u05d0\u05d8\u05d5\u05e1</th><th></th></tr></thead><tbody>' + evRows + empEvRows + '</tbody></table>' : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9</div>') + '</div></div>';
   }).join('');
@@ -1744,7 +1744,7 @@ function renderModalWorkers() {
     cachedEmps.map(e => '<option value="' + e.id + '"' + (w.employee_id === e.id ? ' selected' : '') + '>' + esc(e.name) + '</option>').join('') +
     '</select><input type="number" placeholder="\u20aa" value="' + (w.amount || '') + '" oninput="modalWorkers[' + i + '].amount=parseFloat(this.value)||0" />' +
     '<select onchange="modalWorkers[' + i + '].status=this.value">' +
-    ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option' + (w.status === s ? ' selected' : '') + '>' + s + '</option>').join('') +
+    ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option value="' + s + '"' + (w.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') +
     '</select><button class="btn-del" onclick="modalWorkers.splice(' + i + ',1);renderModalWorkers()">✕</button></div>'
   ).join('');
 }
