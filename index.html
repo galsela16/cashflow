@@ -423,9 +423,9 @@ tr:last-child td{border-bottom:none}
     <div class="tabs">
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
-      <button class="tab" onclick="showPage('events',this)">🎯 אירועים</button>
+      <button class="tab" data-feature="events" onclick="checkAccess('events') && showPage('events',this)">🎯 אירועים</button>
       <button class="tab" data-feature="employees" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
-      <button class="tab" onclick="showPage('clients',this)">🤝 לקוחות</button>
+      <button class="tab" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" onclick="showPage('recurring',this)">🔄 קבועות</button>
       <button class="tab" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" onclick="showPage('alerts',this)">🔔 התראות</button>
@@ -615,9 +615,9 @@ tr:last-child td{border-bottom:none}
   <div class="bottom-nav">
     <button class="bnav-item active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="bnav-icon">📊</span>סיכום</button>
     <button class="bnav-item" onclick="showPage('transactions',this)" data-page="transactions"><span class="bnav-icon">💸</span>הכנסות</button>
-    <button class="bnav-item" onclick="showPage('events',this)" data-page="events"><span class="bnav-icon">🎯</span>אירועים</button>
+    <button class="bnav-item" onclick="checkAccess('events') && showPage('events',this)" data-page="events"><span class="bnav-icon">🎯</span>אירועים</button>
     <button class="bnav-item" onclick="checkAccess('employees') && showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
-    <button class="bnav-item" onclick="showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
+    <button class="bnav-item" onclick="checkAccess('clients') && showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
     <button class="bnav-item" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
@@ -628,7 +628,7 @@ tr:last-child td{border-bottom:none}
     <div class="modal-body" style="padding:2rem">
       <div style="font-size:48px;margin-bottom:16px">⭐</div>
       <div style="font-size:20px;font-weight:700;margin-bottom:8px">שדרג לפרו</div>
-      <div style="font-size:14px;color:var(--muted);margin-bottom:24px">ניהול עובדים זמין בתוכנית פרו בלבד בסך ₪16 לחודש</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:24px">ניהול עובדים, לקוחות ואירועים זמין בתוכנית פרו בסך ₪16 לחודש</div>
       <a href="https://project-7bqkz.vercel.app/#pricing" target="_blank" class="btn-add" style="display:block;margin-bottom:12px;text-decoration:none;text-align:center">שדרג עכשיו →</a>
       <button class="btn-outline" onclick="closeUpgradeModal()">ביטול</button>
     </div>
@@ -913,7 +913,7 @@ const I18N = {
   'מדיניות פרטיות (Privacy Policy)': 'Privacy Policy', 'מדיניות החזרים (Refund Policy)': 'Refund Policy',
   'תנאי שימוש (Terms of Service)': 'Terms of Service',
   // Upgrade
-  'שדרג לפרו': 'Upgrade to Pro', 'ניהול עובדים זמין בתוכנית פרו בלבד בסך ₪16 לחודש': 'Employee management is available only in the Pro plan for ₪16/month',
+  'שדרג לפרו': 'Upgrade to Pro', 'ניהול עובדים, לקוחות ואירועים זמין בתוכנית פרו בסך ₪16 לחודש': 'Employee, client and event management is available in the Pro plan for ₪16/month',
   'שדרג עכשיו →': 'Upgrade now →',
   // Plan badges
   'בסיסי': 'Basic', 'פרו ⭐': 'Pro ⭐', 'פג תוקף': 'Expired',
@@ -1254,20 +1254,24 @@ function updatePlanUI() {
     }
   }
 
-  // עמעם את טאב העובדים אם התוכנית בסיסית או פגת תוקף
+  // עמעם את הטאבים העסקיים (עובדים, לקוחות, אירועים) אם התוכנית בסיסית או פגת תוקף
   const restricted = userPlan === 'basic' || userPlan === 'expired';
-  document.querySelectorAll('[data-page="employees"], [data-feature="employees"]').forEach(t => {
-    t.style.opacity = restricted ? '0.5' : '1';
-    t.title = restricted ? (userPlan === 'expired' ? 'הניסיון הסתיים — נדרש שדרוג' : 'זמין בתוכנית פרו בלבד') : '';
+  ['employees', 'clients', 'events'].forEach(feat => {
+    document.querySelectorAll('[data-page="' + feat + '"], [data-feature="' + feat + '"]').forEach(t => {
+      t.style.opacity = restricted ? '0.5' : '1';
+      t.title = restricted ? (userPlan === 'expired' ? (currentLang === 'en' ? 'Trial ended — upgrade required' : 'הניסיון הסתיים — נדרש שדרוג') : (currentLang === 'en' ? 'Available in Pro plan' : 'זמין בתוכנית פרו')) : '';
+    });
   });
 }
 
+// פיצ'רים עסקיים — זמינים רק ב-Pro (ב-Basic חסומים)
+const PRO_FEATURES = ['employees', 'clients', 'events'];
 function checkAccess(feature) {
-  if (feature === 'employees' && userPlan === 'basic') {
+  if (userPlan === 'expired') {
     showUpgradeModal();
     return false;
   }
-  if (userPlan === 'expired') {
+  if (PRO_FEATURES.includes(feature) && userPlan === 'basic') {
     showUpgradeModal();
     return false;
   }
