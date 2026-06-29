@@ -20,7 +20,8 @@
 body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
 #app-screen{background:linear-gradient(145deg,#3a6b8c 0%,#3a8a9a 30%,#3aaa98 60%,#42b08a 100%);min-height:100vh;position:relative}
 #app-screen::before{content:'';position:fixed;inset:0;background:linear-gradient(145deg,rgba(220,235,245,.62) 0%,rgba(215,240,242,.58) 35%,rgba(218,245,238,.55) 65%,rgba(225,245,235,.6) 100%);pointer-events:none;z-index:0}
-#app-screen .topbar,#app-screen .main,#app-screen .bottom-nav{position:relative;z-index:1}
+#app-screen .topbar{z-index:200}
+#app-screen .main,#app-screen .bottom-nav{position:relative;z-index:1}
 #app-screen .topbar{background:rgba(255,255,255,.7);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.5);box-shadow:0 4px 24px rgba(80,120,150,.1)}
 #app-screen .topbar-title{color:var(--blue)}
 #app-screen .topbar-user{color:var(--muted)}
