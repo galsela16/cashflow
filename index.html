@@ -719,6 +719,18 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <!-- אדמין בלבד — החלפת גרסאות לבדיקה -->
+      <div class="settings-section" id="admin-section" style="display:none">
+        <div class="settings-section-title">👑 אדמין — בדיקת גרסאות</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">החלף בין מסלולים כדי לבדוק איך האפליקציה נראית. לא משפיע על המנוי האמיתי שלך.</div>
+        <div class="view-toggle" style="width:100%;flex-wrap:wrap">
+          <button class="view-toggle-btn" id="admin-plan-off" onclick="setAdminPlan(null)">אדמין (מלא)</button>
+          <button class="view-toggle-btn" id="admin-plan-trial" onclick="setAdminPlan('trial')">ניסיון</button>
+          <button class="view-toggle-btn" id="admin-plan-basic" onclick="setAdminPlan('basic')">בסיסי</button>
+          <button class="view-toggle-btn" id="admin-plan-pro" onclick="setAdminPlan('pro')">פרו</button>
+        </div>
+      </div>
+
       <div class="msg" id="settings-msg"></div>
     </div>
     <div class="modal-footer">
@@ -1047,10 +1059,37 @@ function openSettings() {
   const taxEl = $('tax-rate-db'); if (taxEl) $('settings-tax').value = taxEl.value;
   const savedBiz = localStorage.getItem('cf_bizname'); if (savedBiz) $('settings-bizname').value = savedBiz;
   const savedNotif = localStorage.getItem('cf_notif'); $('settings-notif').checked = savedNotif !== 'off';
+  // סקשן אדמין — הצג רק לאדמינים, וסמן את הבחירה הנוכחית
+  const adminSec = $('admin-section');
+  if (adminSec) {
+    adminSec.style.display = isAdmin() ? 'block' : 'none';
+    if (isAdmin()) {
+      ['off','trial','basic','pro'].forEach(p => {
+        const btn = $('admin-plan-' + p);
+        if (btn) btn.classList.toggle('active', (p === 'off' && !adminPlanOverride) || p === adminPlanOverride);
+      });
+    }
+  }
   $('settings-msg').className = 'msg';
   $('settings-modal').style.display = 'flex';
 }
 function closeSettings() { $('settings-modal').style.display = 'none'; }
+
+// אדמין — החלף מסלול תצוגה לבדיקה
+function setAdminPlan(plan) {
+  adminPlanOverride = plan;
+  if (plan) localStorage.setItem('cf_admin_override', plan);
+  else localStorage.removeItem('cf_admin_override');
+  // עדכן את המסלול הפעיל ורענן
+  userPlan = plan || 'pro';
+  // סמן כפתור פעיל
+  ['off','trial','basic','pro'].forEach(p => {
+    const btn = $('admin-plan-' + p);
+    if (btn) btn.classList.toggle('active', (p === 'off' && !plan) || p === plan);
+  });
+  updatePlanUI();
+  if (typeof renderAll === 'function') renderAll();
+}
 
 let currentLang = localStorage.getItem('cf_lang') || 'he';
 
@@ -1157,6 +1196,12 @@ async function saveNewPassword() {
 }
 
 // ── SUBSCRIPTION ──
+// מיילים של אדמינים — תמיד מקבלים גישת פרו מלאה
+const ADMIN_EMAILS = ['galsela16@gmail.com'];
+function isAdmin() { return currentUser && ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase()); }
+// עקיפת תצוגה לאדמין (לבדיקת גרסאות) — null = ללא עקיפה
+let adminPlanOverride = localStorage.getItem('cf_admin_override') || null;
+
 async function loadSubscription() {
   const uid = currentUser.id;
   const res = await sb.from('subscriptions').select('*').eq('user_id', uid).maybeSingle();
@@ -1184,6 +1229,10 @@ async function loadSubscription() {
       }
     }
   }
+  // אדמין — גישת פרו מלאה (אלא אם בחר לעקוף לבדיקה)
+  if (isAdmin()) {
+    userPlan = adminPlanOverride || 'pro';
+  }
   updatePlanUI();
 }
 
@@ -1191,11 +1240,18 @@ function updatePlanUI() {
   // הצג תווית תוכנית
   const planBadge = document.getElementById('plan-badge');
   if (planBadge) {
-    if (userPlan === 'trial') planBadge.textContent = currentLang === 'en' ? ('Trial · ' + trialDaysLeft + ' days') : ('ניסיון · ' + trialDaysLeft + ' ימים');
-    else if (userPlan === 'basic') planBadge.textContent = currentLang === 'en' ? 'Basic' : 'בסיסי';
-    else if (userPlan === 'pro') planBadge.textContent = currentLang === 'en' ? 'Pro ⭐' : 'פרו ⭐';
-    else if (userPlan === 'expired') planBadge.textContent = currentLang === 'en' ? 'Expired' : 'פג תוקף';
-    planBadge.style.background = userPlan === 'pro' ? '#2855e0' : userPlan === 'expired' ? '#c0392b' : '#0d9c6e';
+    if (isAdmin() && !adminPlanOverride) {
+      planBadge.textContent = currentLang === 'en' ? 'Admin 👑' : 'אדמין 👑';
+      planBadge.style.background = '#7c3aed';
+    } else {
+      if (userPlan === 'trial') planBadge.textContent = currentLang === 'en' ? ('Trial · ' + trialDaysLeft + ' days') : ('ניסיון · ' + trialDaysLeft + ' ימים');
+      else if (userPlan === 'basic') planBadge.textContent = currentLang === 'en' ? 'Basic' : 'בסיסי';
+      else if (userPlan === 'pro') planBadge.textContent = currentLang === 'en' ? 'Pro ⭐' : 'פרו ⭐';
+      else if (userPlan === 'expired') planBadge.textContent = currentLang === 'en' ? 'Expired' : 'פג תוקף';
+      planBadge.style.background = userPlan === 'pro' ? '#2855e0' : userPlan === 'expired' ? '#c0392b' : '#0d9c6e';
+      // אם אדמין בעקיפה — סמן זאת
+      if (isAdmin() && adminPlanOverride) planBadge.textContent += currentLang === 'en' ? ' (test)' : ' (בדיקה)';
+    }
   }
 
   // עמעם את טאב העובדים אם התוכנית בסיסית או פגת תוקף
