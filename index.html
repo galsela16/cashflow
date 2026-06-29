@@ -343,6 +343,7 @@ tr:last-child td{border-bottom:none}
     <div class="topbar-user">
       <span id="user-email-display"></span>
       <span id="plan-badge" style="padding:4px 10px;border-radius:100px;font-size:12px;font-weight:600;color:#fff;background:#0d9c6e"></span>
+      <button class="btn-logout" onclick="openChangePassword()">🔑 סיסמה</button>
       <button class="btn-logout" onclick="logout()">יציאה</button>
     </div>
   </div>
@@ -616,6 +617,32 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="chpass-modal" style="display:none" onclick="if(event.target===this)closeChangePassword()">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title">שינוי סיסמה</div>
+      <button class="btn-del" onclick="closeChangePassword()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">הכניסו סיסמה חדשה (לפחות 6 תווים).</p>
+      <div class="form-group">
+        <label>סיסמה חדשה</label>
+        <input type="password" id="chpass-new" placeholder="לפחות 6 תווים" />
+      </div>
+      <div class="form-group">
+        <label>אימות סיסמה</label>
+        <input type="password" id="chpass-confirm" placeholder="הכניסו שוב" />
+      </div>
+      <div class="msg" id="chpass-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeChangePassword()">ביטול</button>
+      <button class="btn-add" id="chpass-btn" onclick="saveNewPassword()">עדכן סיסמה</button>
+    </div>
+  </div>
+</div>
+
 <!-- Event Modal -->
 <div class="modal-overlay" id="event-modal" style="display:none" onclick="if(event.target===this)closeEventModal()">
   <div class="modal">
@@ -787,6 +814,25 @@ async function sendReset() {
   const m = $('forgot-msg');
   if (error) { m.textContent = error.message; m.className = 'msg err'; }
   else { m.textContent = '✅ נשלח! בדקו את תיבת הדואר'; m.className = 'msg ok'; setTimeout(closeForgot, 3000); }
+}
+
+// ── CHANGE PASSWORD (logged-in user) ──
+function openChangePassword() {
+  $('chpass-new').value = ''; $('chpass-confirm').value = '';
+  $('chpass-msg').className = 'msg';
+  $('chpass-modal').style.display = 'flex';
+}
+function closeChangePassword() { $('chpass-modal').style.display = 'none'; }
+async function saveNewPassword() {
+  const pass = $('chpass-new').value, confirm = $('chpass-confirm').value;
+  const m = $('chpass-msg');
+  if (pass.length < 6) { m.textContent = 'הסיסמה חייבת להכיל לפחות 6 תווים'; m.className = 'msg err'; return; }
+  if (pass !== confirm) { m.textContent = 'הסיסמאות אינן תואמות'; m.className = 'msg err'; return; }
+  $('chpass-btn').disabled = true; $('chpass-btn').textContent = '⏳ מעדכן...';
+  const { error } = await sb.auth.updateUser({ password: pass });
+  $('chpass-btn').disabled = false; $('chpass-btn').textContent = 'עדכן סיסמה';
+  if (error) { m.textContent = error.message; m.className = 'msg err'; }
+  else { m.textContent = '✅ הסיסמה עודכנה בהצלחה!'; m.className = 'msg ok'; setTimeout(closeChangePassword, 2000); }
 }
 
 // ── SUBSCRIPTION ──
