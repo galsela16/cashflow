@@ -825,6 +825,94 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbzH60EnHD5wqtRfYR1vv1-5
 const { createClient } = supabase;
 const sb = createClient(SB_URL, SB_KEY);
 
+// ── i18n: מילון תרגומים (עברית → אנגלית) ──
+const I18N = {
+  // Auth
+  'ניהול תזרים': 'Cash Flow', 'שכר ועסק': 'Payroll & Business', 'בקליק אחד': 'In One Click',
+  'הפתרון המקיף לעצמאים ועסקים קטנים לניהול הכנסות, הוצאות, עובדים ולקוחות — הכל במקום אחד.': 'The complete solution for freelancers and small businesses to manage income, expenses, employees and clients — all in one place.',
+  'דשבורד תזרים בזמן אמת': 'Real-time cash flow dashboard',
+  'ניהול עובדים ושכר': 'Employee & payroll management',
+  'מעקב אירועים ולקוחות': 'Event & client tracking',
+  'שיטת Profit First מובנית': 'Built-in Profit First method',
+  'מאובטח ומוצפן — Supabase': 'Secure & encrypted — Supabase',
+  'ברוכים הבאים חזרה': 'Welcome back', 'היכנסו לחשבון שלכם כדי להמשיך': 'Sign in to your account to continue',
+  'פתחו חשבון חינם': 'Create a free account', '30 יום ניסיון — ללא כרטיס אשראי': '30-day trial — no credit card',
+  'כניסה': 'Login', 'הרשמה חינם': 'Sign up free', 'כניסה לחשבון': 'Sign in', 'התחילו עכשיו': 'Get started',
+  'אימייל': 'Email', 'סיסמה': 'Password', 'שכחתי סיסמה': 'Forgot password', 'אימות סיסמה': 'Confirm password',
+  'לפחות 6 תווים': 'At least 6 characters', 'הכנס שוב את הסיסמה': 'Re-enter password',
+  'מאובטח ומוצפן · ללא כרטיס אשראי · ניסיון חינם 30 יום': 'Secure & encrypted · No credit card · 30-day free trial',
+  // Topbar / nav
+  'חשבון מחובר': 'Connected account', 'בחירת מסלול': 'Choose plan', 'הגדרות ואפשרויות': 'Settings & options',
+  'שינוי סיסמה': 'Change password', 'יציאה': 'Log out',
+  'דשבורד': 'Dashboard', 'הכנסות/הוצאות': 'Income/Expenses', 'אירועים': 'Events', 'עובדים': 'Employees',
+  'לקוחות': 'Clients', 'קבועות': 'Recurring', 'התראות': 'Alerts',
+  // Dashboard
+  'חודש:': 'Month:', 'יתרה נטו': 'Net balance', 'כמה נשאר בפועל': 'What\'s actually left',
+  'צפי רווח': 'Projected profit', 'כולל מה שצפוי': 'Including projected',
+  'הכנסות': 'Income', 'נכנס מלקוחות': 'Received from clients', 'שולם בפועל ▼': 'Actually paid ▼',
+  'צפוי מלקוחות': 'Expected from clients', 'טרם שולם ▼': 'Not yet paid ▼',
+  'הוצאות': 'Expenses', 'הוצאות עסק': 'Business expenses', 'סה"כ החודש ▼': 'Total this month ▼',
+  'הוצאות לפי קטגוריה': 'Expenses by category',
+  'יצא לעובדים': 'Paid to employees', 'שולם בפועל': 'Actually paid',
+  'צפוי לעובדים': 'Expected to employees', 'טרם שולם': 'Not yet paid',
+  'סטטוס עובדים החודש': 'Employee status this month', 'מס': 'Tax',
+  'מס על נכנס': 'Tax on received', 'מס צפוי': 'Projected tax', '% מס': 'Tax %',
+  'אין אירועים': 'No events', 'אירועים': 'events',
+  // Events
+  'אירועים החודש': 'Events this month', '☰ רשימה': '☰ List', '📅 יומן': '📅 Calendar',
+  '🔄 רענן': '🔄 Refresh', '+ אירוע ידני': '+ Manual event', 'טוען אירועים...': 'Loading events...',
+  'מחיר ללקוח': 'Client price', 'עלות עובדים': 'Employee cost', 'רווח': 'Profit',
+  'לחץ על ✏️ להוספת פרטים': 'Click ✏️ to add details', '(ללא שם)': '(No name)', 'היום': 'Today',
+  'אין אירועים החודש. הוסף אירוע ידני או רענן את היומן': 'No events this month. Add a manual event or refresh the calendar',
+  // Employees / Clients
+  'הוסף עובד': 'Add employee', 'שם העובד': 'Employee name', 'תפקיד': 'Role', 'טלפון': 'Phone',
+  '+ הוסף עובד': '+ Add employee', 'הוסף לקוח': 'Add client', 'שם הלקוח': 'Client name',
+  'ח.פ / ע.מ': 'Business ID', '+ הוסף לקוח': '+ Add client', '+ הוסף': '+ Add',
+  'לא נוספו עובדים': 'No employees added', 'אין אירועים החודש': 'No events this month',
+  '+ הוסף אירוע': '+ Add event', 'שם האירוע': 'Event name', 'סכום ₪': 'Amount ₪',
+  'היסטוריית:': 'History:', 'סה"כ': 'Total', 'שולם': 'Paid', 'יתרה': 'Balance',
+  'אין אירועים': 'No events', 'מאירוע': 'from event',
+  // Recurring
+  'הוצאות קבועות': 'Recurring expenses', 'תיאור': 'Description', 'קטגוריה': 'Category', 'סכום': 'Amount',
+  'הוסף הוצאה קבועה': 'Add recurring expense', 'אין הוצאות קבועות': 'No recurring expenses',
+  // Profit First
+  'פעמיים בחודש — הכנסות שנצברו מחולקות לחשבונות': 'Twice a month — accrued income split into accounts',
+  'הכנסה לחלוקה': 'Income to allocate', 'נכנס מלקוחות החודש': 'Received from clients this month',
+  '💡 נלקח אוטומטית מ"נכנס מלקוחות"': '💡 Taken automatically from "Received from clients"',
+  'הקצאה לחשבונות': 'Allocation to accounts', '✏️ ערוך אחוזים': '✏️ Edit percentages',
+  'ערוך אחוזים (סה"כ = 100%)': 'Edit percentages (total = 100%)', 'שמור': 'Save', '✕ סגור': '✕ Close',
+  // Alerts / status
+  'בוצע תשלום': 'Payment made', 'בוצע תשלום + חשבונית מס': 'Payment made + tax invoice',
+  'יצאה דרישת תשלום': 'Payment requested', 'לא יצאה דרישת תשלום': 'No payment requested',
+  'ממתין': 'Pending', 'באיחור': 'Overdue',
+  // Modals
+  'הכנסה': 'Income', 'הוצאה': 'Expense', 'ביטול': 'Cancel', 'מחק': 'Delete', 'הוסף': 'Add', 'עדכן': 'Update',
+  'איפוס סיסמה': 'Reset password',
+  'הכניסו את כתובת האימייל שלכם ונשלח קישור לאיפוס הסיסמה.': 'Enter your email and we\'ll send a password reset link.',
+  'שלח קישור': 'Send link', 'סיסמה חדשה': 'New password', 'הכניסו שוב': 'Re-enter',
+  'הכניסו סיסמה חדשה (לפחות 6 תווים).': 'Enter a new password (at least 6 characters).',
+  'עדכן סיסמה': 'Update password', 'סגור': 'Close', 'שמור הגדרות': 'Save settings',
+  // Settings
+  '⚙️ הגדרות ואפשרויות': '⚙️ Settings & options', '🌐 שפה': '🌐 Language', 'שפת הממשק': 'Interface language',
+  'תרגום מלא של הממשק יתווסף בקרוב': '', '🧾 אחוז מס ברירת מחדל': '🧾 Default tax rate',
+  'אחוז המס שיחושב על הכנסות': 'Tax rate applied to income', '🔔 התראות': '🔔 Alerts',
+  'הצג התראות על חובות ותשלומים': 'Show alerts for debts and payments', '🏢 פרטי עסק': '🏢 Business details',
+  'שם העסק': 'Business name', 'שם העסק שלך': 'Your business name', '📄 מדיניות': '📄 Policies',
+  'מדיניות פרטיות (Privacy Policy)': 'Privacy Policy', 'מדיניות החזרים (Refund Policy)': 'Refund Policy',
+  'תנאי שימוש (Terms of Service)': 'Terms of Service',
+  // Upgrade
+  'שדרג לפרו': 'Upgrade to Pro', 'ניהול עובדים זמין בתוכנית פרו בלבד בסך ₪16 לחודש': 'Employee management is available only in the Pro plan for ₪16/month',
+  'שדרג עכשיו →': 'Upgrade now →',
+  // Plan badges
+  'בסיסי': 'Basic', 'פרו ⭐': 'Pro ⭐', 'פג תוקף': 'Expired',
+  // Misc
+  '-- בחר --': '-- Select --', '— ללא לקוח —': '— No client —', 'אין פריטים': 'No items',
+  'טוען...': 'Loading...', 'לחץ ▼': 'Click ▼'
+};
+// מיפוי הפוך לסטטוסים (אנגלית → עברית) לשמירה ב-DB
+const STATUS_HE = {}; Object.keys(I18N).forEach(he => { if (I18N[he]) STATUS_HE[I18N[he]] = he; });
+function t(s) { if (currentLang === 'en' && I18N[s] !== undefined && I18N[s] !== '') return I18N[s]; return s; }
+
 let currentUser = null;
 let cachedTx = [], cachedEmps = [], cachedEmpEvents = [], cachedClients = [];
 let cachedEventDetails = [], cachedEventWorkers = [], cachedRecurring = [];
@@ -962,12 +1050,58 @@ function openSettings() {
 function closeSettings() { $('settings-modal').style.display = 'none'; }
 
 let currentLang = localStorage.getItem('cf_lang') || 'he';
+
+// מחיל תרגום על אלמנט בודד וילדיו (טקסט + placeholder)
+function translateNode(root) {
+  // טקסטים בתוך אלמנטים (text nodes)
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const textNodes = [];
+  let n; while (n = walker.nextNode()) textNodes.push(n);
+  textNodes.forEach(node => {
+    const orig = node.nodeValue;
+    if (orig == null) return;
+    const trimmed = orig.trim();
+    if (!trimmed) return;
+    // דלג על טקסט בתוך script/style
+    const pn = node.parentNode;
+    if (pn && (pn.nodeName === 'SCRIPT' || pn.nodeName === 'STYLE')) return;
+    // שמור את המקור הראשוני כדי לאפשר חזרה לעברית
+    if (!node._origText) node._origText = orig;
+    const base = node._origText.trim();
+    if (currentLang === 'en' && I18N[base] !== undefined && I18N[base] !== '') {
+      node.nodeValue = node._origText.replace(base, I18N[base]);
+    } else {
+      node.nodeValue = node._origText;
+    }
+  });
+  // placeholders
+  root.querySelectorAll('[placeholder]').forEach(el => {
+    if (!el._origPlaceholder) el._origPlaceholder = el.getAttribute('placeholder');
+    const base = el._origPlaceholder;
+    el.setAttribute('placeholder', currentLang === 'en' && I18N[base] ? I18N[base] : base);
+  });
+}
+
 function setLanguage(lang) {
   currentLang = lang;
   localStorage.setItem('cf_lang', lang);
-  $('lang-he').classList.toggle('active', lang === 'he');
-  $('lang-en').classList.toggle('active', lang === 'en');
-  // התרגום המלא של הממשק יתווסף בשלב הבא
+  if ($('lang-he')) $('lang-he').classList.toggle('active', lang === 'he');
+  if ($('lang-en')) $('lang-en').classList.toggle('active', lang === 'en');
+  // כיוון הדף
+  document.documentElement.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+  document.documentElement.setAttribute('lang', lang === 'en' ? 'en' : 'he');
+  // תרגם את כל ה-DOM הסטטי
+  translateNode(document.body);
+  // רנדר מחדש את התצוגות הדינמיות
+  if (currentUser && typeof renderAll === 'function') {
+    renderAll();
+    if (typeof renderEventsList === 'function') renderEventsList();
+    if (typeof renderRecurring === 'function') renderRecurring();
+    if (typeof renderClientsList === 'function') renderClientsList();
+    if (typeof renderEmpCards === 'function') renderEmpCards();
+    // תרגם שוב אחרי הרינדור הדינמי (כדי לתפוס טקסט שנוצר ע"י ה-render)
+    translateNode(document.body);
+  }
 }
 
 function saveSettings() {
@@ -1813,6 +1947,8 @@ function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('tog
 function toggleEl(id) { const el = $(id); if (el) el.classList.toggle('open'); }
 function toggleDisplay(id) { const el = $(id); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
 
+// החל את השפה השמורה בטעינה (גם על מסך ההתחברות)
+setLanguage(currentLang);
 sb.auth.getSession().then(function(result) { if (result.data.session) enterApp(result.data.session.user); });
 </script>
 </body>
