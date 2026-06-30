@@ -148,13 +148,13 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .card-sub{font-size:10px;color:var(--muted);margin-top:2px}
 .c-green{color:var(--green)} .c-red{color:var(--red)} .c-blue{color:var(--blue)}
 
-/* dashboard hero balance — תוקן ועוצב מחדש שיהיה קומפקטי ואלגנטי */
-.hero-balance{position:relative;display:flex;align-items:stretch;background:#fff;border-radius:var(--radius);padding:0.4rem 0.8rem;margin-bottom:0.9rem;box-shadow:0 16px 44px rgba(70,110,140,.13),0 4px 12px rgba(70,110,140,.06);border:1.5px solid transparent;background-image:linear-gradient(#fff,#fff),linear-gradient(135deg,rgba(27,127,94,.35),rgba(37,99,235,.35));background-origin:border-box;background-clip:padding-box,border-box}
+/* dashboard hero balance — always visible */
+.hero-balance{position:relative;display:flex;align-items:stretch;background:#fff;border-radius:var(--radius);padding:0.85rem 1.25rem;margin-bottom:1.1rem;box-shadow:0 16px 44px rgba(70,110,140,.13),0 4px 12px rgba(70,110,140,.06);border:1.5px solid transparent;background-image:linear-gradient(#fff,#fff),linear-gradient(135deg,rgba(27,127,94,.35),rgba(37,99,235,.35));background-origin:border-box;background-clip:padding-box,border-box}
 .hero-item{flex:1;text-align:center;position:relative;z-index:1}
-.hero-label{font-size:11px;color:var(--muted);margin-bottom:2px;font-weight:600}
-.hero-value{font-size:16px;font-weight:800;line-height:1.1;color:var(--text)}
-.hero-sub{font-size:9px;color:var(--muted);margin-top:1px}
-.hero-divider{width:1px;background:var(--border);margin:0 .4rem}
+.hero-label{font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600}
+.hero-value{font-size:22px;font-weight:800;line-height:1.1;color:var(--text)}
+.hero-sub{font-size:10px;color:var(--muted);margin-top:4px}
+.hero-divider{width:1px;background:var(--border);margin:0 .75rem}
 
 /* dashboard groups */
 .dash-group{margin-bottom:1.5rem}
@@ -310,6 +310,7 @@ tr:last-child td{border-bottom:none}
 <body>
 
 <div id="auth-screen">
+  <!-- Left panel — branding & features (desktop only) -->
   <div class="auth-left">
     <div style="position:relative;z-index:1">
       <div class="auth-left-logo">💰</div>
@@ -325,6 +326,7 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
+  <!-- Right panel — form -->
   <div class="auth-right">
     <div class="auth-card">
       <div class="auth-card-logo">
@@ -393,6 +395,7 @@ tr:last-child td{border-bottom:none}
       <select id="yearSel" onchange="updateMonth()"></select>
     </div>
 
+    <!-- hidden elements needed by JS -->
     <div style="display:none">
       <span id="d-net">—</span>
       <span id="d-pending">—</span>
@@ -401,6 +404,7 @@ tr:last-child td{border-bottom:none}
       <input type="number" id="tax-rate" value="20" />
     </div>
 
+    <!-- Always-visible balance hero -->
     <div class="hero-balance">
       <div class="hero-item">
         <div class="hero-label">💰 יתרה נטו</div>
@@ -409,18 +413,13 @@ tr:last-child td{border-bottom:none}
       </div>
       <div class="hero-divider"></div>
       <div class="hero-item">
-        <div class="hero-label">📈 נטו + צפי נכנס</div>
-        <div class="hero-value" id="d-net-with-pending-db">—</div>
-        <div class="hero-sub">אם כל הצפוי ייכנס</div>
-      </div>
-      <div class="hero-divider"></div>
-      <div class="hero-item">
-        <div class="hero-label">📊 צפי רווח סופי</div>
+        <div class="hero-label">📊 צפי רווח</div>
         <div class="hero-value" id="d-pending-db">—</div>
-        <div class="hero-sub">כולל צפי הוצאות ועובדים</div>
+        <div class="hero-sub">כולל מה שצפוי</div>
       </div>
     </div>
 
+    <!-- tabs (navigation) -->
     <div class="tabs">
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
@@ -432,8 +431,10 @@ tr:last-child td{border-bottom:none}
       <button class="tab" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
+    <!-- dashboard -->
     <div id="page-dashboard" class="page active">
 
+      <!-- 2. Income -->
       <div class="dash-group">
         <div class="dash-group-title">💵 הכנסות</div>
         <div class="cards-row" style="margin-bottom:0">
@@ -442,6 +443,7 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <!-- TX panel (shared detail) -->
       <div id="tx-panel" style="display:none;background:var(--surface);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div style="font-size:14px;font-weight:600" id="tx-panel-title">פירוט</div>
@@ -450,12 +452,14 @@ tr:last-child td{border-bottom:none}
         <div id="tx-panel-content"></div>
       </div>
 
+      <!-- 3. Expenses -->
       <div class="dash-group">
         <div class="dash-group-title">💸 הוצאות</div>
         <div class="card" style="cursor:pointer;margin-bottom:10px" onclick="toggleTxPanel('expense')"><div class="card-label">💸 הוצאות עסק</div><div class="card-value c-red" id="d-expense">—</div><div class="card-sub">סה"כ החודש ▼</div></div>
         <div class="section" style="margin-bottom:0"><div class="section-title">הוצאות לפי קטגוריה</div><div id="cat-bars"><div class="empty">טוען...</div></div></div>
       </div>
 
+      <!-- 4. Employees -->
       <div class="dash-group">
         <div class="dash-group-title">👥 עובדים</div>
         <div class="cards-row" style="margin-bottom:10px">
@@ -465,6 +469,7 @@ tr:last-child td{border-bottom:none}
         <div class="section" style="margin-bottom:0"><div class="section-title">סטטוס עובדים החודש</div><div id="emp-status"></div></div>
       </div>
 
+      <!-- 5. Tax -->
       <div class="dash-group">
         <div class="dash-group-title">🧾 מס</div>
         <div class="summary-pills" style="margin-bottom:0">
@@ -476,6 +481,7 @@ tr:last-child td{border-bottom:none}
 
     </div>
 
+    <!-- transactions -->
     <div id="page-transactions" class="page">
       <div class="section">
         <div class="section-title">הוסף רשומה</div>
@@ -494,6 +500,7 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
 
+    <!-- events -->
     <div id="page-events" class="page">
       <div class="section" style="margin-bottom:1rem">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
@@ -514,6 +521,7 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
 
+    <!-- employees -->
     <div id="page-employees" class="page">
       <div class="section">
         <div class="section-title">הוסף עובד</div>
@@ -527,6 +535,7 @@ tr:last-child td{border-bottom:none}
       <div id="emp-cards" class="emp-cards"></div>
     </div>
 
+    <!-- clients -->
     <div id="page-clients" class="page">
       <div class="section">
         <div class="section-title">הוסף לקוח</div>
@@ -541,6 +550,7 @@ tr:last-child td{border-bottom:none}
       <div id="clients-list"></div>
     </div>
 
+    <!-- recurring -->
     <div id="page-recurring" class="page">
       <div class="section">
         <div class="section-title">הוסף הוצאה קבועה</div>
@@ -562,6 +572,7 @@ tr:last-child td{border-bottom:none}
 
     </div>
 
+    <!-- profit first -->
     <div id="page-profitfirst" class="page">
       <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1rem;color:#fff">
         <div style="font-size:16px;font-weight:600;margin-bottom:4px">🏦 Profit First</div>
@@ -595,6 +606,7 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
 
+    <!-- alerts -->
     <div id="page-alerts" class="page">
       <div id="alerts-box"></div>
     </div>
@@ -610,6 +622,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Upgrade Modal -->
 <div class="modal-overlay" id="upgrade-modal" style="display:none" onclick="if(event.target===this)closeUpgradeModal()">
   <div class="modal" style="max-width:400px;text-align:center">
     <div class="modal-body" style="padding:2rem">
@@ -622,6 +635,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Forgot Password Modal -->
 <div class="modal-overlay" id="forgot-modal" style="display:none" onclick="if(event.target===this)closeForgot()">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
@@ -629,7 +643,7 @@ tr:last-child td{border-bottom:none}
       <button class="btn-del" onclick="closeForgot()">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">הכניסו את כתובת האימייל שלכם ונשלח קישור לאפוס הסיסמה.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">הכניסו את כתובת האימייל שלכם ונשלח קישור לאיפוס הסיסמה.</p>
       <div class="form-group">
         <label>אימייל</label>
         <input type="email" id="forgot-email" placeholder="your@email.com" />
@@ -643,6 +657,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Settings Modal -->
 <div class="modal-overlay" id="settings-modal" style="display:none" onclick="if(event.target===this)closeSettings()">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
@@ -651,6 +666,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <div class="modal-body">
 
+      <!-- שפה -->
       <div class="settings-section">
         <div class="settings-section-title">🌐 שפה</div>
         <div class="settings-row">
@@ -663,6 +679,7 @@ tr:last-child td{border-bottom:none}
         <div style="font-size:11px;color:var(--muted);margin-top:6px">תרגום מלא של הממשק יתווסף בקרוב</div>
       </div>
 
+      <!-- אחוז מס -->
       <div class="settings-section">
         <div class="settings-section-title">🧾 אחוז מס ברירת מחדל</div>
         <div class="settings-row">
@@ -674,6 +691,7 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <!-- התראות -->
       <div class="settings-section">
         <div class="settings-section-title">🔔 התראות</div>
         <label class="settings-row" style="cursor:pointer">
@@ -682,6 +700,7 @@ tr:last-child td{border-bottom:none}
         </label>
       </div>
 
+      <!-- פרטי עסק -->
       <div class="settings-section">
         <div class="settings-section-title">🏢 פרטי עסק</div>
         <div class="form-group">
@@ -690,6 +709,7 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <!-- מדיניות -->
       <div class="settings-section">
         <div class="settings-section-title">📄 מדיניות</div>
         <div style="display:flex;flex-direction:column;gap:6px">
@@ -699,6 +719,7 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <!-- אדמין בלבד — החלפת גרסאות לבדיקה -->
       <div class="settings-section" id="admin-section" style="display:none">
         <div class="settings-section-title">👑 אדמין — בדיקת גרסאות</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:10px">החלף בין מסלולים כדי לבדוק איך האפליקציה נראית. לא משפיע על המנוי האמיתי שלך.</div>
@@ -719,6 +740,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Change Password Modal -->
 <div class="modal-overlay" id="chpass-modal" style="display:none" onclick="if(event.target===this)closeChangePassword()">
   <div class="modal" style="max-width:380px">
     <div class="modal-header">
@@ -728,7 +750,7 @@ tr:last-child td{border-bottom:none}
     <div class="modal-body">
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px">הכניסו סיסמה חדשה (לפחות 6 תווים).</p>
       <div class="form-group">
-        <label>שיסמה חדשה</label>
+        <label>סיסמה חדשה</label>
         <input type="password" id="chpass-new" placeholder="לפחות 6 תווים" />
       </div>
       <div class="form-group">
@@ -744,6 +766,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Event Modal -->
 <div class="modal-overlay" id="event-modal" style="display:none" onclick="if(event.target===this)closeEventModal()">
   <div class="modal">
     <div class="modal-header">
@@ -777,6 +800,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- Employee Modal -->
 <div class="modal-overlay" id="emp-modal" style="display:none" onclick="if(event.target===this)closeEmpModal()">
   <div class="modal">
     <div class="modal-header">
@@ -836,8 +860,7 @@ const I18N = {
   'לקוחות': 'Clients', 'קבועות': 'Recurring', 'התראות': 'Alerts',
   // Dashboard
   'חודש:': 'Month:', 'יתרה נטו': 'Net balance', 'כמה נשאר בפועל': 'What\'s actually left',
-  'נטו + צפי נכנס': 'Net + Expected In', 'אם כל הצפוי ייכנס': 'If expected comes in',
-  'צפי רווח סופי': 'Final projected profit', 'כולל צפי הוצאות ועובדים': 'Includes exp & payroll',
+  'צפי רווח': 'Projected profit', 'כולל מה שצפוי': 'Including projected',
   'הכנסות': 'Income', 'נכנס מלקוחות': 'Received from clients', 'שולם בפועל ▼': 'Actually paid ▼',
   'צפוי מלקוחות': 'Expected from clients', 'טרם שולם ▼': 'Not yet paid ▼',
   'הוצאות': 'Expenses', 'הוצאות עסק': 'Business expenses', 'סה"כ החודש ▼': 'Total this month ▼',
@@ -846,7 +869,6 @@ const I18N = {
   'צפוי לעובדים': 'Expected to employees', 'טרם שולם': 'Not yet paid',
   'סטטוס עובדים החודש': 'Employee status this month', 'מס': 'Tax',
   'מס על נכנס': 'Tax on received', 'מס צפוי': 'Projected tax', '% מס': 'Tax %',
-  'אין אירועים': 'No events',
   // Events
   'אירועים החודש': 'Events this month', '☰ רשימה': '☰ List', '📅 יומן': '📅 Calendar',
   '🔄 רענן': '🔄 Refresh', '+ אירוע ידני': '+ Manual event', 'טוען אירועים...': 'Loading events...',
@@ -1373,9 +1395,6 @@ function renderAll() {
   const totalClientIncome = income + pendingIncome;
   const totalWorkerSalary = salary + pendingEmpSalary + pendingWorkerSalary;
   const pendingNet = totalClientIncome - (expense + pendingEmpSalary + pendingWorkerSalary);
-  
-  // חישוב יתרה נטו + צפי נכנס
-  const netWithPendingIncome = net + pendingIncome;
 
   $('d-income').textContent = fmt(income);
   $('d-expense').textContent = fmt(expense);
@@ -1388,16 +1407,8 @@ function renderAll() {
   // update dashboard cards
   const salDbEl = $('d-salary-db'); if(salDbEl) salDbEl.textContent = fmt(salary);
   const pSalDbEl = $('d-pending-salary-db'); if(pSalDbEl) pSalDbEl.textContent = fmt(pendingEmpSalary + pendingWorkerSalary);
-  
-  // יתרה נטו
   const netDbEl = $('d-net-db'); if(netDbEl) { netDbEl.textContent = fmt(net); netDbEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)'; }
-  
-  // כרטיס חדש: יתרה נטו + צפי נכנס
-  const netWithPendingDbEl = $('d-net-with-pending-db'); if(netWithPendingDbEl) { netWithPendingDbEl.textContent = fmt(netWithPendingIncome); netWithPendingDbEl.style.color = netWithPendingIncome >= 0 ? 'var(--green)' : 'var(--red)'; }
-  
-  // צפי רווח סופי
   const pendDbEl = $('d-pending-db'); if(pendDbEl) { pendDbEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendDbEl.style.color = pendingNet >= 0 ? 'var(--green)' : 'var(--red)'; }
-  
   // sync tax rate from dashboard
   const dbTaxRate = $('tax-rate-db'); if(dbTaxRate) dbTaxRate.value = $('tax-rate').value;
   updatePFIncome(income);
@@ -1523,7 +1534,7 @@ function renderCatBars(totalExp, workerSalary) {
   if (workerTotal > 0) cats['שכר עובדים'] = (cats['שכר עובדים'] || 0) + workerTotal;
   const el = $('cat-bars');
   if (!Object.keys(cats).length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d4\u05d7\u05d5\u05d3\u05e9</div>'; return; }
-  const colors = { '\u05e9\u05db\u05d9\u05e8\u05d5\u05ea': '#185FA5', '\u05e6\u05d9\u05d5\u05d3': '#0F6E56', '\u05e9\u05d9\u05e5\u05d5\u05e7': '#854F0B', '\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd': '#993C1D', '\u05d0\u05d7\u05e8': '#533C89' };
+  const colors = { '\u05e9\u05db\u05d9\u05e8\u05d5\u05ea': '#185FA5', '\u05e6\u05d9\u05d5\u05d3': '#0F6E56', '\u05e9\u05d9\u05d5\u05d5\u05e7': '#854F0B', '\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd': '#993C1D', '\u05d0\u05d7\u05e8': '#533C89' };
   el.innerHTML = Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
     const pct = totalExp > 0 ? Math.round(amt / totalExp * 100) : 0;
     return '<div class="bar-wrap"><div class="bar-label"><span>' + esc(cat) + '</span><span>' + fmt(amt) + ' (' + pct + '%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + (colors[cat] || '#888') + '"></div></div></div>';
@@ -1694,7 +1705,7 @@ function renderEmpCards(monthDetailIds) {
 
     const empEvRows = evs.map(ev => '<tr><td style="font-size:13px">' + esc(ev.event_name) + '</td><td style="font-size:12px;color:var(--muted)">' + (ev.date || '\u2014') + '</td><td style="font-weight:600">' + fmt(ev.amount) + '</td><td><select class="status-select" onchange="updateEmpEventStatus(\'' + ev.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option value="' + s + '"' + (ev.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') + '</select></td><td><button class="btn-del" onclick="deleteEmpEvent(\'' + ev.id + '\')">&#128465;</button></td></tr>').join('');
 
-    return '<div class="emp-card"><div class="emp-card-header" onclick="toggleCard(\'' + emp.id + '\')"><div><div class="emp-card-name">&#128100; ' + esc(emp.name) + '</div><div class="emp-card-meta">' + esc(emp.role || '') + (emp.phone ? ' \u00b7 ' + esc(emp.phone) : '') + ' \u00b7 ' + (evs.length + ewks.length) + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9' + (total > 0 ? ' \u00b7 ' + fmt(total) : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-outline" style="font-size:12px" onclick="event.stopPropagation();openEmpModal(\'' + emp.id + '\')">✏️</button><button class="btn-del" onclick="event.stopPropagation();deleteEmp(\'' + emp.id + '\')">&#128465;</button><span id="toggle-icon-' + emp.id + '">&#9660;</span></div></div><div class="emp-card-body" id="card-body-' + emp.id + '"><div class="event-form"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">+ \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2</div><div class="form-row"><input type="text" id="ev-event-' + emp.id + '" placeholder="\u05e9\u05dd \u05d4\u05d0\u05d9\u05e8\u05d5\u05e2" /><input type="date" id="ev-date-' + emp.id + '" /><input type="number" id="ev-amount-' + emp.id + '" placeholder="\u05e1\u05db\u05d5\u05dd \u20aa" min="0" /></div><button class="btn-sm" onclick="addEmpEvent(\'' + emp.id + '\')">\u05d4\u05d5\u05e1\u05e3</button></div>' + ((evs.length + ewks.length) ? '<table><thead><tr><th>\u05d0\u05d9\u05e8\u05d5\u05e2</th><th>\u05ea\u05d0\u05e8\u05d9\u05da</th><th>\u05e9\u05db\u05d5\u05dd</th><th>\u05e1\u05d8\u05d0\u05d8\u05d5\u05e1</th><th></th></tr></thead><tbody>' + evRows + empEvRows + '</tbody></table>' : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9</div>') + '</div></div>';
+    return '<div class="emp-card"><div class="emp-card-header" onclick="toggleCard(\'' + emp.id + '\')"><div><div class="emp-card-name">&#128100; ' + esc(emp.name) + '</div><div class="emp-card-meta">' + esc(emp.role || '') + (emp.phone ? ' \u00b7 ' + esc(emp.phone) : '') + ' \u00b7 ' + (evs.length + ewks.length) + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9' + (total > 0 ? ' \u00b7 ' + fmt(total) : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-outline" style="font-size:12px" onclick="event.stopPropagation();openEmpModal(\'' + emp.id + '\')">✏️</button><button class="btn-del" onclick="event.stopPropagation();deleteEmp(\'' + emp.id + '\')">&#128465;</button><span id="toggle-icon-' + emp.id + '">&#9660;</span></div></div><div class="emp-card-body" id="card-body-' + emp.id + '"><div class="event-form"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">+ \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2</div><div class="form-row"><input type="text" id="ev-event-' + emp.id + '" placeholder="\u05e9\u05dd \u05d4\u05d0\u05d9\u05e8\u05d5\u05e2" /><input type="date" id="ev-date-' + emp.id + '" /><input type="number" id="ev-amount-' + emp.id + '" placeholder="\u05e1\u05db\u05d5\u05dd \u20aa" min="0" /></div><button class="btn-sm" onclick="addEmpEvent(\'' + emp.id + '\')">\u05d4\u05d5\u05e1\u05e3</button></div>' + ((evs.length + ewks.length) ? '<table><thead><tr><th>\u05d0\u05d9\u05e8\u05d5\u05e2</th><th>\u05ea\u05d0\u05e8\u05d9\u05da</th><th>\u05e1\u05db\u05d5\u05dd</th><th>\u05e1\u05d8\u05d0\u05d8\u05d5\u05e1</th><th></th></tr></thead><tbody>' + evRows + empEvRows + '</tbody></table>' : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9</div>') + '</div></div>';
   }).join('');
 }
 
@@ -1963,7 +1974,7 @@ function renderRecurring() {
   if (!tb) return;
   const total = cachedRecurring.reduce((s, r) => s + r.amount, 0);
   if (totalEl) totalEl.textContent = '\u05e1\u05d4"\u05db: ' + fmt(total) + ' / \u05d7\u05d5\u05d3\u05e9';
-  if (!cachedRecurring.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea</td></tr>'; return; }
+  if (!cachedRecurring.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea</td></tr>'; return; }
   tb.innerHTML = cachedRecurring.map(r => '<tr><td style="font-weight:500">' + esc(r.description) + '</td><td style="font-size:12px;color:var(--muted)">' + esc(r.category) + '</td><td style="font-weight:600;color:var(--red)">' + fmt(r.amount) + '</td><td><button class="btn-del" onclick="deleteRecurring(\'' + r.id + '\')">&#128465;</button></td></tr>').join('');
 }
 async function addRecurring() {
@@ -1976,7 +1987,7 @@ async function addRecurring() {
 }
 async function deleteRecurring(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from('recurring_expenses').delete().eq('id', id); await loadRecurring(); }
 async function importRecurring() {
-  if (!cachedRecurring.length) { alert('\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea'); return; }
+  if (!cachedRecurring.length) { alert('\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea'); return; }
   const month = getMonth();
   if (!confirm('\u05dc\u05d9\u05d9\u05d1\u05d0 ' + cachedRecurring.length + ' \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05dc\u05d7\u05d5\u05d3\u05e9 ' + month + '?')) return;
   await sb.from('transactions').insert(cachedRecurring.map(r => ({ user_id: currentUser.id, month, description: r.description + ' (\u05e7\u05d1\u05d5\u05e2\u05d4)', amount: r.amount, type: 'expense', category: r.category })));
