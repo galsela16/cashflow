@@ -1535,10 +1535,33 @@ function renderCatBars(totalExp, workerSalary) {
   const el = $('cat-bars');
   if (!Object.keys(cats).length) { el.innerHTML = '<div class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d4\u05d7\u05d5\u05d3\u05e9</div>'; return; }
   const colors = { '\u05e9\u05db\u05d9\u05e8\u05d5\u05ea': '#185FA5', '\u05e6\u05d9\u05d5\u05d3': '#0F6E56', '\u05e9\u05d9\u05d5\u05d5\u05e7': '#854F0B', '\u05e9\u05d9\u05e8\u05d5\u05ea\u05d9\u05dd': '#993C1D', '\u05d0\u05d7\u05e8': '#533C89' };
+  let idx = 0;
   el.innerHTML = Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
     const pct = totalExp > 0 ? Math.round(amt / totalExp * 100) : 0;
-    return '<div class="bar-wrap"><div class="bar-label"><span>' + esc(cat) + '</span><span>' + fmt(amt) + ' (' + pct + '%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + (colors[cat] || '#888') + '"></div></div></div>';
+    const color = colors[cat] || '#888';
+    const catIdx = idx++;
+    // בנה את רשימת הפריטים שמרכיבים את הקטגוריה
+    let items = '';
+    if (cat === '\u05e9\u05db\u05e8 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd') {
+      // שכר עובדים — פרט לפי עובד (ששולם)
+      const paidEmp = cachedEmpEvents.filter(e => e.status === '\u05e9\u05d5\u05dc\u05dd');
+      const paidWork = cachedEventWorkers.filter(w => w.status === '\u05e9\u05d5\u05dc\u05dd');
+      paidEmp.forEach(e => { const emp = cachedEmps.find(m => m.id === e.employee_id); items += catItemRow((emp ? emp.name : '\u05e2\u05d5\u05d1\u05d3') + (e.event_name ? ' \u00b7 ' + e.event_name : ''), e.amount); });
+      paidWork.forEach(w => { const emp = cachedEmps.find(m => m.id === w.employee_id); const det = cachedEventDetails.find(d => d.id === w.event_detail_id); items += catItemRow((emp ? emp.name : '\u05e2\u05d5\u05d1\u05d3') + (det ? ' \u00b7 ' + det.event_title : ''), w.amount); });
+    } else {
+      // קטגוריית הוצאה רגילה — פרט לפי עסקאות
+      cachedTx.filter(t => t.type === 'expense' && t.category === cat).forEach(t => {
+        items += catItemRow(t.description || t.category, t.amount, t.date);
+      });
+    }
+    return '<div class="bar-wrap" style="cursor:pointer" onclick="toggleDisplay(\'cat-items-' + catIdx + '\')"><div class="bar-label"><span>' + esc(cat) + ' <span style="font-size:10px;color:var(--muted)">\u25be</span></span><span>' + fmt(amt) + ' (' + pct + '%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div></div>' +
+      '<div id="cat-items-' + catIdx + '" style="display:none;padding:6px 10px 12px;margin-bottom:6px">' + (items || '<div style="font-size:12px;color:var(--muted)">\u05d0\u05d9\u05df \u05e4\u05d9\u05e8\u05d5\u05d8</div>') + '</div>';
   }).join('');
+}
+
+// שורת פריט בתוך פירוט קטגוריה
+function catItemRow(name, amount, date) {
+  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)"><span style="color:var(--text)">' + esc(name) + (date ? ' <span style="color:var(--muted);font-size:11px">\u00b7 ' + date + '</span>' : '') + '</span><span style="color:var(--red);font-weight:600">' + fmt(amount) + '</span></div>';
 }
 
 function renderEmpStatus(monthDetailIds) {
