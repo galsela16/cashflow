@@ -154,6 +154,8 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .hero-label{font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600}
 .hero-value{font-size:22px;font-weight:800;line-height:1.1;color:var(--text)}
 .hero-sub{font-size:10px;color:var(--muted);margin-top:4px}
+.hero-projected{font-size:11px;font-weight:700;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border);color:var(--blue)}
+.hero-projected:empty{display:none}
 .hero-divider{width:1px;background:var(--border);margin:0 .75rem}
 
 /* dashboard groups */
@@ -410,6 +412,7 @@ tr:last-child td{border-bottom:none}
         <div class="hero-label">💰 יתרה נטו</div>
         <div class="hero-value" id="d-net-db">—</div>
         <div class="hero-sub">כמה נשאר בפועל</div>
+        <div class="hero-projected" id="d-net-projected"></div>
       </div>
       <div class="hero-divider"></div>
       <div class="hero-item">
@@ -1408,6 +1411,17 @@ function renderAll() {
   const salDbEl = $('d-salary-db'); if(salDbEl) salDbEl.textContent = fmt(salary);
   const pSalDbEl = $('d-pending-salary-db'); if(pSalDbEl) pSalDbEl.textContent = fmt(pendingEmpSalary + pendingWorkerSalary);
   const netDbEl = $('d-net-db'); if(netDbEl) { netDbEl.textContent = fmt(net); netDbEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)'; }
+  // יתרה צפויה = יתרה נטו נוכחית + כסף שצפוי מלקוחות להיכנס
+  const projectedBalance = net + pendingIncome;
+  const projEl = $('d-net-projected');
+  if (projEl) {
+    if (pendingIncome > 0) {
+      projEl.textContent = (currentLang === 'en' ? 'Projected: ' : 'צפי: ') + fmt(projectedBalance);
+      projEl.style.color = projectedBalance >= 0 ? 'var(--green)' : 'var(--red)';
+    } else {
+      projEl.textContent = '';
+    }
+  }
   const pendDbEl = $('d-pending-db'); if(pendDbEl) { pendDbEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendDbEl.style.color = pendingNet >= 0 ? 'var(--green)' : 'var(--red)'; }
   // sync tax rate from dashboard
   const dbTaxRate = $('tax-rate-db'); if(dbTaxRate) dbTaxRate.value = $('tax-rate').value;
