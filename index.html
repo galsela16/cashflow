@@ -1635,12 +1635,28 @@ function localDateStr(start) {
   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
   return y + '-' + m + '-' + day;
 }
+// מוסיף/מחסיר ימים ממחרוזת תאריך YYYY-MM-DD ומחזיר מחרוזת תאריך
+function addDays(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+}
 
 // מחזיר את הפרטים המלאים של אירוע (detail, client, workers, סטטוס, צבע)
 function getEventInfo(ev) {
-  const detail = ev.source === 'manual'
-    ? cachedEventDetails.find(d => d.id === ev.detailId)
-    : cachedEventDetails.find(d => d.event_title === ev.title && d.event_date === localDateStr(ev.start));
+  let detail;
+  if (ev.source === 'manual') {
+    detail = cachedEventDetails.find(d => d.id === ev.detailId);
+  } else {
+    const dateStr = localDateStr(ev.start);
+    // התאמה מדויקת קודם
+    detail = cachedEventDetails.find(d => d.event_title === ev.title && d.event_date === dateStr);
+    // אם לא נמצא — חפש לפי כותרת עם סטייה של יום (אירועים ישנים שנשמרו עם תאריך אזור-זמן שגוי)
+    if (!detail) {
+      const near = [addDays(dateStr, -1), addDays(dateStr, 1)];
+      detail = cachedEventDetails.find(d => d.event_title === ev.title && near.includes(d.event_date));
+    }
+  }
   const client = detail && detail.client_id ? cachedClients.find(c => c.id === detail.client_id) : null;
   const workers = detail ? cachedEventWorkers.filter(w => w.event_detail_id === detail.id) : [];
   const workerTotal = workers.reduce((s, w) => s + w.amount, 0);
