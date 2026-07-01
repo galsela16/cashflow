@@ -211,9 +211,11 @@ tr:last-child td{border-bottom:none}
 .alert-danger{background:var(--red-bg);color:var(--red)}
 
 /* employee cards */
-.emp-cards{display:flex;flex-direction:column;gap:10px}
-.emp-card{background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
-.emp-card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#f0fdf4,#eff6ff);cursor:pointer}
+.emp-cards{display:flex;flex-direction:column;gap:0;background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.emp-card{background:transparent;border-bottom:1px solid var(--border)}
+.emp-card:last-child{border-bottom:none}
+.emp-card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:transparent;cursor:pointer;transition:background .12s}
+.emp-card-header:hover{background:var(--bg)}
 .emp-card-name{font-weight:600;font-size:14px}
 .emp-card-meta{font-size:12px;color:var(--muted);margin-top:2px}
 .emp-card-body{padding:12px 16px;border-top:1px solid var(--border);display:none}
@@ -221,8 +223,11 @@ tr:last-child td{border-bottom:none}
 .event-form{background:var(--bg);border-radius:var(--radius-sm);padding:10px;margin-bottom:10px}
 
 /* client cards */
-.client-card{background:var(--surface);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow)}
-.client-card-header{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:linear-gradient(135deg,#f0fdf4,#eff6ff)}
+.clients-wrap{background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.client-card{background:transparent;border-bottom:1px solid var(--border)}
+.client-card:last-child{border-bottom:none}
+.client-card-header{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:transparent;transition:background .12s}
+.client-card-header:hover{background:var(--bg)}
 .client-card-body{padding:12px 16px;border-top:1px solid var(--border);display:none}
 .client-card-body.open{display:block}
 .client-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:13px}
@@ -1735,13 +1740,13 @@ function renderEmpCards(monthDetailIds) {
 function renderClientsList() {
   const el = $('clients-list');
   if (!cachedClients.length) { el.innerHTML = '<div class="section"><div class="empty">\u05dc\u05d0 \u05e0\u05d5\u05e1\u05e4\u05d5 \u05dc\u05e7\u05d5\u05d7\u05d5\u05ea</div></div>'; return; }
-  el.innerHTML = cachedClients.map(c => {
+  el.innerHTML = '<div class="clients-wrap">' + cachedClients.map(c => {
     const cEvs = cachedEventDetails.filter(d => d.client_id === c.id);
     const totalPrice = cEvs.reduce((s, d) => s + (d.price || 0), 0);
     const totalPaid = cEvs.filter(d => d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1').reduce((s, d) => s + (d.price || 0), 0);
     const debt = totalPrice - totalPaid;
     return '<div class="client-card"><div class="client-card-header" onclick="toggleEl(\'client-body-' + c.id + '\')"><div><div style="font-weight:600;font-size:14px">' + esc(c.name) + '</div><div style="font-size:12px;color:var(--muted);margin-top:2px">' + esc(c.phone || '') + (c.business_id ? ' \u00b7 \u05d7.\u05e4: ' + esc(c.business_id) : '') + (totalPrice > 0 ? ' \u00b7 \u05e1\u05d4"\u05db: ' + fmt(totalPrice) : '') + (debt > 0 ? ' \u00b7 <span style="color:var(--red)">\u05d7\u05d5\u05d1: ' + fmt(debt) + '</span>' : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-del" onclick="event.stopPropagation();deleteClient(\'' + c.id + '\')">&#128465;</button><span>&#9660;</span></div></div><div class="client-card-body" id="client-body-' + c.id + '"><div class="client-info">' + (c.phone ? '<div class="client-info-item"><label>\u05d8\u05dc\u05e4\u05d5\u05df</label>' + esc(c.phone) + '</div>' : '') + (c.email ? '<div class="client-info-item"><label>\u05d0\u05d9\u05de\u05d9\u05d9\u05dc</label>' + esc(c.email) + '</div>' : '') + (c.business_id ? '<div class="client-info-item"><label>\u05d7.\u05e4 / \u05e2.\u05de</label>' + esc(c.business_id) + '</div>' : '') + '<div class="client-info-item"><label>\u05e1\u05d4"\u05db</label>' + fmt(totalPrice) + '</div><div class="client-info-item"><label>\u05e9\u05d5\u05dc\u05dd</label><span style="color:var(--green)">' + fmt(totalPaid) + '</span></div>' + (debt > 0 ? '<div class="client-info-item"><label>\u05d9\u05ea\u05e8\u05d4</label><span style="color:var(--red)">' + fmt(debt) + '</span></div>' : '') + '</div>' + (cEvs.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea:</div>' + cEvs.map(d => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>' + esc(d.event_title) + '</span><span>' + (d.price ? fmt(d.price) : '\u2014') + ' \u00b7 <span class="badge badge-' + (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1' ? 'paid' : d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' ? 'pending' : 'late') + '">' + esc(d.status) + '</span></span></div>').join('') : '<div style="font-size:13px;color:var(--muted);text-align:center">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd</div>') + '</div></div>';
-  }).join('');
+  }).join('') + '</div>';
 }
 
 function renderAlerts(income, expense, salary, net, pendingIncome) {
