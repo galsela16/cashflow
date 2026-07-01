@@ -1620,11 +1620,27 @@ function buildEventsData() {
   return allEvents;
 }
 
+// מחלץ את התאריך המקומי (YYYY-MM-DD) ממחרוזת אירוע, בצורה שלא מושפעת מאזור זמן.
+// אם המחרוזת כוללת זמן/UTC (יש בה 'T' או 'Z'), ממיר לזמן מקומי ואז לוקח את היום.
+// אם היא תאריך בלבד (all-day), לוקח את התאריך כמו שהוא.
+function localDateStr(start) {
+  if (!start) return '';
+  // תאריך בלבד ללא זמן — קח כמו שהוא (אירוע יום שלם)
+  if (start.length === 10 && start.indexOf('T') === -1) return start;
+  // תאריך עם 'T00:00:00' מקומי שהוספנו ידנית (manual) — קח את החלק הראשון
+  if (start.indexOf('T00:00:00') !== -1 && start.indexOf('Z') === -1 && start.indexOf('+') === -1) return start.slice(0, 10);
+  // אחרת — מחרוזת עם זמן/UTC מגוגל: המר לזמן מקומי
+  const d = new Date(start);
+  if (isNaN(d)) return start.slice(0, 10);
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
 // מחזיר את הפרטים המלאים של אירוע (detail, client, workers, סטטוס, צבע)
 function getEventInfo(ev) {
   const detail = ev.source === 'manual'
     ? cachedEventDetails.find(d => d.id === ev.detailId)
-    : cachedEventDetails.find(d => d.event_title === ev.title && d.event_date === ev.start.slice(0, 10));
+    : cachedEventDetails.find(d => d.event_title === ev.title && d.event_date === localDateStr(ev.start));
   const client = detail && detail.client_id ? cachedClients.find(c => c.id === detail.client_id) : null;
   const workers = detail ? cachedEventWorkers.filter(w => w.event_detail_id === detail.id) : [];
   const workerTotal = workers.reduce((s, w) => s + w.amount, 0);
@@ -1643,7 +1659,7 @@ function eventBodyHtml(info) {
 
 // כפתורי עריכה/מחיקה (משותף)
 function eventActionsHtml(ev, info) {
-  return (info.detail ? '<span class="badge badge-' + info.statusCls + '">' + esc(info.detail.status) + '</span>' : '') + '<button class="btn-sm" onclick="event.stopPropagation();openEditEventModalByTitle(this);return false;" data-title="' + esc(ev.title||'') + '" data-date="' + ev.start.slice(0,10) + '" data-source="' + ev.source + '" data-detailid="' + (ev.detailId||'') + '">&#9999;</button>' + (ev.source === 'manual' ? '<button class="btn-del" onclick="event.stopPropagation();deleteManualEventByEl(this);return false;" data-detailid="' + (ev.detailId||'') + '">&#128465;</button>' : '');
+  return (info.detail ? '<span class="badge badge-' + info.statusCls + '">' + esc(info.detail.status) + '</span>' : '') + '<button class="btn-sm" onclick="event.stopPropagation();openEditEventModalByTitle(this);return false;" data-title="' + esc(ev.title||'') + '" data-date="' + localDateStr(ev.start) + '" data-source="' + ev.source + '" data-detailid="' + (ev.detailId||'') + '">&#9999;</button>' + (ev.source === 'manual' ? '<button class="btn-del" onclick="event.stopPropagation();deleteManualEventByEl(this);return false;" data-detailid="' + (ev.detailId||'') + '">&#128465;</button>' : '');
 }
 
 function renderEventsList() {
@@ -1655,7 +1671,7 @@ function renderEventsList() {
   const todayStr = new Date().toISOString().slice(0, 10);
   // קבץ לפי תאריך
   const groups = {};
-  allEvents.forEach((ev, i) => { const d = ev.start.slice(0, 10); (groups[d] = groups[d] || []).push({ ev, i }); });
+  allEvents.forEach((ev, i) => { const d = localDateStr(ev.start); (groups[d] = groups[d] || []).push({ ev, i }); });
 
   el.innerHTML = Object.keys(groups).sort().map(dateKey => {
     const date = new Date(dateKey + 'T00:00:00');
@@ -1679,7 +1695,7 @@ function renderEventsCalendar() {
 
   // מפה תאריך → אירועים
   const byDate = {};
-  allEvents.forEach((ev, i) => { const d = Number(ev.start.slice(8, 10)); (byDate[d] = byDate[d] || []).push({ ev, i }); });
+  allEvents.forEach((ev, i) => { const d = Number(localDateStr(ev.start).slice(8, 10)); (byDate[d] = byDate[d] || []).push({ ev, i }); });
 
   const weekdays = ['\u05d0','\u05d1','\u05d2','\u05d3','\u05d4','\u05d5','\u05e9'];
   let cells = weekdays.map(w => '<div class="cal-weekday">' + w + '</div>').join('');
@@ -1705,7 +1721,7 @@ function renderEventsCalendar() {
 function openEventFromCal(idx) {
   const ev = allRenderedEvents[idx];
   if (!ev) return;
-  openEditEventModal({ title: ev.title, date: ev.start.slice(0, 10), source: ev.source, detailId: ev.detailId });
+  openEditEventModal({ title: ev.title, date: localDateStr(ev.start), source: ev.source, detailId: ev.detailId });
 }
 
 function setEventView(mode) {
