@@ -1372,11 +1372,65 @@ async function loadAll() {
   } else {
     cachedEventWorkers = [];
   }
+  // נקה כפילויות של אירועים (רשומות רפאים מבאג אזור-זמן ישן) — רק בזיכרון, לא ב-DB
+  dedupeEventDetails();
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
   await autoImportRecurring(month, uid, cachedTx);
   renderAll();
   // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
   loadGCal();
+}
+
+// מזהה רשומות event_details כפולות (אותו שם + תאריכים סמוכים) ומסיר את המיותרת מהזיכרון בלבד.
+// שומר את הרשומה שתאריכה תואם לאירוע ביומן גוגל; אם אין, שומר את המאוחרת (הסבירה לתיקון).
+function dedupeEventDetails() {
+  if (!cachedEventDetails.length) return;
+  const gcalDates = new Set((gcalEvents || []).map(ev => localDateStr(ev.start) + '|' + (ev.title || '')));
+  const removedIds = [];
+  const byKey = {};
+  cachedEventDetails.forEach(d => {
+    const key = (d.user_id || '') + '|' + (d.event_title || '');
+    (byKey[key] = byKey[key] || []).push(d);
+  });
+  const keep = [];
+  Object.values(byKey).forEach(group => {
+    if (group.length === 1) { keep.push(group[0]); return; }
+    // מיין לפי תאריך
+    group.sort((a, b) => (a.event_date || '').localeCompare(b.event_date || ''));
+    // בדוק אם התאריכים סמוכים (עד יומיים הפרש) — אם כן, זו כפילות של אותו אירוע
+    let clusters = [[group[0]]];
+    for (let i = 1; i < group.length; i++) {
+      const prev = clusters[clusters.length - 1];
+      const prevDate = prev[prev.length - 1].event_date;
+      const curDate = group[i].event_date;
+      if (prevDate && curDate && Math.abs(daysBetween(prevDate, curDate)) <= 2) {
+        prev.push(group[i]); // אותה קבוצת כפילויות
+      } else {
+        clusters.push([group[i]]); // אירוע נפרד
+      }
+    }
+    // מכל אשכול — שמור אחד בלבד
+    clusters.forEach(cluster => {
+      if (cluster.length === 1) { keep.push(cluster[0]); return; }
+      // עדיפות: רשומה שתאריכה+שם תואמים ליומן גוגל
+      let chosen = cluster.find(d => gcalDates.has((d.event_date || '') + '|' + (d.event_title || '')));
+      // אחרת — המאוחרת ביותר (סביר שהיא המתוקנת)
+      if (!chosen) chosen = cluster[cluster.length - 1];
+      cluster.forEach(d => { if (d.id !== chosen.id) removedIds.push(d.id); });
+      keep.push(chosen);
+    });
+  });
+  if (removedIds.length) {
+    cachedEventDetails = keep;
+    // הסר גם את ה-event_workers המקושרים לרשומות שהוסרו (מהזיכרון בלבד)
+    cachedEventWorkers = cachedEventWorkers.filter(w => !removedIds.includes(w.event_detail_id));
+  }
+}
+// מספר ימים בין שתי מחרוזות תאריך YYYY-MM-DD
+function daysBetween(d1, d2) {
+  const [y1, m1, day1] = d1.split('-').map(Number);
+  const [y2, m2, day2] = d2.split('-').map(Number);
+  return Math.round((new Date(y2, m2 - 1, day2) - new Date(y1, m1 - 1, day1)) / 86400000);
 }
 
 // ── RENDER ALL ──
