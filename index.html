@@ -519,6 +519,7 @@ tr:last-child td{border-bottom:none}
             </div>
           </div>
           <div style="display:flex;gap:8px">
+            <button class="btn-outline" id="gcal-btn" onclick="connectGCal()">📅 חבר יומן</button>
             <button class="btn-outline" onclick="loadGCal(true)">🔄 רענן</button>
             <button class="btn-add" onclick="openNewEventModal()">+ אירוע ידני</button>
           </div>
@@ -841,6 +842,9 @@ tr:last-child td{border-bottom:none}
 const SB_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cnZsb2dxanpwbm9qZnpiYXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk2MjgsImV4cCI6MjA5NzgwNTYyOH0.2I45YWLkTDLjndmyoNImkPLfqOxJV7TVsff2kAOZHpg';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzH60EnHD5wqtRfYR1vv1-5oELqEK7RlcWqwHlvT88xQDfysYupYV3I8FbnsdRWfkNing/exec';
+// Edge Function לחיבור יומן גוגל פר-משתמש (מחליף את הסנכרון הקבוע הישן)
+const GCAL_FN_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co/functions/v1/google-calendar-auth';
+let gcalConnected = false;
 const { createClient } = supabase;
 const sb = createClient(SB_URL, SB_KEY);
 
@@ -1372,8 +1376,6 @@ async function loadAll() {
   } else {
     cachedEventWorkers = [];
   }
-  // נקה כפילויות של אירועים (רשומות רפאים מבאג אזור-זמן ישן) — רק בזיכרון, לא ב-DB
-  dedupeEventDetails();
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
   await autoImportRecurring(month, uid, cachedTx);
   renderAll();
@@ -1860,18 +1862,74 @@ function renderAlerts(income, expense, salary, net, pendingIncome) {
 // ── GOOGLE CALENDAR ──
 async function loadGCal(showLoading) {
   const el = $('events-list');
-  // הצג "טוען" רק אם המשתמש נמצא בעמוד אירועים וביקש טעינה מפורשת
+  if (!currentUser) return;
   if (showLoading && el) el.innerHTML = '<div class="empty">\u05d8\u05d5\u05e2\u05df...</div>';
   try {
-    const res = await fetch(GAS_URL + '?month=' + getMonth());
+    // קרא לאירועי היומן של המשתמש הנוכחי בלבד
+    const res = await fetch(GCAL_FN_URL + '?action=events&user_id=' + encodeURIComponent(currentUser.id) + '&month=' + getMonth(), {
+      headers: { 'Authorization': 'Bearer ' + SB_KEY }
+    });
     const data = await res.json();
-    gcalEvents = Array.isArray(data) ? data : [];
+    gcalConnected = !!data.connected;
+    gcalEvents = Array.isArray(data.events) ? data.events : [];
     renderEventsList();
+    updateGCalButton();
   } catch (err) {
-    // בכישלון — אל תמחק אירועים קיימים, ועדיין הצג את האירועים הידניים
     if (!Array.isArray(gcalEvents)) gcalEvents = [];
     renderEventsList();
+    updateGCalButton();
     if (showLoading && el) el.innerHTML = '<div class="empty" style="color:var(--red)">\u05e9\u05d2\u05d9\u05d0\u05ea \u05d7\u05d9\u05d1\u05d5\u05e8 \u05dc\u05d9\u05d5\u05de\u05df</div>';
+  }
+}
+
+// פותח חלון חיבור יומן גוגל עבור המשתמש הנוכחי
+async function connectGCal() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(GCAL_FN_URL + '?action=start&user_id=' + encodeURIComponent(currentUser.id), {
+      headers: { 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    const data = await res.json();
+    if (data.url) {
+      // פתח את מסך ההסכמה של גוגל בחלון חדש
+      window.open(data.url, '_blank', 'width=520,height=640');
+      // בדוק שוב אחרי שהמשתמש חוזר (לאחר כמה שניות)
+      setTimeout(() => loadGCal(true), 4000);
+    }
+  } catch (err) {
+    alert(currentLang === 'en' ? 'Failed to start calendar connection' : '\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d7\u05d9\u05d1\u05d5\u05e8 \u05d4\u05d9\u05d5\u05de\u05df');
+  }
+}
+
+// מנתק את היומן של המשתמש הנוכחי
+async function disconnectGCal() {
+  if (!currentUser) return;
+  if (!confirm(currentLang === 'en' ? 'Disconnect Google Calendar?' : '\u05dc\u05e0\u05ea\u05e7 \u05d0\u05ea \u05d9\u05d5\u05de\u05df \u05d2\u05d5\u05d2\u05dc?')) return;
+  try {
+    await fetch(GCAL_FN_URL + '?action=disconnect', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: currentUser.id })
+    });
+    gcalConnected = false;
+    gcalEvents = [];
+    renderEventsList();
+    updateGCalButton();
+  } catch (err) {}
+}
+
+// מעדכן את כפתור היומן לפי מצב החיבור
+function updateGCalButton() {
+  const btn = $('gcal-btn');
+  if (!btn) return;
+  if (gcalConnected) {
+    btn.textContent = currentLang === 'en' ? '\u2713 Calendar connected' : '\u2713 \u05d4\u05d9\u05d5\u05de\u05df \u05de\u05d7\u05d5\u05d1\u05e8';
+    btn.onclick = disconnectGCal;
+    btn.style.color = 'var(--green)';
+  } else {
+    btn.textContent = currentLang === 'en' ? '\uD83D\uDCC5 Connect calendar' : '\uD83D\uDCC5 \u05d7\u05d1\u05e8 \u05d9\u05d5\u05de\u05df';
+    btn.onclick = connectGCal;
+    btn.style.color = '';
   }
 }
 
