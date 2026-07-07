@@ -439,12 +439,13 @@ tr:last-child td{border-bottom:none}
         <div class="hero-sub">כמה נשאר בפועל</div>
       </div>
       <div class="hero-divider"></div>
-      <div class="hero-item">
-        <div class="hero-label">📊 צפי רווח</div>
+      <div class="hero-item" style="cursor:pointer" onclick="toggleProfitBreakdown()">
+        <div class="hero-label">📊 צפי רווח <span style="font-size:10px;color:var(--muted)">▾</span></div>
         <div class="hero-value" id="d-pending-db">—</div>
-        <div class="hero-sub">כולל מה שצפוי</div>
+        <div class="hero-sub">לחץ לפירוט</div>
       </div>
     </div>
+    <div id="profit-breakdown" style="display:none"></div>
 
     <!-- tabs (navigation) -->
     <div class="tabs">
@@ -1006,6 +1007,7 @@ let currentUser = null;
 let cachedTx = [], cachedEmps = [], cachedEmpEvents = [], cachedClients = [];
 let cachedEventDetails = [], cachedEventWorkers = [], cachedRecurring = [];
 let gcalEvents = [], allRenderedEvents = [];
+let profitBreakdownData = null;
 let eventViewMode = 'list';
 let modalWorkers = [], currentEditDetailId = null, currentEventDate = null, isNewManualEvent = false;
 let lastSalary = 0;
@@ -1756,6 +1758,14 @@ function renderAll() {
   const totalWorkerSalary = salary + pendingEmpSalary + pendingWorkerSalary;
   const pendingNet = totalClientIncome - (expense + pendingEmpSalary + pendingWorkerSalary);
 
+  // שמור רכיבים לפירוט צפי הרווח (שקיפות מלאה)
+  profitBreakdownData = {
+    txIncome, eventIncome, pendingIncome,
+    txExpense, paidEmpSalary, paidWorkerSalary, pendingEmpSalary, pendingWorkerSalary,
+    income, pendingNet
+  };
+  if ($('profit-breakdown') && $('profit-breakdown').style.display !== 'none') renderProfitBreakdown();
+
   $('d-income').textContent = fmt(income);
   $('d-expense').textContent = fmt(expense);
   $('d-pending-income').textContent = fmt(pendingIncome);
@@ -1780,6 +1790,36 @@ function renderAll() {
   renderClientsList();
   renderEventsList();
   renderAlerts(income, expense, salary, net, pendingIncome);
+}
+
+// פירוט מלא של צפי הרווח — שקיפות מוחלטת של החישוב
+function toggleProfitBreakdown() {
+  const el = $('profit-breakdown');
+  if (el.style.display === 'none') { el.style.display = 'block'; renderProfitBreakdown(); }
+  else { el.style.display = 'none'; }
+}
+function renderProfitBreakdown() {
+  const d = profitBreakdownData;
+  if (!d) return;
+  const row = (label, val, isNeg) => '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">' + label + '</span><span style="font-weight:600;color:' + (isNeg ? 'var(--red)' : 'var(--green)') + '">' + (isNeg ? '−' : '+') + fmt(Math.abs(val)) + '</span></div>';
+  const totalIn = d.txIncome + d.eventIncome + d.pendingIncome;
+  const totalOut = d.txExpense + d.paidEmpSalary + d.paidWorkerSalary + d.pendingEmpSalary + d.pendingWorkerSalary;
+  $('profit-breakdown').innerHTML =
+    '<div style="background:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:1.1rem;box-shadow:var(--shadow)">' +
+    '<div style="font-weight:700;font-size:14px;margin-bottom:10px;color:var(--blue)">📊 מתוך מה מורכב צפי הרווח</div>' +
+    '<div style="font-size:12px;font-weight:700;color:var(--green);margin:8px 0 4px">➕ נכנס / צפוי להיכנס</div>' +
+    (d.txIncome ? row('הכנסות עסקה (שוטף)', d.txIncome) : '') +
+    (d.eventIncome ? row('תשלומים שהתקבלו מלקוחות', d.eventIncome) : '') +
+    (d.pendingIncome ? row('צפוי מלקוחות (טרם שולם)', d.pendingIncome) : '') +
+    '<div style="font-size:12px;font-weight:700;color:var(--red);margin:12px 0 4px">➖ יוצא / צפוי לצאת</div>' +
+    (d.txExpense ? row('הוצאות עסק', d.txExpense, true) : '') +
+    (d.paidEmpSalary ? row('שכר עובדים ששולם', d.paidEmpSalary, true) : '') +
+    (d.paidWorkerSalary ? row('שכר עובדי אירועים ששולם', d.paidWorkerSalary, true) : '') +
+    (d.pendingEmpSalary ? row('שכר עובדים ממתין', d.pendingEmpSalary, true) : '') +
+    (d.pendingWorkerSalary ? row('שכר עובדי אירועים ממתין', d.pendingWorkerSalary, true) : '') +
+    '<div style="display:flex;justify-content:space-between;padding:10px 0 2px;margin-top:6px;border-top:2px solid var(--border);font-weight:800;font-size:15px"><span>= צפי רווח</span><span style="color:' + (d.pendingNet >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmt(d.pendingNet) + '</span></div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:8px">סה"כ צפוי להיכנס: ' + fmt(totalIn) + ' · סה"כ צפוי לצאת: ' + fmt(totalOut) + '</div>' +
+    '</div>';
 }
 
 function toggleTxPanel(type) {
