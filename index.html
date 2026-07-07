@@ -1020,7 +1020,30 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const getMonth = () => $('yearSel').value + '-' + $('monthSel').value.padStart(2, '0');
 // מחזיר את פרטי האירועים של החודש הנבחר (משותף לכמה פונקציות)
-const getMonthDetails = (month) => { const m = month || getMonth(); return cachedEventDetails.filter(d => d.month === m || (d.event_date && d.event_date.slice(0, 7) === m)); };
+const getMonthDetails = (month) => {
+  const m = month || getMonth();
+  const matching = cachedEventDetails.filter(d => d.month === m || (d.event_date && d.event_date.slice(0, 7) === m));
+  // סנן כפילויות שנוצרו מבאג אזור-זמן: אותו שם + אותו מחיר + תאריכים סמוכים = אירוע אחד
+  const seen = [];
+  const unique = [];
+  for (const d of matching) {
+    const dup = seen.find(s =>
+      s.event_title === d.event_title &&
+      (s.price || 0) === (d.price || 0) &&
+      s.client_id === d.client_id &&
+      Math.abs(dateDiffDays(s.event_date, d.event_date)) <= 2
+    );
+    if (!dup) { seen.push(d); unique.push(d); }
+  }
+  return unique;
+};
+// מספר ימים בין שני תאריכים (מחזיר 999 אם אחד חסר, כדי שלא ייחשבו סמוכים)
+function dateDiffDays(a, b) {
+  if (!a || !b) return 999;
+  const da = new Date(a.slice(0, 10)), db = new Date(b.slice(0, 10));
+  if (isNaN(da) || isNaN(db)) return 999;
+  return Math.round((da - db) / 86400000);
+}
 
 // ── EXPORT (Excel / PDF) ──
 function toggleExportMenu(e) { if (e) e.stopPropagation(); $('export-menu').classList.toggle('open'); }
