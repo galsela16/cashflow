@@ -1144,11 +1144,12 @@ function fmtNum(n) { return (n || 0).toLocaleString('en-US'); }
 // מילון זיהוי קטגוריה לפי מילות מפתח בתיאור
 const BANK_CATEGORIES = [
   { cat: 'שכירות', keys: ['שכירות', 'שכ"ד', 'שכ״ד', 'דירה', 'משרד'] },
-  { cat: 'ביטוח', keys: ['ביטוח', 'הראל', 'כלל', 'מגדל', 'הפניקס', 'מנורה'] },
-  { cat: 'רכב', keys: ['דלק', 'פז', 'סונול', 'דור אלון', 'ten', 'טן', 'חניון', 'חניה', 'כביש 6', 'רכב'] },
-  { cat: 'תוכנות', keys: ['google', 'microsoft', 'adobe', 'zoom', 'apple', 'aws', 'openai', 'תוכנה', 'מנוי'] },
-  { cat: 'שיווק', keys: ['facebook', 'meta', 'instagram', 'tiktok', 'שיווק', 'פרסום', 'קמפיין'] },
-  { cat: 'ציוד', keys: ['ציוד', 'מחשב', 'ksp', 'באג', 'ivory', 'אייבורי'] },
+  { cat: 'ביטוח', keys: ['ביטוח', 'הראל', 'כלל', 'מגדל', 'הפניקס', 'מנורה', 'איילון'] },
+  { cat: 'רכב', keys: ['דלק', 'פז', 'סונול', 'דור אלון', 'ten', 'טן', 'חניון', 'חניה', 'כביש 6', 'רכב', 'פנגו', 'pango', 'cellopark', 'סלופארק'] },
+  { cat: 'תוכנות', keys: ['google', 'microsoft', 'adobe', 'zoom', 'apple', 'aws', 'openai', 'תוכנה', 'מנוי', 'netflix', 'spotify'] },
+  { cat: 'שיווק', keys: ['facebook', 'meta', 'instagram', 'tiktok', 'שיווק', 'פרסום', 'קמפיין', 'google ads'] },
+  { cat: 'ציוד', keys: ['ציוד', 'מחשב', 'ksp', 'באג', 'ivory', 'אייבורי', 'ליין'] },
+  { cat: 'אחר', keys: ['wolt', 'וולט', 'מסעדה', 'קפה', 'בית קפה', 'סופר', 'שופרסל', 'רמי לוי', 'דמי כרטיס', 'ביט', 'bit'] },
   { cat: 'שירותים', keys: ['רואה חשבון', 'עורך דין', 'ייעוץ', 'שירות'] }
 ];
 // זיהוי חכם של קטגוריה לפי התיאור
@@ -1165,20 +1166,64 @@ let bankParsedRows = [];
 function handleBankFile(input) {
   const file = input.files[0];
   if (!file) return;
-  if (typeof XLSX === 'undefined') { alert('ספריית הקריאה עדיין נטענת, נסה שוב בעוד רגע'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-      parseBankRows(rows);
+      const bytes = new Uint8Array(e.target.result);
+      // בדוק אם זה HTML (בנק לאומי מייצא HTML בשם .xls)
+      const head = new TextDecoder('utf-8').decode(bytes.slice(0, 500)).toLowerCase();
+      if (head.includes('<html') || head.includes('<table') || head.includes('<!doctype')) {
+        const fullText = new TextDecoder('utf-8').decode(bytes);
+        parseLeumiHtml(fullText);
+      } else {
+        // Excel אמיתי
+        if (typeof XLSX === 'undefined') { alert('ספריית הקריאה עדיין נטענת, נסה שוב בעוד רגע'); return; }
+        const wb = XLSX.read(bytes, { type: 'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        parseBankRows(rows);
+      }
     } catch (err) {
-      alert('שגיאה בקריאת הקובץ. ודא שזה קובץ Excel תקין.');
+      alert('שגיאה בקריאת הקובץ: ' + err.message);
     }
     input.value = '';
   };
   reader.readAsArrayBuffer(file);
+}
+
+// קורא ייעודי לקובץ HTML של בנק לאומי (כרטיס אשראי / עו"ש)
+function parseLeumiHtml(htmlText) {
+  bankParsedRows = [];
+  const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+  const trs = doc.querySelectorAll('tr');
+  trs.forEach(tr => {
+    const cells = Array.from(tr.querySelectorAll('td')).map(td => (td.textContent || '').replace(/\s+/g, ' ').trim());
+    const nonEmpty = cells.filter(c => c);
+    if (nonEmpty.length < 3) return;
+    // שורת נתונים: התא הראשון הוא תאריך DD/MM/YY
+    if (!/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(nonEmpty[0])) return;
+    const date = nonEmpty[0];
+    const desc = nonEmpty[1] || '';
+    // מצא את הסכום — התא הבא שהוא מספר
+    let amount = 0;
+    for (let i = 2; i < nonEmpty.length; i++) {
+      const num = parseFloat(nonEmpty[i].replace(/[^\d.-]/g, ''));
+      if (!isNaN(num) && num > 0) { amount = num; break; }
+    }
+    if (!desc || amount <= 0) return;
+    // כרטיס אשראי — הכל הוצאות
+    bankParsedRows.push({
+      include: true, date, desc, amount, type: 'expense',
+      category: guessCategory(desc)
+    });
+  });
+
+  if (!bankParsedRows.length) {
+    alert('לא זוהו עסקאות בקובץ. ייתכן שהפורמט שונה — צור קשר לתמיכה.');
+    return;
+  }
+  renderBankPreview();
+  $('bank-modal').style.display = 'flex';
 }
 
 // מזהה עמודות (תאריך/תיאור/חובה/זכות/סכום) ובונה רשומות
