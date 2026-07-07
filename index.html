@@ -206,6 +206,8 @@ tr:last-child td{border-bottom:none}
 .badge-pending{background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d}
 .badge-late{background:var(--red-soft);color:var(--red);border:1px solid #fca5a5}
 .btn-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:2px 6px;border-radius:4px}
+.btn-del-multi{background:var(--red-soft,#fef2f2);border:1.5px solid var(--red);color:var(--red);cursor:pointer;font-size:13px;font-weight:600;padding:7px 14px;border-radius:100px;transition:all .15s}
+.btn-del-multi:hover{background:var(--red);color:#fff}
 .btn-del:hover{color:var(--red);background:var(--red-bg)}
 .status-select{padding:4px 8px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#f8faff;color:var(--text)}
 
@@ -523,8 +525,11 @@ tr:last-child td{border-bottom:none}
         <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
       </div>
       <div class="section">
-        <div class="section-title">רשומות החודש</div>
-        <table><thead><tr><th>תיאור</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th></th></tr></thead>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-title" style="margin-bottom:0">רשומות החודש</div>
+          <button class="btn-del-multi" id="tx-del-multi" onclick="deleteSelectedTx()" style="display:none">🗑 מחק מסומנות (<span id="tx-sel-count">0</span>)</button>
+        </div>
+        <table><thead><tr><th style="width:30px"><input type="checkbox" id="tx-check-all" onchange="toggleAllTx(this)"></th><th>תיאור</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th></th></tr></thead>
         <tbody id="tx-table"></tbody></table>
       </div>
     </div>
@@ -1955,7 +1960,8 @@ function renderEmpStatus(monthDetailIds) {
 function renderTxTable() {
   const tb = $('tx-table');
   if (!cachedTx.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">\u05d0\u05d9\u05df \u05e8\u05e9\u05d5\u05de\u05d5\u05ea</td></tr>'; return; }
-  tb.innerHTML = cachedTx.map(t => '<tr><td>' + esc(t.description) + '</td><td style="color:var(--muted);font-size:12px">' + esc(t.category) + '</td><td><span class="badge badge-' + t.type + '">' + (t.type === 'income' ? '\u05d4\u05db\u05e0\u05e1\u05d4' : '\u05d4\u05d5\u05e6\u05d0\u05d4') + '</span></td><td style="font-weight:600">' + fmt(t.amount) + '</td><td><button class="btn-del" onclick="deleteTx(\'' + t.id + '\')">&#128465;</button></td></tr>').join('');
+  tb.innerHTML = cachedTx.map(t => '<tr><td><input type="checkbox" class="tx-check" value="' + t.id + '" onchange="updateTxSelCount()"></td><td>' + esc(t.description) + '</td><td style="color:var(--muted);font-size:12px">' + esc(t.category) + '</td><td><span class="badge badge-' + t.type + '">' + (t.type === 'income' ? '\u05d4\u05db\u05e0\u05e1\u05d4' : '\u05d4\u05d5\u05e6\u05d0\u05d4') + '</span></td><td style="font-weight:600">' + fmt(t.amount) + '</td><td><button class="btn-del" onclick="deleteTx(\'' + t.id + '\')">&#128465;</button></td></tr>').join('');
+  updateTxSelCount();
 }
 
 // בונה את מבנה הנתונים המשותף לשתי התצוגות
@@ -2350,6 +2356,28 @@ async function addTx() {
   await loadAll();
 }
 async function deleteTx(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from('transactions').delete().eq('id', id); await loadAll(); }
+
+// בחירה מרובה של רשומות
+function updateTxSelCount() {
+  const checked = document.querySelectorAll('.tx-check:checked').length;
+  const btn = $('tx-del-multi'), cnt = $('tx-sel-count');
+  if (cnt) cnt.textContent = checked;
+  if (btn) btn.style.display = checked > 0 ? 'inline-block' : 'none';
+  // עדכן את מצב ה"בחר הכל"
+  const all = $('tx-check-all');
+  if (all) { const total = document.querySelectorAll('.tx-check').length; all.checked = total > 0 && checked === total; }
+}
+function toggleAllTx(cb) {
+  document.querySelectorAll('.tx-check').forEach(c => c.checked = cb.checked);
+  updateTxSelCount();
+}
+async function deleteSelectedTx() {
+  const ids = Array.from(document.querySelectorAll('.tx-check:checked')).map(c => c.value);
+  if (!ids.length) return;
+  if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7 ' + ids.length + ' \u05e8\u05e9\u05d5\u05de\u05d5\u05ea?')) return;
+  await sb.from('transactions').delete().in('id', ids);
+  await loadAll();
+}
 
 // ── EMPLOYEES ──
 async function addEmployee() {
