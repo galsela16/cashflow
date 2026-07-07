@@ -1924,6 +1924,29 @@ function toggleTxPanel(type) {
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+// ── כלי אבחון זמני — לבדיקת אירועים בעייתיים ──
+function diagEvents() {
+  const month = getMonth();
+  const all = cachedEventDetails.filter(d => d.month === month || (d.event_date && d.event_date.slice(0, 7) === month));
+  console.table(all.map(d => ({
+    title: d.event_title || '(ריק)',
+    price: d.price,
+    date: d.event_date,
+    month: d.month,
+    status: d.status,
+    client: (cachedClients.find(c => c.id === d.client_id) || {}).name || '(אין)',
+    is_manual: d.is_manual,
+    id: d.id
+  })));
+  // מצא בעייתיים: שם ריק או ברירת מחדל
+  const problematic = all.filter(d => !d.event_title || d.event_title.trim() === '' || d.event_title === 'פרטי אירוע' || d.event_title === 'Event details');
+  const msg = 'סה"כ אירועים החודש: ' + all.length + '\n' +
+    'אירועים ללא שם תקין: ' + problematic.length + '\n\n' +
+    problematic.map(d => '• מחיר: ' + d.price + ' | תאריך: ' + d.event_date + ' | סטטוס: ' + d.status + ' | שם: "' + (d.event_title || 'ריק') + '"').join('\n');
+  alert(msg);
+  return { all, problematic };
+}
+
 // פתיחת עריכת אירוע מתוך פירוט ההכנסות/צפוי
 async function editIncomeEvent(title, date, detailId) {
   await openEditEventModal({ title, date, source: 'gcal', detailId });
