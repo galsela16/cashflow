@@ -851,9 +851,12 @@ tr:last-child td{border-bottom:none}
         <button class="btn-outline" style="margin-top:8px;width:100%" onclick="addWorkerRow()">+ הוסף עובד</button>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-outline" onclick="closeEventModal()">ביטול</button>
-      <button class="btn-add" onclick="saveEvent()">שמור</button>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-del-multi" id="event-delete-btn" onclick="deleteEventFromModal()" style="display:none">🗑 מחק אירוע</button>
+      <div style="display:flex;gap:8px;margin-right:auto">
+        <button class="btn-outline" onclick="closeEventModal()">ביטול</button>
+        <button class="btn-add" onclick="saveEvent()">שמור</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2356,6 +2359,7 @@ function openNewEventModal() {
   fillClientSelect(null);
   $('modal-price').value = ''; $('modal-status').value = '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd'; $('modal-notes').value = '';
   renderModalWorkers();
+  if ($('event-delete-btn')) $('event-delete-btn').style.display = 'none';
   $('event-modal').style.display = 'flex';
 }
 
@@ -2400,6 +2404,7 @@ async function openEditEventModal({ title, date, source, detailId }) {
     modalWorkers = [];
   }
   renderModalWorkers();
+  if ($('event-delete-btn')) $('event-delete-btn').style.display = currentEditDetailId ? 'inline-block' : 'none';
   $('event-modal').style.display = 'flex';
 }
 
@@ -2425,6 +2430,22 @@ function renderModalWorkers() {
 }
 
 function closeEventModal() { $('event-modal').style.display = 'none'; modalWorkers = []; currentEditDetailId = null; currentEventDate = null; }
+
+// מחיקת אירוע מתוך טופס העריכה
+async function deleteEventFromModal() {
+  if (!currentEditDetailId) return;
+  const title = $('modal-ev-title').value || $('modal-event-title').textContent || 'האירוע';
+  if (!confirm('למחוק את "' + title + '"?\nהפעולה תמחק גם את פרטי העובדים של האירוע ואינה ניתנת לביטול.')) return;
+  // מחק עובדים מקושרים ואז את האירוע
+  await sb.from('event_workers').delete().eq('event_detail_id', currentEditDetailId);
+  await sb.from('event_details').delete().eq('id', currentEditDetailId);
+  closeEventModal();
+  // סגור פאנל פירוט אם פתוח, ורענן
+  const panel = $('tx-panel');
+  const panelType = panel ? panel.dataset.type : null;
+  await loadAll();
+  if (panel && panelType && panel.style.display !== 'none') { panel.style.display = 'none'; toggleTxPanel(panelType); }
+}
 
 async function saveEvent() {
   const uid = currentUser.id;
