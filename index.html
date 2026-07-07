@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ניהול תזרים ושכר</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root {
   --bg:#f0f4ff; --surface:#fff; --border:#dde3f0; --text:#1a1c2e; --muted:#8892b0;
@@ -123,6 +126,14 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .settings-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text)}
 .main{max-width:800px;margin:0 auto;padding:1.25rem 1rem 5rem}
 .month-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.export-wrap{position:relative;margin-right:auto}
+.export-btn{padding:8px 16px;border:1.5px solid var(--border);border-radius:100px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);transition:all .15s;white-space:nowrap}
+.export-btn:hover{border-color:var(--blue);color:var(--blue)}
+.export-menu{position:absolute;top:44px;left:0;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:6px;z-index:120;display:none;min-width:180px}
+.export-menu.open{display:block}
+.export-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text);text-align:right}
+.export-menu button:hover{background:var(--bg)}
+.export-menu button span{font-size:16px}
 .month-bar label{font-size:13px;color:var(--text);font-weight:500}
 .month-bar select{padding:7px 10px;border:1px solid rgba(255,255,255,.6);border-radius:var(--radius-sm);background:rgba(255,255,255,.7);color:var(--text);font-size:14px;backdrop-filter:blur(4px);box-shadow:0 2px 8px rgba(80,120,150,.08)}
 .month-bar select option{background:#fff;color:var(--text)}
@@ -400,6 +411,13 @@ tr:last-child td{border-bottom:none}
       <label>חודש:</label>
       <select id="monthSel" onchange="updateMonth()"></select>
       <select id="yearSel" onchange="updateMonth()"></select>
+      <div class="export-wrap">
+        <button class="export-btn" onclick="toggleExportMenu(event)">📤 ייצוא דוח</button>
+        <div class="export-menu" id="export-menu">
+          <button onclick="closeExportMenu();exportExcel()"><span>📊</span> Excel (לעריכה)</button>
+          <button onclick="closeExportMenu();exportPDF()"><span>📄</span> PDF (להדפסה)</button>
+        </div>
+      </div>
     </div>
 
     <!-- hidden elements needed by JS -->
@@ -491,7 +509,11 @@ tr:last-child td{border-bottom:none}
     <!-- transactions -->
     <div id="page-transactions" class="page">
       <div class="section">
-        <div class="section-title">הוסף רשומה</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-title" style="margin-bottom:0">הוסף רשומה</div>
+          <button class="btn-outline" onclick="document.getElementById('bank-file').click()">🏦 טען דף בנק</button>
+          <input type="file" id="bank-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleBankFile(this)" />
+        </div>
         <div class="form-row">
           <input type="text" id="t-desc" placeholder="תיאור" />
           <input type="number" id="t-amount" placeholder="סכום ₪" min="0" />
@@ -661,6 +683,25 @@ tr:last-child td{border-bottom:none}
     <div class="modal-footer">
       <button class="btn-outline" onclick="closeForgot()">ביטול</button>
       <button class="btn-add" id="forgot-btn" onclick="sendReset()">שלח קישור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bank Import Review Modal -->
+<div class="modal-overlay" id="bank-modal" style="display:none" onclick="if(event.target===this)closeBankModal()">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <div class="modal-title">🏦 טעינת דף בנק — אישור רשומות</div>
+      <button class="btn-del" onclick="closeBankModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">זיהינו את הרשומות הבאות. בדוק, תקן את הסוג והקטגוריה במידת הצורך, והסר שורות שאינך רוצה לייבא.</p>
+      <div id="bank-preview" style="max-height:400px;overflow-y:auto"></div>
+      <div class="msg" id="bank-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeBankModal()">ביטול</button>
+      <button class="btn-add" id="bank-import-btn" onclick="importBankRows()">ייבא רשומות מסומנות</button>
     </div>
   </div>
 </div>
@@ -841,7 +882,6 @@ tr:last-child td{border-bottom:none}
 <script>
 const SB_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cnZsb2dxanpwbm9qZnpiYXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk2MjgsImV4cCI6MjA5NzgwNTYyOH0.2I45YWLkTDLjndmyoNImkPLfqOxJV7TVsff2kAOZHpg';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzH60EnHD5wqtRfYR1vv1-5oELqEK7RlcWqwHlvT88xQDfysYupYV3I8FbnsdRWfkNing/exec';
 // Edge Function לחיבור יומן גוגל פר-משתמש (מחליף את הסנכרון הקבוע הישן)
 const GCAL_FN_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co/functions/v1/google-calendar-auth';
 let gcalConnected = false;
@@ -870,7 +910,8 @@ const I18N = {
   'דשבורד': 'Dashboard', 'הכנסות/הוצאות': 'Income/Expenses', 'אירועים': 'Events', 'עובדים': 'Employees',
   'לקוחות': 'Clients', 'קבועות': 'Recurring', 'התראות': 'Alerts',
   // Dashboard
-  'חודש:': 'Month:', 'יתרה נטו': 'Net balance', 'כמה נשאר בפועל': 'What\'s actually left',
+  'חודש:': 'Month:', '📤 ייצוא דוח': '📤 Export report', 'Excel (לעריכה)': 'Excel (editable)', 'PDF (להדפסה)': 'PDF (printable)',
+  'יתרה נטו': 'Net balance', 'כמה נשאר בפועל': 'What\'s actually left',
   'צפי רווח': 'Projected profit', 'כולל מה שצפוי': 'Including projected',
   'הכנסות': 'Income', 'נכנס מלקוחות': 'Received from clients', 'שולם בפועל ▼': 'Actually paid ▼',
   'צפוי מלקוחות': 'Expected from clients', 'טרם שולם ▼': 'Not yet paid ▼',
@@ -973,6 +1014,264 @@ const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g,
 const getMonth = () => $('yearSel').value + '-' + $('monthSel').value.padStart(2, '0');
 // מחזיר את פרטי האירועים של החודש הנבחר (משותף לכמה פונקציות)
 const getMonthDetails = (month) => { const m = month || getMonth(); return cachedEventDetails.filter(d => d.month === m || (d.event_date && d.event_date.slice(0, 7) === m)); };
+
+// ── EXPORT (Excel / PDF) ──
+function toggleExportMenu(e) { if (e) e.stopPropagation(); $('export-menu').classList.toggle('open'); }
+function closeExportMenu() { $('export-menu').classList.remove('open'); }
+document.addEventListener('click', function(e) {
+  const menu = $('export-menu');
+  if (menu && menu.classList.contains('open') && !menu.parentElement.contains(e.target)) menu.classList.remove('open');
+});
+
+// אוסף את נתוני החודש הנוכחי למבנה מסודר לייצוא
+function collectReportData() {
+  const month = getMonth();
+  const monthTx = cachedTx.filter(t => t.month === month);
+  const income = monthTx.filter(t => t.type === 'income');
+  const expense = monthTx.filter(t => t.type === 'expense');
+  const monthDetailIds = getMonthDetails().map(d => d.id);
+  // תשלומי עובדים
+  const empPays = cachedEmpEvents.filter(e => e.month === month || (e.date && e.date.slice(0,7) === month));
+  const workerPays = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id));
+  // סיכומים
+  const totalIncome = income.reduce((s, t) => s + t.amount, 0);
+  const totalExpense = expense.reduce((s, t) => s + t.amount, 0);
+  const totalEmpPay = empPays.reduce((s, e) => s + e.amount, 0) + workerPays.reduce((s, w) => s + w.amount, 0);
+  const net = totalIncome - totalExpense - totalEmpPay;
+  return { month, income, expense, empPays, workerPays, totalIncome, totalExpense, totalEmpPay, net };
+}
+
+// שם עובד לפי id
+function empName(id) { const e = cachedEmps.find(m => m.id === id); return e ? e.name : '—'; }
+
+function exportExcel() {
+  if (typeof XLSX === 'undefined') { alert('ספריית הייצוא עדיין נטענת, נסה שוב בעוד רגע'); return; }
+  const d = collectReportData();
+  const wb = XLSX.utils.book_new();
+
+  // גיליון סיכום
+  const summary = [
+    ['דוח חודשי — ' + d.month],
+    [],
+    ['סה"כ הכנסות', d.totalIncome],
+    ['סה"כ הוצאות', d.totalExpense],
+    ['סה"כ שכר עובדים', d.totalEmpPay],
+    ['יתרה נטו', d.net]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), 'סיכום');
+
+  // גיליון הכנסות
+  const incRows = [['תיאור', 'קטגוריה', 'סכום', 'סטטוס']];
+  d.income.forEach(t => incRows.push([t.description || '', t.category || '', t.amount, t.status || '']));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(incRows), 'הכנסות');
+
+  // גיליון הוצאות
+  const expRows = [['תיאור', 'קטגוריה', 'סכום']];
+  d.expense.forEach(t => expRows.push([t.description || '', t.category || '', t.amount]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expRows), 'הוצאות');
+
+  // גיליון שכר עובדים
+  const empRows = [['עובד', 'אירוע', 'סכום', 'סטטוס']];
+  d.empPays.forEach(e => empRows.push([empName(e.employee_id), e.event_name || '', e.amount, e.status || '']));
+  d.workerPays.forEach(w => { const det = cachedEventDetails.find(x => x.id === w.event_detail_id); empRows.push([empName(w.employee_id), det ? det.event_title : '', w.amount, w.status || '']); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(empRows), 'שכר עובדים');
+
+  XLSX.writeFile(wb, 'CashFlow_' + d.month + '.xlsx');
+}
+
+function exportPDF() {
+  if (typeof window.jspdf === 'undefined') { alert('ספריית הייצוא עדיין נטענת, נסה שוב בעוד רגע'); return; }
+  const d = collectReportData();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  // כותרת (באנגלית — jsPDF לא תומך בעברית ללא פונט מיוחד)
+  doc.setFontSize(18);
+  doc.text('CashFlow Report — ' + d.month, 14, 20);
+
+  // טבלת סיכום
+  doc.autoTable({
+    startY: 28,
+    head: [['Summary', 'Amount (ILS)']],
+    body: [
+      ['Total Income', fmtNum(d.totalIncome)],
+      ['Total Expenses', fmtNum(d.totalExpense)],
+      ['Total Payroll', fmtNum(d.totalEmpPay)],
+      ['Net Balance', fmtNum(d.net)]
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [37, 99, 235] }
+  });
+
+  // הכנסות
+  if (d.income.length) {
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['Income — Description', 'Category', 'Amount']],
+      body: d.income.map(t => [t.description || '', t.category || '', fmtNum(t.amount)]),
+      theme: 'striped', headStyles: { fillColor: [13, 156, 110] }
+    });
+  }
+  // הוצאות
+  if (d.expense.length) {
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['Expenses — Description', 'Category', 'Amount']],
+      body: d.expense.map(t => [t.description || '', t.category || '', fmtNum(t.amount)]),
+      theme: 'striped', headStyles: { fillColor: [220, 38, 38] }
+    });
+  }
+  // שכר
+  const payRows = [];
+  d.empPays.forEach(e => payRows.push([empName(e.employee_id), e.event_name || '', fmtNum(e.amount)]));
+  d.workerPays.forEach(w => { const det = cachedEventDetails.find(x => x.id === w.event_detail_id); payRows.push([empName(w.employee_id), det ? det.event_title : '', fmtNum(w.amount)]); });
+  if (payRows.length) {
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 8,
+      head: [['Payroll — Employee', 'Event', 'Amount']],
+      body: payRows,
+      theme: 'striped', headStyles: { fillColor: [124, 58, 237] }
+    });
+  }
+
+  doc.save('CashFlow_' + d.month + '.pdf');
+}
+
+// עוזר: מספר עם פסיקים בלי סמל מטבע (ל-PDF)
+function fmtNum(n) { return (n || 0).toLocaleString('en-US'); }
+
+// ── BANK IMPORT ──
+// מילון זיהוי קטגוריה לפי מילות מפתח בתיאור
+const BANK_CATEGORIES = [
+  { cat: 'שכירות', keys: ['שכירות', 'שכ"ד', 'שכ״ד', 'דירה', 'משרד'] },
+  { cat: 'ביטוח', keys: ['ביטוח', 'הראל', 'כלל', 'מגדל', 'הפניקס', 'מנורה'] },
+  { cat: 'רכב', keys: ['דלק', 'פז', 'סונול', 'דור אלון', 'ten', 'טן', 'חניון', 'חניה', 'כביש 6', 'רכב'] },
+  { cat: 'תוכנות', keys: ['google', 'microsoft', 'adobe', 'zoom', 'apple', 'aws', 'openai', 'תוכנה', 'מנוי'] },
+  { cat: 'שיווק', keys: ['facebook', 'meta', 'instagram', 'tiktok', 'שיווק', 'פרסום', 'קמפיין'] },
+  { cat: 'ציוד', keys: ['ציוד', 'מחשב', 'ksp', 'באג', 'ivory', 'אייבורי'] },
+  { cat: 'שירותים', keys: ['רואה חשבון', 'עורך דין', 'ייעוץ', 'שירות'] }
+];
+// זיהוי חכם של קטגוריה לפי התיאור
+function guessCategory(desc) {
+  const d = (desc || '').toLowerCase();
+  for (const c of BANK_CATEGORIES) {
+    if (c.keys.some(k => d.includes(k.toLowerCase()))) return c.cat;
+  }
+  return 'אחר';
+}
+
+let bankParsedRows = [];
+
+function handleBankFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (typeof XLSX === 'undefined') { alert('ספריית הקריאה עדיין נטענת, נסה שוב בעוד רגע'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      parseBankRows(rows);
+    } catch (err) {
+      alert('שגיאה בקריאת הקובץ. ודא שזה קובץ Excel תקין.');
+    }
+    input.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// מזהה עמודות (תאריך/תיאור/חובה/זכות/סכום) ובונה רשומות
+function parseBankRows(rows) {
+  bankParsedRows = [];
+  // מצא את שורת הכותרות (הראשונה עם כמה תאים לא-ריקים)
+  let headerIdx = rows.findIndex(r => r.filter(c => String(c).trim()).length >= 3);
+  if (headerIdx < 0) headerIdx = 0;
+  const headers = rows[headerIdx].map(h => String(h).toLowerCase());
+  // אתר עמודות לפי מילות מפתח נפוצות בבנקים ישראליים
+  const findCol = (...keys) => headers.findIndex(h => keys.some(k => h.includes(k)));
+  const descCol = findCol('תיאור', 'פרטים', 'פעולה', 'תנועה', 'ספק');
+  const debitCol = findCol('חובה', 'חיוב');
+  const creditCol = findCol('זכות', 'זיכוי');
+  const amountCol = findCol('סכום', 'סך');
+  const dateCol = findCol('תאריך', 'ערך');
+
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !r.filter(c => String(c).trim()).length) continue;
+    const desc = descCol >= 0 ? String(r[descCol] || '').trim() : '';
+    if (!desc) continue;
+    let amount = 0, type = 'expense';
+    // אם יש עמודות חובה/זכות נפרדות
+    if (debitCol >= 0 || creditCol >= 0) {
+      const debit = parseFloat(String(r[debitCol] || '0').replace(/[^\d.-]/g, '')) || 0;
+      const credit = parseFloat(String(r[creditCol] || '0').replace(/[^\d.-]/g, '')) || 0;
+      if (credit > 0) { amount = credit; type = 'income'; }
+      else { amount = debit; type = 'expense'; }
+    } else if (amountCol >= 0) {
+      // עמודת סכום אחת — שלילי = הוצאה, חיובי = הכנסה
+      const val = parseFloat(String(r[amountCol] || '0').replace(/[^\d.-]/g, '')) || 0;
+      amount = Math.abs(val);
+      type = val >= 0 ? 'income' : 'expense';
+    }
+    if (amount <= 0) continue;
+    bankParsedRows.push({
+      include: true,
+      date: dateCol >= 0 ? String(r[dateCol] || '').trim() : '',
+      desc, amount, type,
+      category: type === 'expense' ? guessCategory(desc) : 'אחר'
+    });
+  }
+
+  if (!bankParsedRows.length) {
+    alert('לא זוהו רשומות בקובץ. ודא שהקובץ מכיל עמודות של תיאור וסכום (או חובה/זכות).');
+    return;
+  }
+  renderBankPreview();
+  $('bank-modal').style.display = 'flex';
+}
+
+function renderBankPreview() {
+  const cats = ['שירותים', 'שכירות', 'ציוד', 'שיווק', 'ביטוח', 'תוכנות', 'רכב', 'אחר'];
+  $('bank-preview').innerHTML =
+    '<table style="width:100%;font-size:12.5px"><thead><tr>' +
+    '<th style="width:30px"><input type="checkbox" checked onchange="toggleAllBank(this)"></th>' +
+    '<th>תיאור</th><th>סכום</th><th>סוג</th><th>קטגוריה</th></tr></thead><tbody>' +
+    bankParsedRows.map((row, i) =>
+      '<tr>' +
+      '<td><input type="checkbox" ' + (row.include ? 'checked' : '') + ' onchange="bankParsedRows[' + i + '].include=this.checked"></td>' +
+      '<td>' + esc(row.desc) + (row.date ? '<div style="font-size:10px;color:var(--muted)">' + esc(row.date) + '</div>' : '') + '</td>' +
+      '<td style="font-weight:600;color:' + (row.type === 'income' ? 'var(--green)' : 'var(--red)') + '">' + fmt(row.amount) + '</td>' +
+      '<td><select onchange="bankParsedRows[' + i + '].type=this.value" style="font-size:12px;padding:3px"><option value="income"' + (row.type === 'income' ? ' selected' : '') + '>הכנסה</option><option value="expense"' + (row.type === 'expense' ? ' selected' : '') + '>הוצאה</option></select></td>' +
+      '<td><select onchange="bankParsedRows[' + i + '].category=this.value" style="font-size:12px;padding:3px">' + cats.map(c => '<option value="' + c + '"' + (row.category === c ? ' selected' : '') + '>' + c + '</option>').join('') + '</select></td>' +
+      '</tr>'
+    ).join('') + '</tbody></table>';
+}
+
+function toggleAllBank(cb) {
+  bankParsedRows.forEach(r => r.include = cb.checked);
+  renderBankPreview();
+}
+
+function closeBankModal() { $('bank-modal').style.display = 'none'; bankParsedRows = []; }
+
+async function importBankRows() {
+  const toImport = bankParsedRows.filter(r => r.include);
+  if (!toImport.length) { $('bank-msg').textContent = 'לא נבחרו רשומות'; $('bank-msg').className = 'msg err'; return; }
+  const btn = $('bank-import-btn'); btn.disabled = true; btn.textContent = '⏳ מייבא...';
+  const month = getMonth();
+  const records = toImport.map(r => ({
+    user_id: currentUser.id, month,
+    description: r.desc, amount: r.amount, type: r.type,
+    category: r.type === 'expense' ? r.category : 'אחר'
+  }));
+  const { error } = await sb.from('transactions').insert(records);
+  btn.disabled = false; btn.textContent = 'ייבא רשומות מסומנות';
+  if (error) { $('bank-msg').textContent = 'שגיאה: ' + error.message; $('bank-msg').className = 'msg err'; return; }
+  closeBankModal();
+  await loadAll();
+  alert('✅ ' + records.length + ' רשומות יובאו בהצלחה!');
+}
 
 const HEB_DAYS = ['\u05e8\u05d0\u05e9\u05d5\u05df','\u05e9\u05e0\u05d9','\u05e9\u05dc\u05d9\u05e9\u05d9','\u05e8\u05d1\u05d9\u05e2\u05d9','\u05d7\u05de\u05d9\u05e9\u05d9','\u05e9\u05d9\u05e9\u05d9','\u05e9\u05d1\u05ea'];
 const HEB_MON = ['\u05d9\u05e0\u05d5\u05d0\u05e8','\u05e4\u05d1\u05e8\u05d5\u05d0\u05e8','\u05de\u05e8\u05e5','\u05d0\u05e4\u05e8\u05d9\u05dc','\u05de\u05d0\u05d9','\u05d9\u05d5\u05e0\u05d9','\u05d9\u05d5\u05dc\u05d9','\u05d0\u05d5\u05d2\u05d5\u05e1\u05d8','\u05e1\u05e4\u05d8\u05de\u05d1\u05e8','\u05d0\u05d5\u05e7\u05d8\u05d5\u05d1\u05e8','\u05e0\u05d5\u05d1\u05de\u05d1\u05e8','\u05d3\u05e6\u05de\u05d1\u05e8'];
@@ -1381,58 +1680,6 @@ async function loadAll() {
   renderAll();
   // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
   loadGCal();
-}
-
-// מזהה רשומות event_details כפולות (אותו שם + תאריכים סמוכים) ומסיר את המיותרת מהזיכרון בלבד.
-// שומר את הרשומה שתאריכה תואם לאירוע ביומן גוגל; אם אין, שומר את המאוחרת (הסבירה לתיקון).
-function dedupeEventDetails() {
-  if (!cachedEventDetails.length) return;
-  const gcalDates = new Set((gcalEvents || []).map(ev => localDateStr(ev.start) + '|' + (ev.title || '')));
-  const removedIds = [];
-  const byKey = {};
-  cachedEventDetails.forEach(d => {
-    const key = (d.user_id || '') + '|' + (d.event_title || '');
-    (byKey[key] = byKey[key] || []).push(d);
-  });
-  const keep = [];
-  Object.values(byKey).forEach(group => {
-    if (group.length === 1) { keep.push(group[0]); return; }
-    // מיין לפי תאריך
-    group.sort((a, b) => (a.event_date || '').localeCompare(b.event_date || ''));
-    // בדוק אם התאריכים סמוכים (עד יומיים הפרש) — אם כן, זו כפילות של אותו אירוע
-    let clusters = [[group[0]]];
-    for (let i = 1; i < group.length; i++) {
-      const prev = clusters[clusters.length - 1];
-      const prevDate = prev[prev.length - 1].event_date;
-      const curDate = group[i].event_date;
-      if (prevDate && curDate && Math.abs(daysBetween(prevDate, curDate)) <= 2) {
-        prev.push(group[i]); // אותה קבוצת כפילויות
-      } else {
-        clusters.push([group[i]]); // אירוע נפרד
-      }
-    }
-    // מכל אשכול — שמור אחד בלבד
-    clusters.forEach(cluster => {
-      if (cluster.length === 1) { keep.push(cluster[0]); return; }
-      // עדיפות: רשומה שתאריכה+שם תואמים ליומן גוגל
-      let chosen = cluster.find(d => gcalDates.has((d.event_date || '') + '|' + (d.event_title || '')));
-      // אחרת — המאוחרת ביותר (סביר שהיא המתוקנת)
-      if (!chosen) chosen = cluster[cluster.length - 1];
-      cluster.forEach(d => { if (d.id !== chosen.id) removedIds.push(d.id); });
-      keep.push(chosen);
-    });
-  });
-  if (removedIds.length) {
-    cachedEventDetails = keep;
-    // הסר גם את ה-event_workers המקושרים לרשומות שהוסרו (מהזיכרון בלבד)
-    cachedEventWorkers = cachedEventWorkers.filter(w => !removedIds.includes(w.event_detail_id));
-  }
-}
-// מספר ימים בין שתי מחרוזות תאריך YYYY-MM-DD
-function daysBetween(d1, d2) {
-  const [y1, m1, day1] = d1.split('-').map(Number);
-  const [y2, m2, day2] = d2.split('-').map(Number);
-  return Math.round((new Date(y2, m2 - 1, day2) - new Date(y1, m1 - 1, day1)) / 86400000);
 }
 
 // ── RENDER ALL ──
@@ -2167,15 +2414,6 @@ async function addRecurring() {
   $('btn-add-rec').disabled = false; await loadRecurring();
 }
 async function deleteRecurring(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from('recurring_expenses').delete().eq('id', id); await loadRecurring(); }
-async function importRecurring() {
-  if (!cachedRecurring.length) { alert('\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea'); return; }
-  const month = getMonth();
-  if (!confirm('\u05dc\u05d9\u05d9\u05d1\u05d0 ' + cachedRecurring.length + ' \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05dc\u05d7\u05d5\u05d3\u05e9 ' + month + '?')) return;
-  await sb.from('transactions').insert(cachedRecurring.map(r => ({ user_id: currentUser.id, month, description: r.description + ' (\u05e7\u05d1\u05d5\u05e2\u05d4)', amount: r.amount, type: 'expense', category: r.category })));
-  await loadAll(); showPage('transactions', null);
-  alert('\u2705 ' + cachedRecurring.length + ' \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05d9\u05d5\u05d1\u05d0\u05d5!');
-}
-
 // ── PROFIT FIRST ──
 let pfSettings = {
   accounts: [
