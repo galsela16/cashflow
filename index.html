@@ -216,29 +216,30 @@ tr:last-child td{border-bottom:none}
 
 /* ── החודש במבט אחד ── */
 .mv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
-.mv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .mv-col-title{font-size:13px;font-weight:600;color:var(--muted)}
 .mv-count{font-size:11px;color:var(--muted)}
-.mv-list{max-height:44vh;min-height:60px;overflow-y:auto;padding-left:4px;scrollbar-width:thin}
+.mv-list{max-height:46vh;min-height:60px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface);scrollbar-width:thin}
 .mv-list::-webkit-scrollbar{width:5px}
 .mv-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:100px}
-.mv-row{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;margin-bottom:3px;font-size:12.5px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:box-shadow .15s}
-.mv-row:hover{box-shadow:var(--shadow)}
-.mv-row.mv-paid{background:var(--green-soft);border-color:#a7f3d0}
-.mv-row.mv-pending{background:#fffbeb;border-color:#fcd34d}
+.mv-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);font-size:12.5px;cursor:pointer;transition:background .12s}
+.mv-row:last-child{border-bottom:none}
+.mv-row:hover{background:var(--bg)}
+.mv-row.mv-paid{background:var(--green-soft)}
+.mv-row.mv-pending{background:#fffbeb}
 .mv-row.mv-static{cursor:default}
-.mv-date{font-size:10.5px;color:var(--muted);flex:0 0 32px;text-align:center}
+.mv-date{flex:0 0 32px;font-size:10.5px;color:var(--muted);text-align:center}
 .mv-name{flex:1;min-width:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mv-sub{font-weight:400;color:var(--muted);font-size:11px}
-.mv-amount{font-weight:600;white-space:nowrap;flex:0 0 auto;min-width:58px;text-align:left}
-.mv-status{padding:2px 3px;font-size:10.5px;border-radius:100px;border:1px solid var(--border);background:#fff;color:var(--text);flex:0 0 92px;max-width:92px;cursor:pointer}
-.mv-status.mv-st-paid{background:var(--green-soft);border-color:#a7f3d0;color:var(--green)}
-.mv-status.mv-st-pending{background:var(--amber-bg);border-color:#fcd34d;color:var(--amber)}
+.mv-amount{flex:0 0 66px;text-align:left;font-weight:600;white-space:nowrap}
+.mv-status{flex:0 0 auto;max-width:126px;font-size:10.5px;padding:2px 6px;border-radius:100px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer}
+.mv-status.mv-st-paid{background:#fff;border-color:#a7f3d0;color:var(--green)}
+.mv-status.mv-st-pending{background:#fff;border-color:#fcd34d;color:var(--amber)}
 .mv-badge-sm{font-size:10px;padding:1px 6px;border-radius:100px;flex:0 0 auto}
 .mv-totals{margin-top:8px;padding-top:8px;border-top:1.5px solid var(--border);display:flex;flex-direction:column;gap:4px;font-size:12.5px}
 .mv-tot-row{display:flex;justify-content:space-between}
 .mv-tot-main{font-weight:700;font-size:14px}
-@media(max-width:600px){.mv-grid{grid-template-columns:1fr}.mv-list{max-height:38vh}.mv-status{flex:0 0 78px;max-width:78px}}
+@media(max-width:600px){.mv-grid{grid-template-columns:1fr}.mv-list{max-height:38vh}.mv-status{max-width:96px}}
 
 /* bar chart */
 .bar-wrap{margin-bottom:10px}
@@ -2131,6 +2132,20 @@ function renderTxTable() {
 
 // ── החודש במבט אחד: הכנסות עם סטטוס צבעוני מול הוצאות ──
 const MV_STATUSES = ['לא יצאה דרישת תשלום', 'יצאה דרישת תשלום', 'בוצע תשלום', 'בוצע תשלום + חשבונית מס'];
+// תוויות מקוצרות לבורר הסטטוס (הערך שנשמר ל-DB נשאר המלא)
+const MV_SHORT = {
+  'לא יצאה דרישת תשלום': 'טרם נדרש',
+  'יצאה דרישת תשלום': 'נדרש תשלום',
+  'בוצע תשלום': 'שולם',
+  'בוצע תשלום + חשבונית מס': 'שולם + חשבונית'
+};
+const MV_SHORT_EN = {
+  'לא יצאה דרישת תשלום': 'Not requested',
+  'יצאה דרישת תשלום': 'Requested',
+  'בוצע תשלום': 'Paid',
+  'בוצע תשלום + חשבונית מס': 'Paid + invoice'
+};
+const mvShort = s => currentLang === 'en' ? (MV_SHORT_EN[s] || s) : (MV_SHORT[s] || s);
 const mvIsPaid = s => s === 'בוצע תשלום' || s === 'בוצע תשלום + חשבונית מס';
 const mvCls = s => mvIsPaid(s) ? 'mv-paid' : s === 'יצאה דרישת תשלום' ? 'mv-pending' : '';
 const mvSelCls = s => mvIsPaid(s) ? 'mv-st-paid' : s === 'יצאה דרישת תשלום' ? 'mv-st-pending' : '';
@@ -2151,7 +2166,7 @@ function renderMonthView() {
     const day = d.event_date ? Number(d.event_date.slice(8, 10)) + '/' + Number(d.event_date.slice(5, 7)) : '—';
     const title = esc(d.event_title || 'אירוע') + (c ? ' <span class="mv-sub">· ' + esc(c.name) + '</span>' : '');
     const sel = '<select class="mv-status ' + mvSelCls(d.status) + '" onclick="event.stopPropagation()" onchange="updateEventStatus(\'' + d.id + '\',this.value)">' +
-      MV_STATUSES.map(s => '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') + '</select>';
+      MV_STATUSES.map(s => '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + mvShort(s) + '</option>').join('') + '</select>';
     return '<div class="mv-row ' + mvCls(d.status) + '" onclick="mvEditEvent(\'' + d.id + '\')" title="' + esc(d.event_title || '') + '">' +
       '<div class="mv-date">' + day + '</div><div class="mv-name">' + title + '</div>' +
       sel + '<div class="mv-amount">' + fmt(d.price) + '</div></div>';
