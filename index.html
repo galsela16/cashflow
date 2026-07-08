@@ -214,6 +214,26 @@ tr:last-child td{border-bottom:none}
 .btn-del:hover{color:var(--red);background:var(--red-bg)}
 .status-select{padding:4px 8px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#f8faff;color:var(--text)}
 
+/* ── החודש במבט אחד ── */
+.mv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mv-col-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--muted)}
+.mv-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:box-shadow .15s}
+.mv-row:hover{box-shadow:var(--shadow)}
+.mv-row.mv-paid{background:var(--green-soft);border-color:#a7f3d0}
+.mv-row.mv-pending{background:#fffbeb;border-color:#fcd34d}
+.mv-row.mv-static{cursor:default}
+.mv-name{flex:1;min-width:0}
+.mv-name>div:first-child{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mv-sub{font-size:11px;color:var(--muted)}
+.mv-amount{font-weight:600;white-space:nowrap}
+.mv-status{padding:3px 4px;font-size:11px;border-radius:100px;border:1px solid var(--border);background:#fff;color:var(--text);max-width:104px;cursor:pointer}
+.mv-status.mv-st-paid{background:var(--green-soft);border-color:#a7f3d0;color:var(--green)}
+.mv-status.mv-st-pending{background:var(--amber-bg);border-color:#fcd34d;color:var(--amber)}
+.mv-totals{margin-top:10px;padding-top:10px;border-top:1.5px solid var(--border);display:flex;flex-direction:column;gap:5px;font-size:12.5px}
+.mv-tot-row{display:flex;justify-content:space-between}
+.mv-tot-main{font-weight:700;font-size:14px}
+@media(max-width:600px){.mv-grid{grid-template-columns:1fr}}
+
 /* bar chart */
 .bar-wrap{margin-bottom:10px}
 .bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:3px}
@@ -514,6 +534,21 @@ tr:last-child td{border-bottom:none}
 
     <!-- transactions -->
     <div id="page-transactions" class="page">
+      <div class="section">
+        <div class="section-title">📅 החודש במבט אחד</div>
+        <div class="mv-grid">
+          <div>
+            <div class="mv-col-title">הכנסות</div>
+            <div id="mv-income"></div>
+            <div class="mv-totals" id="mv-income-totals"></div>
+          </div>
+          <div>
+            <div class="mv-col-title">הוצאות</div>
+            <div id="mv-expense"></div>
+            <div class="mv-totals" id="mv-expense-totals"></div>
+          </div>
+        </div>
+      </div>
       <div class="section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div class="section-title" style="margin-bottom:0">הוסף רשומה</div>
@@ -960,6 +995,10 @@ const I18N = {
   'בוצע תשלום': 'Payment made', 'בוצע תשלום + חשבונית מס': 'Payment made + tax invoice',
   'יצאה דרישת תשלום': 'Payment requested', 'לא יצאה דרישת תשלום': 'No payment requested',
   'ממתין': 'Pending', 'באיחור': 'Overdue',
+  // Month at a glance
+  'החודש במבט אחד': 'Month at a glance', 'נכנס': 'Received', 'סה"כ צפוי': 'Total expected',
+  'סה"כ הוצאות': 'Total expenses', 'אין הכנסות החודש': 'No income this month', 'אין הוצאות החודש': 'No expenses this month',
+  'הכנסה ידנית': 'Manual income', 'שכר עובדים': 'Employee wages', 'שולם החודש': 'Paid this month', 'נשאר ביד': 'Left over',
   // Modals
   'הכנסה': 'Income', 'הוצאה': 'Expense', 'ביטול': 'Cancel', 'מחק': 'Delete', 'הוסף': 'Add', 'עדכן': 'Update',
   'איפוס סיסמה': 'Reset password',
@@ -1815,6 +1854,7 @@ function renderAll() {
   renderCatBars(expense, salary);
   renderEmpStatus(monthDetailIds);
   renderTxTable();
+  renderMonthView();
   renderEmpCards(monthDetailIds);
   renderClientsList();
   renderEventsList();
@@ -2081,6 +2121,85 @@ function renderTxTable() {
   if (!cachedTx.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">\u05d0\u05d9\u05df \u05e8\u05e9\u05d5\u05de\u05d5\u05ea</td></tr>'; return; }
   tb.innerHTML = cachedTx.map(t => '<tr><td><input type="checkbox" class="tx-check" value="' + t.id + '" onchange="updateTxSelCount()"></td><td>' + esc(t.description) + '</td><td style="color:var(--muted);font-size:12px">' + esc(t.category) + '</td><td><span class="badge badge-' + t.type + '">' + (t.type === 'income' ? '\u05d4\u05db\u05e0\u05e1\u05d4' : '\u05d4\u05d5\u05e6\u05d0\u05d4') + '</span></td><td style="font-weight:600">' + fmt(t.amount) + '</td><td><button class="btn-del" onclick="deleteTx(\'' + t.id + '\')">&#128465;</button></td></tr>').join('');
   updateTxSelCount();
+}
+
+// ── החודש במבט אחד: הכנסות עם סטטוס צבעוני מול הוצאות ──
+const MV_STATUSES = ['לא יצאה דרישת תשלום', 'יצאה דרישת תשלום', 'בוצע תשלום', 'בוצע תשלום + חשבונית מס'];
+const mvIsPaid = s => s === 'בוצע תשלום' || s === 'בוצע תשלום + חשבונית מס';
+const mvCls = s => mvIsPaid(s) ? 'mv-paid' : s === 'יצאה דרישת תשלום' ? 'mv-pending' : '';
+const mvSelCls = s => mvIsPaid(s) ? 'mv-st-paid' : s === 'יצאה דרישת תשלום' ? 'mv-st-pending' : '';
+
+function renderMonthView() {
+  const incEl = $('mv-income'), expEl = $('mv-expense');
+  if (!incEl || !expEl) return;
+  const month = getMonth();
+  const monthDetails = getMonthDetails(month);
+  const monthDetailIds = monthDetails.map(d => d.id);
+
+  // הכנסות: אירועים עם מחיר (לפי תאריך) + הכנסות ידניות/בנק
+  const evRows = monthDetails.filter(d => d.price > 0).sort((a, b) => (a.event_date || '') > (b.event_date || '') ? 1 : -1);
+  const txIncomeRows = cachedTx.filter(x => x.type === 'income');
+
+  let incHtml = evRows.map(d => {
+    const c = cachedClients.find(cl => cl.id === d.client_id);
+    const day = d.event_date ? Number(d.event_date.slice(8, 10)) + '/' + Number(d.event_date.slice(5, 7)) : '';
+    const sub = (c ? esc(c.name) : '') + (day ? (c ? ' · ' : '') + day : '');
+    const sel = '<select class="mv-status ' + mvSelCls(d.status) + '" onclick="event.stopPropagation()" onchange="updateEventStatus(\'' + d.id + '\',this.value)">' +
+      MV_STATUSES.map(s => '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') + '</select>';
+    return '<div class="mv-row ' + mvCls(d.status) + '" onclick="mvEditEvent(\'' + d.id + '\')">' +
+      '<div class="mv-name"><div>' + esc(d.event_title || 'אירוע') + '</div>' + (sub ? '<div class="mv-sub">' + sub + '</div>' : '') + '</div>' +
+      sel + '<div class="mv-amount">' + fmt(d.price) + '</div></div>';
+  }).join('');
+
+  incHtml += txIncomeRows.map(x =>
+    '<div class="mv-row mv-paid mv-static"><div class="mv-name"><div>' + esc(x.description) + '</div><div class="mv-sub">' + t('הכנסה ידנית') + '</div></div>' +
+    '<span class="badge badge-paid">' + t('נכנס') + '</span><div class="mv-amount">' + fmt(x.amount) + '</div></div>'
+  ).join('');
+
+  incEl.innerHTML = incHtml || '<div class="empty">' + t('אין הכנסות החודש') + '</div>';
+
+  const paidEv = evRows.filter(d => mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
+  const pendEv = evRows.filter(d => !mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
+  const txInc = txIncomeRows.reduce((s, x) => s + x.amount, 0);
+  const inTotal = paidEv + txInc;
+  $('mv-income-totals').innerHTML =
+    '<div class="mv-tot-row"><span style="color:var(--green)">' + t('נכנס') + '</span><span style="color:var(--green);font-weight:600">' + fmt(inTotal) + '</span></div>' +
+    '<div class="mv-tot-row"><span style="color:var(--amber)">' + t('ממתין') + '</span><span style="color:var(--amber);font-weight:600">' + fmt(pendEv) + '</span></div>' +
+    '<div class="mv-tot-row mv-tot-main"><span>' + t('סה"כ צפוי') + '</span><span>' + fmt(inTotal + pendEv) + '</span></div>';
+
+  // הוצאות: עסקאות הוצאה + שכר ששולם
+  const txExpRows = cachedTx.filter(x => x.type === 'expense');
+  const paidEmpSalary = cachedEmpEvents.filter(e => e.status === 'שולם').reduce((s, e) => s + e.amount, 0);
+  const paidWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === 'שולם').reduce((s, w) => s + w.amount, 0);
+  const salary = paidEmpSalary + paidWorkerSalary;
+
+  let expHtml = txExpRows.map(x =>
+    '<div class="mv-row mv-static"><div class="mv-name"><div>' + esc(x.description) + '</div>' + (x.category ? '<div class="mv-sub">' + esc(x.category) + '</div>' : '') + '</div>' +
+    '<div class="mv-amount" style="color:var(--red)">' + fmt(x.amount) + '</div></div>'
+  ).join('');
+  if (salary > 0) expHtml += '<div class="mv-row mv-static"><div class="mv-name"><div>' + t('שכר עובדים') + '</div><div class="mv-sub">' + t('שולם החודש') + '</div></div>' +
+    '<div class="mv-amount" style="color:var(--red)">' + fmt(salary) + '</div></div>';
+
+  expEl.innerHTML = expHtml || '<div class="empty">' + t('אין הוצאות החודש') + '</div>';
+
+  const expTotal = txExpRows.reduce((s, x) => s + x.amount, 0) + salary;
+  const net = inTotal - expTotal;
+  $('mv-expense-totals').innerHTML =
+    '<div class="mv-tot-row mv-tot-main"><span>' + t('סה"כ הוצאות') + '</span><span style="color:var(--red)">' + fmt(expTotal) + '</span></div>' +
+    '<div class="mv-tot-row"><span>' + t('נשאר ביד') + '</span><span style="font-weight:600;color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmt(net) + '</span></div>';
+}
+
+// פתיחת עריכת אירוע מהתצוגה החודשית — לפי ID בלבד (בטוח לכל כותרת)
+function mvEditEvent(detailId) {
+  const d = cachedEventDetails.find(x => x.id === detailId);
+  if (!d) return;
+  editIncomeEvent(d.event_title || '', d.event_date || '', detailId);
+}
+
+// עדכון סטטוס אירוע ישירות מהשורה (בלי לפתוח מודל)
+async function updateEventStatus(id, status) {
+  await sb.from('event_details').update({ status }).eq('id', id);
+  await loadAll();
 }
 
 // בונה את מבנה הנתונים המשותף לשתי התצוגות
