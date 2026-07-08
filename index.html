@@ -215,24 +215,30 @@ tr:last-child td{border-bottom:none}
 .status-select{padding:4px 8px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#f8faff;color:var(--text)}
 
 /* ── החודש במבט אחד ── */
-.mv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.mv-col-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--muted)}
-.mv-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:box-shadow .15s}
+.mv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.mv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mv-col-title{font-size:13px;font-weight:600;color:var(--muted)}
+.mv-count{font-size:11px;color:var(--muted)}
+.mv-list{max-height:44vh;min-height:60px;overflow-y:auto;padding-left:4px;scrollbar-width:thin}
+.mv-list::-webkit-scrollbar{width:5px}
+.mv-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:100px}
+.mv-row{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;margin-bottom:3px;font-size:12.5px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:box-shadow .15s}
 .mv-row:hover{box-shadow:var(--shadow)}
 .mv-row.mv-paid{background:var(--green-soft);border-color:#a7f3d0}
 .mv-row.mv-pending{background:#fffbeb;border-color:#fcd34d}
 .mv-row.mv-static{cursor:default}
-.mv-name{flex:1;min-width:0}
-.mv-name>div:first-child{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mv-sub{font-size:11px;color:var(--muted)}
-.mv-amount{font-weight:600;white-space:nowrap}
-.mv-status{padding:3px 4px;font-size:11px;border-radius:100px;border:1px solid var(--border);background:#fff;color:var(--text);max-width:104px;cursor:pointer}
+.mv-date{font-size:10.5px;color:var(--muted);flex:0 0 32px;text-align:center}
+.mv-name{flex:1;min-width:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mv-sub{font-weight:400;color:var(--muted);font-size:11px}
+.mv-amount{font-weight:600;white-space:nowrap;flex:0 0 auto;min-width:58px;text-align:left}
+.mv-status{padding:2px 3px;font-size:10.5px;border-radius:100px;border:1px solid var(--border);background:#fff;color:var(--text);flex:0 0 92px;max-width:92px;cursor:pointer}
 .mv-status.mv-st-paid{background:var(--green-soft);border-color:#a7f3d0;color:var(--green)}
 .mv-status.mv-st-pending{background:var(--amber-bg);border-color:#fcd34d;color:var(--amber)}
-.mv-totals{margin-top:10px;padding-top:10px;border-top:1.5px solid var(--border);display:flex;flex-direction:column;gap:5px;font-size:12.5px}
+.mv-badge-sm{font-size:10px;padding:1px 6px;border-radius:100px;flex:0 0 auto}
+.mv-totals{margin-top:8px;padding-top:8px;border-top:1.5px solid var(--border);display:flex;flex-direction:column;gap:4px;font-size:12.5px}
 .mv-tot-row{display:flex;justify-content:space-between}
 .mv-tot-main{font-weight:700;font-size:14px}
-@media(max-width:600px){.mv-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.mv-grid{grid-template-columns:1fr}.mv-list{max-height:38vh}.mv-status{flex:0 0 78px;max-width:78px}}
 
 /* bar chart */
 .bar-wrap{margin-bottom:10px}
@@ -538,13 +544,13 @@ tr:last-child td{border-bottom:none}
         <div class="section-title">📅 החודש במבט אחד</div>
         <div class="mv-grid">
           <div>
-            <div class="mv-col-title">הכנסות</div>
-            <div id="mv-income"></div>
+            <div class="mv-head"><div class="mv-col-title">הכנסות</div><div class="mv-count" id="mv-income-count"></div></div>
+            <div class="mv-list" id="mv-income"></div>
             <div class="mv-totals" id="mv-income-totals"></div>
           </div>
           <div>
-            <div class="mv-col-title">הוצאות</div>
-            <div id="mv-expense"></div>
+            <div class="mv-head"><div class="mv-col-title">הוצאות</div><div class="mv-count" id="mv-expense-count"></div></div>
+            <div class="mv-list" id="mv-expense"></div>
             <div class="mv-totals" id="mv-expense-totals"></div>
           </div>
         </div>
@@ -2142,21 +2148,24 @@ function renderMonthView() {
 
   let incHtml = evRows.map(d => {
     const c = cachedClients.find(cl => cl.id === d.client_id);
-    const day = d.event_date ? Number(d.event_date.slice(8, 10)) + '/' + Number(d.event_date.slice(5, 7)) : '';
-    const sub = (c ? esc(c.name) : '') + (day ? (c ? ' · ' : '') + day : '');
+    const day = d.event_date ? Number(d.event_date.slice(8, 10)) + '/' + Number(d.event_date.slice(5, 7)) : '—';
+    const title = esc(d.event_title || 'אירוע') + (c ? ' <span class="mv-sub">· ' + esc(c.name) + '</span>' : '');
     const sel = '<select class="mv-status ' + mvSelCls(d.status) + '" onclick="event.stopPropagation()" onchange="updateEventStatus(\'' + d.id + '\',this.value)">' +
       MV_STATUSES.map(s => '<option value="' + s + '"' + (d.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') + '</select>';
-    return '<div class="mv-row ' + mvCls(d.status) + '" onclick="mvEditEvent(\'' + d.id + '\')">' +
-      '<div class="mv-name"><div>' + esc(d.event_title || 'אירוע') + '</div>' + (sub ? '<div class="mv-sub">' + sub + '</div>' : '') + '</div>' +
+    return '<div class="mv-row ' + mvCls(d.status) + '" onclick="mvEditEvent(\'' + d.id + '\')" title="' + esc(d.event_title || '') + '">' +
+      '<div class="mv-date">' + day + '</div><div class="mv-name">' + title + '</div>' +
       sel + '<div class="mv-amount">' + fmt(d.price) + '</div></div>';
   }).join('');
 
   incHtml += txIncomeRows.map(x =>
-    '<div class="mv-row mv-paid mv-static"><div class="mv-name"><div>' + esc(x.description) + '</div><div class="mv-sub">' + t('הכנסה ידנית') + '</div></div>' +
-    '<span class="badge badge-paid">' + t('נכנס') + '</span><div class="mv-amount">' + fmt(x.amount) + '</div></div>'
+    '<div class="mv-row mv-paid mv-static" title="' + esc(x.description) + '"><div class="mv-date">—</div>' +
+    '<div class="mv-name">' + esc(x.description) + ' <span class="mv-sub">· ' + t('הכנסה ידנית') + '</span></div>' +
+    '<span class="badge badge-paid mv-badge-sm">' + t('נכנס') + '</span><div class="mv-amount">' + fmt(x.amount) + '</div></div>'
   ).join('');
 
   incEl.innerHTML = incHtml || '<div class="empty">' + t('אין הכנסות החודש') + '</div>';
+  const incCount = evRows.length + txIncomeRows.length;
+  $('mv-income-count').textContent = incCount ? incCount + ' ' + (currentLang === 'en' ? 'items' : 'פריטים') : '';
 
   const paidEv = evRows.filter(d => mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
   const pendEv = evRows.filter(d => !mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
@@ -2174,13 +2183,16 @@ function renderMonthView() {
   const salary = paidEmpSalary + paidWorkerSalary;
 
   let expHtml = txExpRows.map(x =>
-    '<div class="mv-row mv-static"><div class="mv-name"><div>' + esc(x.description) + '</div>' + (x.category ? '<div class="mv-sub">' + esc(x.category) + '</div>' : '') + '</div>' +
+    '<div class="mv-row mv-static" title="' + esc(x.description) + '"><div class="mv-name">' + esc(x.description) +
+    (x.category ? ' <span class="mv-sub">· ' + esc(t(x.category)) + '</span>' : '') + '</div>' +
     '<div class="mv-amount" style="color:var(--red)">' + fmt(x.amount) + '</div></div>'
   ).join('');
-  if (salary > 0) expHtml += '<div class="mv-row mv-static"><div class="mv-name"><div>' + t('שכר עובדים') + '</div><div class="mv-sub">' + t('שולם החודש') + '</div></div>' +
+  if (salary > 0) expHtml += '<div class="mv-row mv-static"><div class="mv-name">' + t('שכר עובדים') + ' <span class="mv-sub">· ' + t('שולם החודש') + '</span></div>' +
     '<div class="mv-amount" style="color:var(--red)">' + fmt(salary) + '</div></div>';
 
   expEl.innerHTML = expHtml || '<div class="empty">' + t('אין הוצאות החודש') + '</div>';
+  const expCount = txExpRows.length + (salary > 0 ? 1 : 0);
+  $('mv-expense-count').textContent = expCount ? expCount + ' ' + (currentLang === 'en' ? 'items' : 'פריטים') : '';
 
   const expTotal = txExpRows.reduce((s, x) => s + x.amount, 0) + salary;
   const net = inTotal - expTotal;
