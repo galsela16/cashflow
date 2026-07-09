@@ -1007,6 +1007,7 @@ const I18N = {
   'החודש במבט אחד': 'Month at a glance', 'נכנס': 'Received', 'סה"כ צפוי': 'Total expected',
   'סה"כ הוצאות': 'Total expenses', 'אין הכנסות החודש': 'No income this month', 'אין הוצאות החודש': 'No expenses this month',
   'הכנסה ידנית': 'Manual income', 'שכר עובדים': 'Employee wages', 'שולם החודש': 'Paid this month', 'נשאר ביד': 'Left over',
+  'סמן שולם': 'Mark paid',
   // Modals
   'הכנסה': 'Income', 'הוצאה': 'Expense', 'ביטול': 'Cancel', 'מחק': 'Delete', 'הוסף': 'Add', 'עדכן': 'Update',
   'איפוס סיסמה': 'Reset password',
@@ -2105,13 +2106,17 @@ function renderEmpStatus(monthDetailIds) {
     const cls = status === '\u05e9\u05d5\u05dc\u05dd' ? 'paid' : status === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : status === '\u05de\u05de\u05ea\u05d9\u05df' ? 'pending' : '';
     // רשימת אירועים מפורטת — מאירועים (event_workers) ומאירועי עובד ישירים
     const statusBadge = s => '<span class="badge badge-' + (s === '\u05e9\u05d5\u05dc\u05dd' ? 'paid' : s === '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8' ? 'late' : 'pending') + '">' + s + '</span>';
+    // כפתור "סמן שולם" — מוצג רק כשהפריט עדיין לא שולם
+    const payBtn = (fnName, id) => '<button class="btn-paid-quick" onclick="event.stopPropagation();' + fnName + '(\'' + id + '\',\'\u05e9\u05d5\u05dc\u05dd\')" style="margin-right:8px">' + t('\u05e1\u05de\u05df \u05e9\u05d5\u05dc\u05dd') + '</button>';
     let detailRows = '';
     ewks.forEach(w => {
       const det = cachedEventDetails.find(d => d.id === w.event_detail_id);
-      detailRows += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;color:var(--muted)"><span>' + (det ? esc(det.event_title) : '\u05d0\u05d9\u05e8\u05d5\u05e2') + (det && det.event_date ? ' \u00b7 ' + det.event_date : '') + '</span><span>' + fmt(w.amount) + ' ' + statusBadge(w.status) + '</span></div>';
+      const btn = w.status !== '\u05e9\u05d5\u05dc\u05dd' ? payBtn('updateEventWorkerStatus', w.id) : '';
+      detailRows += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;color:var(--muted)"><span>' + (det ? esc(det.event_title) : '\u05d0\u05d9\u05e8\u05d5\u05e2') + (det && det.event_date ? ' \u00b7 ' + det.event_date : '') + '</span><span style="display:flex;align-items:center">' + fmt(w.amount) + ' ' + statusBadge(w.status) + btn + '</span></div>';
     });
     evs.forEach(e => {
-      detailRows += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;color:var(--muted)"><span>' + esc(e.event_name) + (e.date ? ' \u00b7 ' + e.date : '') + '</span><span>' + fmt(e.amount) + ' ' + statusBadge(e.status) + '</span></div>';
+      const btn = e.status !== '\u05e9\u05d5\u05dc\u05dd' ? payBtn('updateEmpEventStatus', e.id) : '';
+      detailRows += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;color:var(--muted)"><span>' + esc(e.event_name) + (e.date ? ' \u00b7 ' + e.date : '') + '</span><span style="display:flex;align-items:center">' + fmt(e.amount) + ' ' + statusBadge(e.status) + btn + '</span></div>';
     });
     const expandable = count > 0;
     return '<div style="border-bottom:1px solid var(--border)">' +
