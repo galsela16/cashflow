@@ -348,8 +348,9 @@ tr:last-child td{border-bottom:none}
 @media(max-width:600px){
   .tabs{display:none}
   .cards-row-3{grid-template-columns:1fr 1fr}
-  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:none;display:flex;padding:10px 0 14px;z-index:50;box-shadow:0 -4px 20px rgba(37,99,235,.08);border-radius:20px 20px 0 0}
-  .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0;color:var(--muted);font-size:9px;border:none;background:none}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:none;display:flex;padding:10px 4px 14px;z-index:50;box-shadow:0 -4px 20px rgba(37,99,235,.08);border-radius:20px 20px 0 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .bottom-nav::-webkit-scrollbar{display:none}
+  .bnav-item{flex:0 0 auto;min-width:62px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 2px;color:var(--muted);font-size:9px;border:none;background:none;white-space:nowrap}
   .bnav-item.active{color:var(--blue);font-weight:600}
   .bnav-icon{font-size:18px}
   .topbar-user span{display:none}
@@ -707,6 +708,8 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" onclick="checkAccess('events') && showPage('events',this)" data-page="events"><span class="bnav-icon">🎯</span>אירועים</button>
     <button class="bnav-item" onclick="checkAccess('employees') && showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
     <button class="bnav-item" onclick="checkAccess('clients') && showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
+    <button class="bnav-item" onclick="showPage('recurring',this)" data-page="recurring"><span class="bnav-icon">🔄</span>קבועות</button>
+    <button class="bnav-item" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
@@ -2920,6 +2923,11 @@ function showPage(id, el) {
   if (page) page.classList.add('active');
   if (el) el.classList.add('active');
   document.querySelectorAll('[data-page="' + id + '"]').forEach(b => b.classList.add('active'));
+  // גלול את הכפתור הפעיל לתצוגה בתפריט התחתון הנגלל (מובייל)
+  const activeNav = document.querySelector('.bottom-nav .bnav-item[data-page="' + id + '"]');
+  if (activeNav && activeNav.scrollIntoView) activeNav.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  // גלול את תוכן העמוד לראש בעת מעבר סקשן
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
   if (id === 'recurring') renderRecurring();
 }
