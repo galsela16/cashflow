@@ -1127,9 +1127,21 @@ document.addEventListener('click', function(e) {
 function collectReportData() {
   const month = getMonth();
   const monthTx = cachedTx.filter(t => t.month === month);
-  const income = monthTx.filter(t => t.type === 'income');
+  const txIncome = monthTx.filter(t => t.type === 'income');
   const expense = monthTx.filter(t => t.type === 'expense');
-  const monthDetailIds = getMonthDetails().map(d => d.id);
+  const monthDetails = getMonthDetails();
+  const monthDetailIds = monthDetails.map(d => d.id);
+  // הכנסות מאירועים ששולמו (כמו בדשבורד) — נספרות כהכנסה
+  const isPaid = s => s === 'בוצע תשלום' || s === 'בוצע תשלום + חשבונית מס';
+  const paidEvents = monthDetails.filter(d => d.price > 0 && isPaid(d.status));
+  // רשימת הכנסות מאוחדת: עסקאות income + אירועים ששולמו
+  const income = [
+    ...txIncome.map(t => ({ description: t.description, category: t.category || '', amount: t.amount })),
+    ...paidEvents.map(d => {
+      const c = cachedClients.find(cl => cl.id === d.client_id);
+      return { description: d.event_title || 'אירוע', category: c ? c.name : 'אירוע', amount: d.price || 0 };
+    })
+  ];
   // תשלומי עובדים
   const empPays = cachedEmpEvents.filter(e => e.month === month || (e.date && e.date.slice(0,7) === month));
   const workerPays = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id));
@@ -1163,17 +1175,20 @@ function exportExcel() {
   // גיליון הכנסות
   const incRows = [['תיאור', 'קטגוריה', 'סכום', 'סטטוס']];
   d.income.forEach(t => incRows.push([t.description || '', t.category || '', t.amount, t.status || '']));
+  incRows.push(['סה"כ', '', d.totalIncome, '']);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(incRows), 'הכנסות');
 
   // גיליון הוצאות
   const expRows = [['תיאור', 'קטגוריה', 'סכום']];
   d.expense.forEach(t => expRows.push([t.description || '', t.category || '', t.amount]));
+  expRows.push(['סה"כ', '', d.totalExpense]);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expRows), 'הוצאות');
 
   // גיליון שכר עובדים
   const empRows = [['עובד', 'אירוע', 'סכום', 'סטטוס']];
   d.empPays.forEach(e => empRows.push([empName(e.employee_id), e.event_name || '', e.amount, e.status || '']));
   d.workerPays.forEach(w => { const det = cachedEventDetails.find(x => x.id === w.event_detail_id); empRows.push([empName(w.employee_id), det ? det.event_title : '', w.amount, w.status || '']); });
+  empRows.push(['סה"כ', '', d.totalEmpPay, '']);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(empRows), 'שכר עובדים');
 
   XLSX.writeFile(wb, 'CashFlow_' + d.month + '.xlsx');
@@ -1225,16 +1240,22 @@ function exportPDF() {
   const pageW = doc.internal.pageSize.getWidth();
   doc.text(R('דוח CashFlow — ' + d.month), pageW - 14, 20, { align: 'right' });
 
-  // הגדרות משותפות לטבלאות: פונט עברי, יישור לימין
-  const tableOpts = (head, body, fill) => ({
-    startY: undefined,
-    head: [head.map(R)],
-    body: body.map(row => row.map(R)),
-    theme: 'grid',
-    styles: { font: F, halign: 'right', fontSize: 10 },
-    headStyles: { font: F, fillColor: fill, halign: 'right', textColor: [255,255,255] },
-    columnStyles: { 0: { halign: 'right' } }
-  });
+  // הגדרות משותפות לטבלאות: פונט עברי, יישור לימין, עם שורת סיכום אופציונלית
+  const tableOpts = (head, body, fill, footRow) => {
+    const opts = {
+      head: [head.map(R)],
+      body: body.map(row => row.map(R)),
+      theme: 'grid',
+      styles: { font: F, halign: 'right', fontSize: 10 },
+      headStyles: { font: F, fillColor: fill, halign: 'right', textColor: [255,255,255] },
+      columnStyles: { 0: { halign: 'right' } }
+    };
+    if (footRow) {
+      opts.foot = [footRow.map(R)];
+      opts.footStyles = { font: F, fillColor: [237,240,247], textColor: [20,20,30], halign: 'right', fontStyle: 'bold' };
+    }
+    return opts;
+  };
 
   // טבלת סיכום
   doc.autoTable(Object.assign(tableOpts(
@@ -1251,14 +1272,16 @@ function exportPDF() {
     doc.autoTable(Object.assign(tableOpts(
       ['הכנסות — תיאור', 'קטגוריה', 'סכום'],
       d.income.map(t => [t.description || '', t.category || '', fmtNum(t.amount)]),
-      [13, 156, 110]), { startY: doc.lastAutoTable.finalY + 8 }));
+      [13, 156, 110],
+      ['סה"כ הכנסות', '', fmtNum(d.totalIncome)]), { startY: doc.lastAutoTable.finalY + 8 }));
   }
   // הוצאות
   if (d.expense.length) {
     doc.autoTable(Object.assign(tableOpts(
       ['הוצאות — תיאור', 'קטגוריה', 'סכום'],
       d.expense.map(t => [t.description || '', t.category || '', fmtNum(t.amount)]),
-      [220, 38, 38]), { startY: doc.lastAutoTable.finalY + 8 }));
+      [220, 38, 38],
+      ['סה"כ הוצאות', '', fmtNum(d.totalExpense)]), { startY: doc.lastAutoTable.finalY + 8 }));
   }
   // שכר
   const payRows = [];
@@ -1267,7 +1290,8 @@ function exportPDF() {
   if (payRows.length) {
     doc.autoTable(Object.assign(tableOpts(
       ['שכר — עובד', 'אירוע', 'סכום'],
-      payRows, [124, 58, 237]), { startY: doc.lastAutoTable.finalY + 8 }));
+      payRows, [124, 58, 237],
+      ['סה"כ שכר', '', fmtNum(d.totalEmpPay)]), { startY: doc.lastAutoTable.finalY + 8 }));
   }
 
   doc.save('CashFlow_' + d.month + '.pdf');
