@@ -662,15 +662,21 @@ tr:last-child td{border-bottom:none}
         <div style="font-size:13px;opacity:.85">פעמיים בחודש — הכנסות שנצברו מחולקות לחשבונות</div>
       </div>
       <div class="section">
-        <div class="section-title">💵 הכנסה לחלוקה</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-title" style="margin-bottom:0">💵 הכנסה לחלוקה</div>
+          <div class="view-toggle">
+            <button class="view-toggle-btn active" id="pf-src-received" onclick="setPFSource('received')">נכנס מלקוחות</button>
+            <button class="view-toggle-btn" id="pf-src-projected" onclick="setPFSource('projected')">צפי רווח</button>
+          </div>
+        </div>
         <div style="background:var(--green-soft);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">נכנס מלקוחות החודש</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px" id="pf-income-label">נכנס מלקוחות החודש</div>
             <div style="font-size:28px;font-weight:700;color:var(--green)" id="pf-income-display">₪0</div>
           </div>
           <div style="font-size:36px">💰</div>
         </div>
-        <div style="font-size:12px;color:var(--muted)">💡 נלקח אוטומטית מ"נכנס מלקוחות"</div>
+        <div style="font-size:12px;color:var(--muted)" id="pf-income-note">💡 נלקח אוטומטית מ"נכנס מלקוחות"</div>
       </div>
       <div class="section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
@@ -997,6 +1003,7 @@ const I18N = {
   // Profit First
   'פעמיים בחודש — הכנסות שנצברו מחולקות לחשבונות': 'Twice a month — accrued income split into accounts',
   'הכנסה לחלוקה': 'Income to allocate', 'נכנס מלקוחות החודש': 'Received from clients this month',
+  'צפי רווח החודש': 'Projected profit this month', '💡 נלקח אוטומטית מ"צפי רווח"': '💡 Taken automatically from "Projected profit"',
   '💡 נלקח אוטומטית מ"נכנס מלקוחות"': '💡 Taken automatically from "Received from clients"',
   'הקצאה לחשבונות': 'Allocation to accounts', '✏️ ערוך אחוזים': '✏️ Edit percentages',
   'ערוך אחוזים (סה"כ = 100%)': 'Edit percentages (total = 100%)', 'שמור': 'Save', '✕ סגור': '✕ Close',
@@ -1860,7 +1867,10 @@ function renderAll() {
   const pendDbEl = $('d-pending-db'); if(pendDbEl) { pendDbEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendDbEl.style.color = pendingNet >= 0 ? 'var(--green)' : 'var(--red)'; }
   // sync tax rate from dashboard
   const dbTaxRate = $('tax-rate-db'); if(dbTaxRate) dbTaxRate.value = $('tax-rate').value;
-  updatePFIncome(income);
+  // שמור את שני הערכים לבחירת מקור ההכנסה ל-Profit First
+  pfIncomeReceived = income;
+  pfIncomeProjected = Math.max(0, pendingNet);
+  updatePFIncome();
 
   renderCatBars(expense, salary);
   renderEmpStatus(monthDetailIds);
@@ -2051,9 +2061,34 @@ function updateTax(inc, pendInc) {
   const taxPendDbEl = $('d-tax-pending-db'); if(taxPendDbEl) taxPendDbEl.textContent = fmt(pendTaxable * rate / 100);
 }
 
-function updatePFIncome(amt) {
+// מקור ההכנסה ל-Profit First: 'received' (נכנס מלקוחות) או 'projected' (צפי רווח)
+let pfIncomeSource = localStorage.getItem('cf_pf_source') || 'received';
+let pfIncomeReceived = 0, pfIncomeProjected = 0;
+
+function updatePFIncome() {
   const el = $('pf-income-display');
-  if (el) { el.textContent = fmt(amt || 0); calcPF(); }
+  if (!el) return;
+  const amt = pfIncomeSource === 'projected' ? pfIncomeProjected : pfIncomeReceived;
+  el.textContent = fmt(amt || 0);
+  // עדכן תוויות וכפתורים
+  const lbl = $('pf-income-label'), note = $('pf-income-note');
+  if (pfIncomeSource === 'projected') {
+    if (lbl) lbl.textContent = t('צפי רווח החודש');
+    if (note) note.textContent = t('💡 נלקח אוטומטית מ"צפי רווח"');
+  } else {
+    if (lbl) lbl.textContent = t('נכנס מלקוחות החודש');
+    if (note) note.textContent = t('💡 נלקח אוטומטית מ"נכנס מלקוחות"');
+  }
+  if ($('pf-src-received')) $('pf-src-received').classList.toggle('active', pfIncomeSource === 'received');
+  if ($('pf-src-projected')) $('pf-src-projected').classList.toggle('active', pfIncomeSource === 'projected');
+  calcPF();
+}
+
+// החלפת מקור ההכנסה ל-Profit First
+function setPFSource(src) {
+  pfIncomeSource = src;
+  localStorage.setItem('cf_pf_source', src);
+  updatePFIncome();
 }
 
 function renderCatBars(totalExp, workerSalary) {
