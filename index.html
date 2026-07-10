@@ -545,8 +545,11 @@ tr:last-child td{border-bottom:none}
     <!-- transactions -->
     <div id="page-transactions" class="page">
       <div class="section">
-        <div class="section-title">📅 החודש במבט אחד</div>
-        <div class="mv-grid">
+        <div class="section-title mv-toggle" onclick="toggleMonthView()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+          <span>📅 החודש במבט אחד</span>
+          <span id="mv-chevron" style="font-size:12px;color:var(--muted);transition:transform .2s">▾</span>
+        </div>
+        <div class="mv-grid" id="mv-grid-wrap" style="display:none;margin-top:14px">
           <div>
             <div class="mv-head"><div class="mv-col-title">הכנסות</div><div class="mv-count" id="mv-income-count"></div></div>
             <div class="mv-list" id="mv-income"></div>
@@ -1831,6 +1834,12 @@ async function enterApp(user) {
   initMonths();
   loadPFSettings();
   loadSubscription();
+  // שחזר מצב "החודש במבט אחד" (מכווץ כברירת מחדל)
+  if (localStorage.getItem('cf_mv_open') === '1') {
+    const wrap = $('mv-grid-wrap'), chev = $('mv-chevron');
+    if (wrap) wrap.style.display = 'grid';
+    if (chev) chev.style.transform = 'rotate(180deg)';
+  }
   // טען קודם הוצאות קבועות, ורק אז loadAll (שתלוי בהן לייבוא אוטומטי)
   await loadRecurring();
   await loadAll();
@@ -2260,7 +2269,20 @@ const mvIsPaid = s => s === 'בוצע תשלום' || s === 'בוצע תשלום 
 const mvCls = s => mvIsPaid(s) ? 'mv-paid' : s === 'יצאה דרישת תשלום' ? 'mv-pending' : '';
 const mvSelCls = s => mvIsPaid(s) ? 'mv-st-paid' : s === 'יצאה דרישת תשלום' ? 'mv-st-pending' : '';
 
+// פתיחה/סגירה של "החודש במבט אחד" — מכווץ כברירת מחדל, זוכר את הבחירה
+function toggleMonthView() {
+  const wrap = $('mv-grid-wrap'), chev = $('mv-chevron');
+  if (!wrap) return;
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'grid' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+  localStorage.setItem('cf_mv_open', open ? '1' : '0');
+  if (open) renderMonthView();
+}
+
 function renderMonthView() {
+  const wrap = $('mv-grid-wrap');
+  if (wrap && wrap.style.display === 'none') return; // מכווץ — אין צורך לרנדר
   const incEl = $('mv-income'), expEl = $('mv-expense');
   if (!incEl || !expEl) return;
   const month = getMonth();
