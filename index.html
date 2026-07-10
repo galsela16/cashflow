@@ -619,7 +619,7 @@ tr:last-child td{border-bottom:none}
           <input type="text" id="t-desc" placeholder="תיאור" />
           <input type="number" id="t-amount" placeholder="סכום ₪" min="0" />
           <select id="t-type"><option value="income">הכנסה</option><option value="expense">הוצאה</option></select>
-          <select id="t-cat"><option value="שירותים">שירותים</option><option value="שכירות">שכירות</option><option value="ציוד">ציוד</option><option value="שיווק">שיווק</option><option value="אחר">אחר</option></select>
+          <select id="t-cat"></select>
         </div>
         <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
       </div>
@@ -760,7 +760,7 @@ tr:last-child td{border-bottom:none}
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
           <div style="flex:1;min-width:120px">
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">קטגוריה</label>
-            <input id="bud-cat" placeholder="לדוגמה: אוכל" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <select id="bud-cat" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)"></select>
           </div>
           <div style="flex:1;min-width:100px">
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">תקרה חודשית (₪)</label>
@@ -1757,6 +1757,26 @@ function translateNode(root) {
 }
 
 // ── מצב עסק/בית ──
+// ── קטגוריות לפי מצב ──
+const BIZ_CATEGORIES = ['שירותים', 'שכירות', 'ציוד', 'שיווק', 'אחר'];
+const HOME_CATEGORIES = ['אוכל', 'רכב', 'קבועות (בית)', 'בריאות', 'חינוך', 'אישי', 'בילויים', 'ביגוד', 'חיסכון', 'אחר'];
+function populateCategories() {
+  const cats = appMode === 'home' ? HOME_CATEGORIES : BIZ_CATEGORIES;
+  const sel = $('t-cat');
+  if (sel) {
+    const cur = sel.value;
+    sel.innerHTML = cats.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+    if (cats.includes(cur)) sel.value = cur;
+  }
+  // רשימת קטגוריות לתקציבים (מצב בית) — ללא "אחר" שהוא ברירת מחדל של הוצאות ללא קטגוריה
+  const budSel = $('bud-cat');
+  if (budSel) {
+    const curB = budSel.value;
+    budSel.innerHTML = HOME_CATEGORIES.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+    if (HOME_CATEGORIES.includes(curB)) budSel.value = curB;
+  }
+}
+
 function applyModeVisibility() {
   // הצג/הסתר טאבים ופריטי ניווט לפי המצב
   document.querySelectorAll('[data-mode]').forEach(el => {
@@ -1765,6 +1785,8 @@ function applyModeVisibility() {
   // עדכן כפתורי המתג
   if ($('mode-business')) $('mode-business').classList.toggle('active', appMode === 'business');
   if ($('mode-home')) $('mode-home').classList.toggle('active', appMode === 'home');
+  // עדכן את רשימת הקטגוריות בטופס ההוצאות לפי המצב
+  populateCategories();
   // רקע חמים במצב בית
   const scr = $('app-screen');
   if (scr) scr.classList.toggle('home-mode', appMode === 'home');
