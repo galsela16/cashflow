@@ -3219,14 +3219,18 @@ async function autoImportRecurring(month, uid, existingTx) {
   // נעילה — מנע ייבוא כפול (מפתח כולל מצב כדי לא להתנגש בין עסק/בית)
   const lockKey = appMode + ':' + month;
   if (_importingMonths.has(lockKey)) return;
-  // בדוק אם כבר יובאו הוצאות קבועות לחודש זה
-  const alreadyImported = existingTx.some(t => t.description && t.description.includes('(קבועה)'));
-  if (alreadyImported) return;
+  // אילו קבועות כבר יובאו החודש? (לפי התיאור עם הסיומת "(קבועה)")
+  const importedDescs = new Set(
+    existingTx.filter(t => t.description && t.description.includes('(קבועה)'))
+              .map(t => t.description.replace(' (קבועה)', '').trim())
+  );
+  // ייבא רק קבועות שעוד לא יובאו החודש
+  const toImport = cachedRecurring.filter(r => !importedDescs.has(r.description.trim()));
+  if (!toImport.length) return;
   _importingMonths.add(lockKey);
   try {
-    // ייבא אוטומטית
     await sb.from(TX_TABLE()).insert(
-      cachedRecurring.map(r => ({
+      toImport.map(r => ({
         user_id: uid,
         month,
         description: r.description + ' (קבועה)',
@@ -3264,9 +3268,15 @@ async function addRecurring() {
   $('btn-add-rec').disabled = true;
   await sb.from(REC_TABLE()).insert({ user_id: currentUser.id, description: desc, amount, category });
   $('r-desc').value = ''; $('r-amount').value = '';
-  $('btn-add-rec').disabled = false; await loadRecurring();
+  $('btn-add-rec').disabled = false;
+  await loadRecurring();
+  await loadAll(); // ייבא את הקבועה החדשה לעסקאות ורענן את הדשבורד
 }
-async function deleteRecurring(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from(REC_TABLE()).delete().eq('id', id); await loadRecurring(); }
+async function deleteRecurring(id) {
+  if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return;
+  await sb.from(REC_TABLE()).delete().eq('id', id);
+  await loadRecurring();
+}
 // ── PROFIT FIRST ──
 let pfSettings = {
   accounts: [
