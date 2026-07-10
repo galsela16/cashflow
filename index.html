@@ -99,6 +99,10 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 #app-screen{display:none}
 .topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(37,99,235,.06)}
 .topbar-title{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.mode-switch{display:inline-flex;background:var(--bg);border-radius:100px;padding:3px;gap:2px}
+.mode-btn{padding:6px 14px;border:none;background:transparent;border-radius:100px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.mode-btn.active{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+@media(max-width:600px){.mode-btn{padding:5px 10px;font-size:12px}.topbar-title{font-size:18px}}
 .topbar-user{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:10px}
 .btn-logout{padding:6px 14px;border:1.5px solid var(--border);border-radius:100px;background:transparent;cursor:pointer;font-size:13px;color:var(--muted)}
 
@@ -422,7 +426,13 @@ tr:last-child td{border-bottom:none}
 
 <div id="app-screen">
   <div class="topbar">
-    <div class="topbar-title"><span style="color:var(--text)">cash</span><span style="color:var(--blue)">flow</span></div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="topbar-title"><span style="color:var(--text)">cash</span><span style="color:var(--blue)">flow</span></div>
+      <div class="mode-switch">
+        <button class="mode-btn active" id="mode-business" onclick="setMode('business')">🏢 עסק</button>
+        <button class="mode-btn" id="mode-home" onclick="setMode('home')">🏠 בית</button>
+      </div>
+    </div>
     <div class="topbar-user">
       <span id="plan-badge" style="padding:4px 10px;border-radius:100px;font-size:12px;font-weight:600;color:#fff;background:#0d9c6e"></span>
       <div class="settings-wrap">
@@ -490,10 +500,12 @@ tr:last-child td{border-bottom:none}
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
       <button class="tab" onclick="showPage('recurring',this)">🔄 קבועות</button>
-      <button class="tab" data-feature="events" onclick="checkAccess('events') && showPage('events',this)">🎯 אירועים</button>
-      <button class="tab" data-feature="employees" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
-      <button class="tab" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
-      <button class="tab" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
+      <button class="tab" data-mode="business" data-feature="events" onclick="checkAccess('events') && showPage('events',this)">🎯 אירועים</button>
+      <button class="tab" data-mode="business" data-feature="employees" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
+      <button class="tab" data-mode="business" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
+      <button class="tab" data-mode="business" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
+      <button class="tab" data-mode="home" onclick="showPage('budgets',this)">🎯 תקציבים</button>
+      <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
@@ -714,14 +726,19 @@ tr:last-child td{border-bottom:none}
   <div class="bottom-nav">
     <button class="bnav-item active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="bnav-icon">📊</span>סיכום</button>
     <button class="bnav-item" onclick="showPage('transactions',this)" data-page="transactions"><span class="bnav-icon">💸</span>הכנסות</button>
-    <button class="bnav-item" onclick="checkAccess('events') && showPage('events',this)" data-page="events"><span class="bnav-icon">🎯</span>אירועים</button>
-    <button class="bnav-item" onclick="checkAccess('employees') && showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
-    <button class="bnav-item" onclick="checkAccess('clients') && showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
+    <button class="bnav-item" data-mode="business" onclick="checkAccess('events') && showPage('events',this)" data-page="events"><span class="bnav-icon">🎯</span>אירועים</button>
+    <button class="bnav-item" data-mode="business" onclick="checkAccess('employees') && showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
+    <button class="bnav-item" data-mode="business" onclick="checkAccess('clients') && showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
     <button class="bnav-item" onclick="showPage('recurring',this)" data-page="recurring"><span class="bnav-icon">🔄</span>קבועות</button>
-    <button class="bnav-item" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
+    <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
+    <button class="bnav-item" data-mode="home" onclick="showPage('budgets',this)" data-page="budgets"><span class="bnav-icon">🎯</span>תקציבים</button>
+    <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
+
+<!-- placeholder pages for home mode (built in later steps) -->
+<template id="home-pages-template"></template>
 
 <!-- Upgrade Modal -->
 <div class="modal-overlay" id="upgrade-modal" style="display:none" onclick="if(event.target===this)closeUpgradeModal()">
@@ -1635,6 +1652,8 @@ function setAdminPlan(plan) {
 }
 
 let currentLang = localStorage.getItem('cf_lang') || 'he';
+// מצב האפליקציה: 'business' (עסק) או 'home' (בית)
+let appMode = localStorage.getItem('cf_mode') || 'business';
 
 // מחיל תרגום על אלמנט בודד וילדיו (טקסט + placeholder)
 function translateNode(root) {
@@ -1677,6 +1696,37 @@ function translateNode(root) {
     const base = el._origPlaceholder;
     el.setAttribute('placeholder', currentLang === 'en' && I18N[base] ? I18N[base] : base);
   });
+}
+
+// ── מצב עסק/בית ──
+function applyModeVisibility() {
+  // הצג/הסתר טאבים ופריטי ניווט לפי המצב
+  document.querySelectorAll('[data-mode]').forEach(el => {
+    el.style.display = el.getAttribute('data-mode') === appMode ? '' : 'none';
+  });
+  // עדכן כפתורי המתג
+  if ($('mode-business')) $('mode-business').classList.toggle('active', appMode === 'business');
+  if ($('mode-home')) $('mode-home').classList.toggle('active', appMode === 'home');
+}
+
+function setMode(mode) {
+  if (mode === appMode) return;
+  appMode = mode;
+  localStorage.setItem('cf_mode', mode);
+  applyModeVisibility();
+  // אם העמוד הנוכחי לא זמין במצב החדש — חזור לדשבורד
+  const activePage = document.querySelector('.page.active');
+  const activeId = activePage ? activePage.id.replace('page-', '') : '';
+  const businessOnly = ['events', 'employees', 'clients', 'profitfirst'];
+  const homeOnly = ['budgets', 'goals'];
+  const invalid = (mode === 'home' && businessOnly.includes(activeId)) ||
+                  (mode === 'business' && homeOnly.includes(activeId));
+  if (invalid || !activePage) {
+    const dashBtn = document.querySelector('.tab[onclick*="dashboard"]');
+    showPage('dashboard', dashBtn);
+  }
+  // טען מחדש את הנתונים של המצב הפעיל
+  if (currentUser && typeof loadAll === 'function') loadAll();
 }
 
 function setLanguage(lang) {
@@ -1839,6 +1889,7 @@ async function enterApp(user) {
   initMonths();
   loadPFSettings();
   loadSubscription();
+  applyModeVisibility();
   // שחזר מצב "החודש במבט אחד" (מכווץ כברירת מחדל)
   if (localStorage.getItem('cf_mv_open') === '1') {
     const wrap = $('mv-grid-wrap'), chev = $('mv-chevron');
