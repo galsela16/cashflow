@@ -751,6 +751,31 @@ tr:last-child td{border-bottom:none}
     <div id="page-alerts" class="page">
       <div id="alerts-box"></div>
     </div>
+
+    <!-- budgets (home mode) -->
+    <div id="page-budgets" class="page">
+      <div class="section">
+        <div class="section-title">🎯 תקציב חודשי לפי קטגוריה</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">הגדר תקרה חודשית לכל קטגוריה, וראה כמה הוצאת מולה החודש.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+          <div style="flex:1;min-width:120px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">קטגוריה</label>
+            <input id="bud-cat" placeholder="לדוגמה: אוכל" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div style="flex:1;min-width:100px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">תקרה חודשית (₪)</label>
+            <input id="bud-limit" type="number" placeholder="1000" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <button class="btn btn-primary" id="btn-add-bud" onclick="addBudget()" style="height:38px">הוסף</button>
+        </div>
+        <div id="budgets-list"></div>
+      </div>
+    </div>
+
+    <!-- goals (home mode) -->
+    <div id="page-goals" class="page">
+      <div id="goals-content"></div>
+    </div>
   </div>
 
   <div class="bottom-nav">
@@ -1978,6 +2003,7 @@ async function loadAll() {
     // אין אירועים/עובדים/לקוחות במצב בית
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
     await autoImportRecurring(month, uid, cachedTx);
+    await loadBudgets();
     renderHome();
     return;
   }
@@ -2071,7 +2097,57 @@ function renderHome() {
 }
 
 // placeholder — יבנו בשלבים הבאים
-function renderHomeBudgets() {}
+let cachedBudgets = [];
+async function loadBudgets() {
+  const res = await sb.from('home_budgets').select('*').eq('user_id', currentUser.id).order('created_at');
+  cachedBudgets = res.data || [];
+  renderHomeBudgets();
+}
+async function addBudget() {
+  const cat = $('bud-cat').value.trim(), limit = parseFloat($('bud-limit').value);
+  if (!cat || !limit || limit <= 0) return;
+  $('btn-add-bud').disabled = true;
+  await sb.from('home_budgets').insert({ user_id: currentUser.id, category: cat, monthly_limit: limit });
+  $('bud-cat').value = ''; $('bud-limit').value = '';
+  $('btn-add-bud').disabled = false;
+  await loadBudgets();
+}
+async function deleteBudget(id) {
+  if (!confirm('למחוק תקציב זה?')) return;
+  await sb.from('home_budgets').delete().eq('id', id);
+  await loadBudgets();
+}
+function renderHomeBudgets() {
+  const el = $('budgets-list');
+  if (!el) return;
+  if (!cachedBudgets.length) { el.innerHTML = '<div class="empty">עדיין לא הוגדרו תקציבים. הוסף קטגוריה למעלה.</div>'; return; }
+  // חשב הוצאה בפועל לכל קטגוריה מהעסקאות של החודש
+  const spent = {};
+  cachedTx.filter(t => t.type === 'expense').forEach(t => {
+    const c = t.category || 'אחר';
+    spent[c] = (spent[c] || 0) + t.amount;
+  });
+  el.innerHTML = cachedBudgets.map(b => {
+    const used = spent[b.category] || 0;
+    const pct = b.monthly_limit > 0 ? Math.round(used / b.monthly_limit * 100) : 0;
+    const over = used > b.monthly_limit;
+    const barColor = over ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--green)';
+    const remaining = b.monthly_limit - used;
+    return '<div style="padding:12px 0;border-bottom:1px solid var(--border)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+        '<div style="font-weight:600">' + esc(b.category) + '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<span style="font-size:13px;color:' + (over ? 'var(--red)' : 'var(--muted)') + '">' + fmt(used) + ' / ' + fmt(b.monthly_limit) + '</span>' +
+          '<button class="btn-del" onclick="deleteBudget(\'' + b.id + '\')">&#128465;</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(pct, 100) + '%;background:' + barColor + '"></div></div>' +
+      '<div style="font-size:11px;color:' + (over ? 'var(--red)' : 'var(--muted)') + ';margin-top:4px">' +
+        (over ? '⚠️ חריגה של ' + fmt(Math.abs(remaining)) : 'נשאר ' + fmt(remaining)) + ' · ' + pct + '%' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
 function renderHomeGoals() {}
 
 // ── RENDER ALL ──
