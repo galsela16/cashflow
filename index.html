@@ -483,7 +483,7 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <!-- Always-visible balance hero -->
-    <div class="hero-balance">
+    <div class="hero-balance" id="biz-hero-balance">
       <div class="hero-item">
         <div class="hero-label">💰 יתרה נטו</div>
         <div class="hero-value" id="d-net-db">—</div>
@@ -1743,6 +1743,11 @@ function applyModeVisibility() {
   // רקע חמים במצב בית
   const scr = $('app-screen');
   if (scr) scr.classList.toggle('home-mode', appMode === 'home');
+  // הסתר את כרטיס היתרה/צפי-רווח העסקי במצב בית
+  const bizHero = $('biz-hero-balance');
+  if (bizHero) bizHero.style.display = appMode === 'home' ? 'none' : '';
+  const pb = $('profit-breakdown');
+  if (pb && appMode === 'home') pb.style.display = 'none';
 }
 
 function setMode(mode) {
