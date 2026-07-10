@@ -515,6 +515,32 @@ tr:last-child td{border-bottom:none}
     <!-- dashboard -->
     <div id="page-dashboard" class="page active">
 
+      <!-- home dashboard (home mode only) -->
+      <div id="home-dashboard" style="display:none">
+        <div class="hero-balance" style="margin-bottom:1.1rem">
+          <div class="hero-item">
+            <div class="hero-label">💰 יתרה החודש</div>
+            <div class="hero-value" id="h-net">—</div>
+            <div class="hero-sub">הכנסות פחות הוצאות</div>
+          </div>
+        </div>
+        <div class="cards-row" style="margin-bottom:1.25rem">
+          <div class="card card-soft-green"><div class="card-label">💵 נכנס החודש</div><div class="card-value c-green" id="h-income">—</div><div class="card-sub" id="h-income-sub">משכורות והכנסות</div></div>
+          <div class="card"><div class="card-label">💸 יצא החודש</div><div class="card-value c-red" id="h-expense">—</div><div class="card-sub">כל ההוצאות</div></div>
+        </div>
+        <div class="section" style="margin-bottom:1rem">
+          <div class="section-title">💵 הכנסות החודש</div>
+          <div id="h-income-list"></div>
+        </div>
+        <div class="section" style="margin-bottom:0">
+          <div class="section-title">💸 הוצאות לפי קטגוריה</div>
+          <div id="h-cat-bars"><div class="empty">אין הוצאות החודש</div></div>
+        </div>
+      </div>
+
+      <!-- business dashboard content -->
+      <div id="business-dashboard">
+
       <!-- 2. Income -->
       <div class="dash-group">
         <div class="dash-group-title">💵 הכנסות</div>
@@ -560,6 +586,7 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      </div><!-- /business-dashboard -->
     </div>
 
     <!-- transactions -->
@@ -1498,7 +1525,7 @@ async function importBankRows() {
     description: r.desc, amount: r.amount, type: r.type,
     category: r.type === 'expense' ? r.category : 'אחר'
   }));
-  const { error } = await sb.from('transactions').insert(records);
+  const { error } = await sb.from(TX_TABLE()).insert(records);
   btn.disabled = false; btn.textContent = 'ייבא רשומות מסומנות';
   if (error) { $('bank-msg').textContent = 'שגיאה: ' + error.message; $('bank-msg').className = 'msg err'; return; }
   closeBankModal();
@@ -1657,6 +1684,9 @@ function setAdminPlan(plan) {
 let currentLang = localStorage.getItem('cf_lang') || 'he';
 // מצב האפליקציה: 'business' (עסק) או 'home' (בית)
 let appMode = localStorage.getItem('cf_mode') || 'business';
+// שמות טבלאות לפי מצב
+const TX_TABLE = () => appMode === 'home' ? 'home_transactions' : 'transactions';
+const REC_TABLE = () => appMode === 'home' ? 'home_recurring' : 'recurring_expenses';
 
 // מחיל תרגום על אלמנט בודד וילדיו (טקסט + placeholder)
 function translateNode(root) {
@@ -1732,7 +1762,9 @@ function setMode(mode) {
     showPage('dashboard', dashBtn);
   }
   // טען מחדש את הנתונים של המצב הפעיל
-  if (currentUser && typeof loadAll === 'function') loadAll();
+  if (currentUser && typeof loadAll === 'function') {
+    loadRecurring().then(() => loadAll());
+  }
 }
 
 function setLanguage(lang) {
@@ -1934,6 +1966,17 @@ function updateMonth() { loadAll(); }
 // ── LOAD ──
 async function loadAll() {
   const month = getMonth(), uid = currentUser.id;
+  // ── מצב בית: טען רק עסקאות בית + קבועות בית ──
+  if (appMode === 'home') {
+    const txR = await sb.from('home_transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false });
+    cachedTx = txR.data || [];
+    // אין אירועים/עובדים/לקוחות במצב בית
+    cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
+    await autoImportRecurring(month, uid, cachedTx);
+    renderHome();
+    return;
+  }
+  // ── מצב עסק (כרגיל) ──
   const [txR, empR, evR, clientR, detailR] = await Promise.all([
     sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false }),
     sb.from('employees').select('*').eq('user_id', uid).order('name'),
@@ -1958,8 +2001,82 @@ async function loadAll() {
   loadGCal();
 }
 
+// ── RENDER HOME (מצב בית) ──
+function renderHome() {
+  // הצג דשבורד בית, הסתר דשבורד עסק
+  const homeD = $('home-dashboard'), bizD = $('business-dashboard');
+  if (homeD) homeD.style.display = 'block';
+  if (bizD) bizD.style.display = 'none';
+
+  const month = getMonth();
+  // משכורת מהעסק (50% מצפי הרווח שנשמר בעת חישוב העסק)
+  let bizSalary = 0;
+  try { bizSalary = (JSON.parse(localStorage.getItem('cf_biz_salary') || '{}'))[month] || 0; } catch (e) {}
+
+  const incomeRows = cachedTx.filter(t => t.type === 'income');
+  const expenseRows = cachedTx.filter(t => t.type === 'expense');
+  const manualIncome = incomeRows.reduce((s, t) => s + t.amount, 0);
+  const totalIncome = manualIncome + bizSalary;
+  const totalExpense = expenseRows.reduce((s, t) => s + t.amount, 0);
+  const net = totalIncome - totalExpense;
+
+  // כרטיסי סיכום
+  if ($('h-income')) $('h-income').textContent = fmt(totalIncome);
+  if ($('h-expense')) $('h-expense').textContent = fmt(totalExpense);
+  const netEl = $('h-net');
+  if (netEl) { netEl.textContent = fmt(net); netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)'; }
+
+  // רשימת הכנסות (כולל המשכורת מהעסק אם קיימת)
+  let incHtml = '';
+  if (bizSalary > 0) {
+    incHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
+      '<div><div style="font-weight:500">🏢 משכורת מהעסק</div><div style="font-size:11px;color:var(--muted)">50% מצפי הרווח</div></div>' +
+      '<div style="font-weight:600;color:var(--green)">' + fmt(bizSalary) + '</div></div>';
+  }
+  incHtml += incomeRows.map(t =>
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
+    '<div><div style="font-weight:500">' + esc(t.description) + '</div>' + (t.category ? '<div style="font-size:11px;color:var(--muted)">' + esc(t.category) + '</div>' : '') + '</div>' +
+    '<div style="font-weight:600;color:var(--green)">' + fmt(t.amount) + '</div></div>'
+  ).join('');
+  const incList = $('h-income-list');
+  if (incList) incList.innerHTML = incHtml || '<div class="empty">אין הכנסות החודש</div>';
+
+  // הוצאות לפי קטגוריה
+  const cats = {};
+  expenseRows.forEach(t => { cats[t.category || 'אחר'] = (cats[t.category || 'אחר'] || 0) + t.amount; });
+  const catEl = $('h-cat-bars');
+  if (catEl) {
+    if (!Object.keys(cats).length) { catEl.innerHTML = '<div class="empty">אין הוצאות החודש</div>'; }
+    else {
+      const colors = ['#185FA5', '#0F6E56', '#854F0B', '#993C1D', '#533C89', '#B45309'];
+      let i = 0;
+      catEl.innerHTML = Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
+        const pct = totalExpense > 0 ? Math.round(amt / totalExpense * 100) : 0;
+        const color = colors[i++ % colors.length];
+        return '<div class="bar-wrap"><div class="bar-label"><span>' + esc(cat) + '</span><span>' + fmt(amt) + ' (' + pct + '%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div></div>';
+      }).join('');
+    }
+  }
+
+  // עדכן את טבלת הרשומות (משותפת) וקבועות
+  renderTxTable();
+  renderRecurring();
+  renderHomeBudgets();
+  renderHomeGoals();
+}
+
+// placeholder — יבנו בשלבים הבאים
+function renderHomeBudgets() {}
+function renderHomeGoals() {}
+
 // ── RENDER ALL ──
 function renderAll() {
+  // מצב בית — דלג על רינדור העסק (מטופל ב-renderHome)
+  if (appMode === 'home') { renderHome(); return; }
+  // הצג דשבורד עסק, הסתר בית
+  const homeD = $('home-dashboard'), bizD = $('business-dashboard');
+  if (homeD) homeD.style.display = 'none';
+  if (bizD) bizD.style.display = 'block';
   const month = getMonth();
   const monthDetails = getMonthDetails(month);
   const monthDetailIds = monthDetails.map(d => d.id);
@@ -1988,6 +2105,14 @@ function renderAll() {
     txExpense, paidEmpSalary, paidWorkerSalary, pendingEmpSalary, pendingWorkerSalary,
     income, pendingNet
   };
+  // שמור את צפי הרווח + אחוז שכר ההנהלה כדי שמצב "בית" יחשב את המשכורת מהעסק
+  try {
+    const mgmtPct = (pfSettings.accounts.find(a => a.name.includes('הנהלה')) || { pct: 50 }).pct;
+    const salaryFromBiz = Math.max(0, pendingNet) * mgmtPct / 100;
+    const bizSalary = JSON.parse(localStorage.getItem('cf_biz_salary') || '{}');
+    bizSalary[month] = Math.round(salaryFromBiz);
+    localStorage.setItem('cf_biz_salary', JSON.stringify(bizSalary));
+  } catch (e) {}
   if ($('profit-breakdown') && $('profit-breakdown').style.display !== 'none') renderProfitBreakdown();
 
   $('d-income').textContent = fmt(income);
@@ -2901,12 +3026,12 @@ async function addTx() {
   const desc = $('t-desc').value.trim(), amount = parseFloat($('t-amount').value), type = $('t-type').value, category = $('t-cat').value;
   if (!desc || !amount || amount <= 0) return;
   $('btn-add-tx').disabled = true;
-  await sb.from('transactions').insert({ user_id: currentUser.id, month: getMonth(), description: desc, amount, type, category });
+  await sb.from(TX_TABLE()).insert({ user_id: currentUser.id, month: getMonth(), description: desc, amount, type, category });
   $('t-desc').value = ''; $('t-amount').value = '';
   $('btn-add-tx').disabled = false;
   await loadAll();
 }
-async function deleteTx(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from('transactions').delete().eq('id', id); await loadAll(); }
+async function deleteTx(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from(TX_TABLE()).delete().eq('id', id); await loadAll(); }
 
 // בחירה מרובה של רשומות
 function updateTxSelCount() {
@@ -2926,7 +3051,7 @@ async function deleteSelectedTx() {
   const ids = Array.from(document.querySelectorAll('.tx-check:checked')).map(c => c.value);
   if (!ids.length) return;
   if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7 ' + ids.length + ' \u05e8\u05e9\u05d5\u05de\u05d5\u05ea?')) return;
-  await sb.from('transactions').delete().in('id', ids);
+  await sb.from(TX_TABLE()).delete().in('id', ids);
   await loadAll();
 }
 
@@ -2988,15 +3113,16 @@ async function deleteClient(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7 \
 let _importingMonths = new Set();
 async function autoImportRecurring(month, uid, existingTx) {
   if (!cachedRecurring.length) return;
-  // נעילה — מנע ייבוא כפול אם loadAll רץ פעמיים במקביל
-  if (_importingMonths.has(month)) return;
+  // נעילה — מנע ייבוא כפול (מפתח כולל מצב כדי לא להתנגש בין עסק/בית)
+  const lockKey = appMode + ':' + month;
+  if (_importingMonths.has(lockKey)) return;
   // בדוק אם כבר יובאו הוצאות קבועות לחודש זה
   const alreadyImported = existingTx.some(t => t.description && t.description.includes('(קבועה)'));
   if (alreadyImported) return;
-  _importingMonths.add(month);
+  _importingMonths.add(lockKey);
   try {
     // ייבא אוטומטית
-    await sb.from('transactions').insert(
+    await sb.from(TX_TABLE()).insert(
       cachedRecurring.map(r => ({
         user_id: uid,
         month,
@@ -3007,16 +3133,16 @@ async function autoImportRecurring(month, uid, existingTx) {
       }))
     );
     // טען מחדש את העסקאות
-    const txR = await sb.from('transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false });
+    const txR = await sb.from(TX_TABLE()).select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false });
     cachedTx = txR.data || [];
   } finally {
-    _importingMonths.delete(month);
+    _importingMonths.delete(lockKey);
   }
 }
 
 // ── RECURRING ──
 async function loadRecurring() {
-  const res = await sb.from('recurring_expenses').select('*').eq('user_id', currentUser.id).order('created_at');
+  const res = await sb.from(REC_TABLE()).select('*').eq('user_id', currentUser.id).order('created_at');
   cachedRecurring = res.data || [];
   renderRecurring();
   updateTax();
@@ -3033,11 +3159,11 @@ async function addRecurring() {
   const desc = $('r-desc').value.trim(), amount = parseFloat($('r-amount').value), category = $('r-cat').value;
   if (!desc || !amount || amount <= 0) return;
   $('btn-add-rec').disabled = true;
-  await sb.from('recurring_expenses').insert({ user_id: currentUser.id, description: desc, amount, category });
+  await sb.from(REC_TABLE()).insert({ user_id: currentUser.id, description: desc, amount, category });
   $('r-desc').value = ''; $('r-amount').value = '';
   $('btn-add-rec').disabled = false; await loadRecurring();
 }
-async function deleteRecurring(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from('recurring_expenses').delete().eq('id', id); await loadRecurring(); }
+async function deleteRecurring(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from(REC_TABLE()).delete().eq('id', id); await loadRecurring(); }
 // ── PROFIT FIRST ──
 let pfSettings = {
   accounts: [
