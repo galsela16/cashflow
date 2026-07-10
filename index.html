@@ -23,6 +23,9 @@
 body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
 #app-screen{background:linear-gradient(145deg,#3a6b8c 0%,#3a8a9a 30%,#3aaa98 60%,#42b08a 100%);min-height:100vh;position:relative}
 #app-screen::before{content:'';position:fixed;inset:0;background:linear-gradient(145deg,rgba(220,235,245,.62) 0%,rgba(215,240,242,.58) 35%,rgba(218,245,238,.55) 65%,rgba(225,245,235,.6) 100%);pointer-events:none;z-index:0}
+/* מצב בית — גוון חמים יותר */
+#app-screen.home-mode{background:linear-gradient(145deg,#c98a5e 0%,#cf9a6a 30%,#d4a878 60%,#c9925f 100%)}
+#app-screen.home-mode::before{background:linear-gradient(145deg,rgba(252,242,232,.66) 0%,rgba(250,238,228,.62) 35%,rgba(248,235,222,.58) 65%,rgba(252,240,230,.64) 100%)}
 #app-screen .topbar{z-index:200}
 #app-screen .main,#app-screen .bottom-nav{position:relative;z-index:1}
 #app-screen .topbar{background:rgba(255,255,255,.7);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.5);box-shadow:0 4px 24px rgba(80,120,150,.1)}
@@ -429,8 +432,8 @@ tr:last-child td{border-bottom:none}
     <div style="display:flex;align-items:center;gap:14px">
       <div class="topbar-title"><span style="color:var(--text)">cash</span><span style="color:var(--blue)">flow</span></div>
       <div class="mode-switch">
-        <button class="mode-btn active" id="mode-business" onclick="setMode('business')">🏢 עסק</button>
         <button class="mode-btn" id="mode-home" onclick="setMode('home')">🏠 בית</button>
+        <button class="mode-btn active" id="mode-business" onclick="setMode('business')">🏢 עסק</button>
       </div>
     </div>
     <div class="topbar-user">
@@ -1707,6 +1710,9 @@ function applyModeVisibility() {
   // עדכן כפתורי המתג
   if ($('mode-business')) $('mode-business').classList.toggle('active', appMode === 'business');
   if ($('mode-home')) $('mode-home').classList.toggle('active', appMode === 'home');
+  // רקע חמים במצב בית
+  const scr = $('app-screen');
+  if (scr) scr.classList.toggle('home-mode', appMode === 'home');
 }
 
 function setMode(mode) {
