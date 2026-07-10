@@ -309,17 +309,21 @@ tr:last-child td{border-bottom:none}
 .ev-row-body.open{display:block}
 
 /* calendar grid */
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cal-weekday{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:6px 0}
-.cal-cell{min-height:78px;background:var(--bg);border-radius:8px;padding:5px;display:flex;flex-direction:column;gap:3px;overflow:hidden}
-.cal-cell.empty-cell{background:transparent}
-.cal-cell-num{font-size:12px;font-weight:600;color:var(--muted);align-self:flex-end}
-.cal-cell.today{background:var(--blue-bg);outline:2px solid var(--blue)}
-.cal-cell.today .cal-cell-num{color:var(--blue)}
-.cal-event{font-size:10px;padding:2px 5px;border-radius:5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.4}
+.cal-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-weekday{text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:8px 0;background:var(--bg);border-bottom:1px solid var(--border)}
+.cal-cell{min-height:88px;background:var(--surface);padding:5px 5px 6px;display:flex;flex-direction:column;gap:3px;overflow:hidden;border-bottom:1px solid var(--border);border-left:1px solid var(--border);position:relative}
+.cal-cell.empty-cell{background:var(--bg);opacity:.4}
+.cal-cell-num{font-size:12px;font-weight:600;color:var(--muted);align-self:flex-end;line-height:1}
+.cal-cell.today{background:var(--blue-soft,#eff6ff)}
+.cal-cell.today .cal-cell-num{background:var(--blue);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px}
+.cal-event{font-size:10px;padding:2px 6px;border-radius:4px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5;font-weight:500}
 .cal-event:hover{opacity:.85}
-.cal-more{font-size:9px;color:var(--muted);text-align:center}
-@media(max-width:600px){.cal-cell{min-height:54px}.cal-event{font-size:8px;padding:1px 3px}.cal-cell-num{font-size:10px}}
+.cal-more{font-size:9px;color:var(--muted);text-align:center;font-weight:600}
+.cal-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11px;color:var(--muted)}
+.cal-legend-item{display:flex;align-items:center;gap:5px}
+.cal-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+@media(max-width:600px){.cal-cell{min-height:58px;padding:3px}.cal-event{font-size:8px;padding:1px 3px;border-radius:3px}.cal-cell-num{font-size:10px}.cal-cell.today .cal-cell-num{width:16px;height:16px;font-size:9px}}
 
 /* modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}
@@ -2502,7 +2506,9 @@ function renderEventsCalendar() {
   const byDate = {};
   allEvents.forEach((ev, i) => { const d = Number(localDateStr(ev.start).slice(8, 10)); (byDate[d] = byDate[d] || []).push({ ev, i }); });
 
-  const weekdays = ['\u05d0','\u05d1','\u05d2','\u05d3','\u05d4','\u05d5','\u05e9'];
+  const weekdays = currentLang === 'en'
+    ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    : ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
   let cells = weekdays.map(w => '<div class="cal-weekday">' + w + '</div>').join('');
   // תאים ריקים עד תחילת החודש
   for (let i = 0; i < firstDay; i++) cells += '<div class="cal-cell empty-cell"></div>';
@@ -2516,10 +2522,17 @@ function renderEventsCalendar() {
       const info = getEventInfo(ev);
       return '<div class="cal-event" style="background:' + info.barColor + '" onclick="openEventFromCal(' + i + ')" title="' + esc(ev.title || '') + '">' + esc(ev.title || '(\u05dc\u05dc\u05d0 \u05e9\u05dd)') + '</div>';
     }).join('');
-    const more = dayEvents.length > 3 ? '<div class="cal-more">+' + (dayEvents.length - 3) + ' \u05e0\u05d5\u05e1\u05e4\u05d9\u05dd</div>' : '';
+    const more = dayEvents.length > 3 ? '<div class="cal-more">+' + (dayEvents.length - 3) + ' ' + (currentLang === 'en' ? 'more' : '\u05e0\u05d5\u05e1\u05e4\u05d9\u05dd') + '</div>' : '';
     cells += '<div class="cal-cell' + (isToday ? ' today' : '') + '"><span class="cal-cell-num">' + day + '</span>' + evHtml + more + '</div>';
   }
-  el.innerHTML = '<div class="cal-grid">' + cells + '</div>';
+  // מקרא צבעים (סטטוס תשלום)
+  const legend = '<div class="cal-legend">' +
+    '<div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--green)"></span>' + t('בוצע תשלום') + '</div>' +
+    '<div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--amber)"></span>' + t('יצאה דרישת תשלום') + '</div>' +
+    '<div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--red)"></span>' + t('לא יצאה דרישת תשלום') + '</div>' +
+    '<div class="cal-legend-item"><span class="cal-legend-dot" style="background:#94a3b8"></span>' + (currentLang === 'en' ? 'No details' : '\u05d0\u05d9\u05df \u05e4\u05e8\u05d8\u05d9\u05dd') + '</div>' +
+    '</div>';
+  el.innerHTML = '<div class="cal-wrap"><div class="cal-grid">' + cells + '</div></div>' + legend;
 }
 
 // פתיחת אירוע מתוך תא ביומן — פותח את מודל העריכה
