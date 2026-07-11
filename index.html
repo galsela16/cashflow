@@ -508,7 +508,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="business" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" data-mode="business" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
-      <button class="tab" onclick="showPage('alerts',this)">🔔 התראות</button>
+      <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
     <!-- dashboard -->
@@ -823,7 +823,7 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" onclick="showPage('recurring',this)" data-page="recurring"><span class="bnav-icon">🔄</span>קבועות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
-    <button class="bnav-item" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
+    <button class="bnav-item" data-mode="business" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
 
@@ -1833,7 +1833,7 @@ function setMode(mode) {
   // אם העמוד הנוכחי לא זמין במצב החדש — חזור לדשבורד
   const activePage = document.querySelector('.page.active');
   const activeId = activePage ? activePage.id.replace('page-', '') : '';
-  const businessOnly = ['events', 'employees', 'clients', 'profitfirst'];
+  const businessOnly = ['events', 'employees', 'clients', 'profitfirst', 'alerts'];
   const homeOnly = ['budgets', 'goals'];
   const invalid = (mode === 'home' && businessOnly.includes(activeId)) ||
                   (mode === 'business' && homeOnly.includes(activeId));
