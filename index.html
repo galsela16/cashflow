@@ -507,7 +507,6 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="business" data-feature="employees" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
       <button class="tab" data-mode="business" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" data-mode="business" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
-      <button class="tab" data-mode="home" onclick="showPage('budgets',this)">🎯 תקציבים</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
@@ -752,28 +751,25 @@ tr:last-child td{border-bottom:none}
       <div id="alerts-box"></div>
     </div>
 
-    <!-- budgets (home mode) -->
-    <div id="page-budgets" class="page">
-      <div class="section">
-        <div class="section-title">🎯 תקציב חודשי לפי קטגוריה</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">הגדר תקרה חודשית לכל קטגוריה, וראה כמה הוצאת מולה החודש.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
-          <div style="flex:1;min-width:120px">
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">קטגוריה</label>
-            <select id="bud-cat" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)"></select>
+    <!-- goals / savings (home mode) -->
+    <div id="page-goals" class="page">
+      <div class="section" style="margin-bottom:1rem">
+        <div class="section-title">🎯 יעדי חיסכון</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">הגדר יעדים ועקוב אחרי ההתקדמות שלך אליהם.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px">
+          <div style="flex:2;min-width:130px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שם היעד</label>
+            <input id="goal-name" placeholder="לדוגמה: טיול ליפן" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
           </div>
           <div style="flex:1;min-width:100px">
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">תקרה חודשית (₪)</label>
-            <input id="bud-limit" type="number" placeholder="1000" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סכום יעד (₪)</label>
+            <input id="goal-target" type="number" placeholder="15000" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
           </div>
-          <button class="btn btn-primary" id="btn-add-bud" onclick="addBudget()" style="height:38px">הוסף</button>
+          <button class="btn btn-primary" id="btn-add-goal" onclick="addGoal()" style="height:38px">הוסף יעד</button>
         </div>
-        <div id="budgets-list"></div>
+        <div id="goals-list"></div>
       </div>
-    </div>
 
-    <!-- goals (home mode) -->
-    <div id="page-goals" class="page">
       <div class="section">
         <div class="section-title">🐷 מחשבון ריבית דריבית</div>
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">בדוק כמה החיסכון שלך יצמח לאורך זמן, כולל הפקדות חודשיות וריבית מצטברת.</p>
@@ -826,7 +822,6 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" data-mode="business" onclick="checkAccess('clients') && showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
     <button class="bnav-item" onclick="showPage('recurring',this)" data-page="recurring"><span class="bnav-icon">🔄</span>קבועות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
-    <button class="bnav-item" data-mode="home" onclick="showPage('budgets',this)" data-page="budgets"><span class="bnav-icon">🎯</span>תקציבים</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
@@ -1808,13 +1803,6 @@ function populateCategories() {
     sel.innerHTML = cats.map(c => '<option value="' + c + '">' + c + '</option>').join('');
     if (cats.includes(cur)) sel.value = cur;
   }
-  // רשימת קטגוריות לתקציבים (מצב בית) — ללא "אחר" שהוא ברירת מחדל של הוצאות ללא קטגוריה
-  const budSel = $('bud-cat');
-  if (budSel) {
-    const curB = budSel.value;
-    budSel.innerHTML = HOME_CATEGORIES.map(c => '<option value="' + c + '">' + c + '</option>').join('');
-    if (HOME_CATEGORIES.includes(curB)) budSel.value = curB;
-  }
 }
 
 function applyModeVisibility() {
@@ -2065,7 +2053,7 @@ async function loadAll() {
     // אין אירועים/עובדים/לקוחות במצב בית
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
     await autoImportRecurring(month, uid, cachedTx);
-    await loadBudgets();
+    await loadGoals();
     renderHome();
     return;
   }
@@ -2154,58 +2142,71 @@ function renderHome() {
   // עדכן את טבלת הרשומות (משותפת) וקבועות
   renderTxTable();
   renderRecurring();
-  renderHomeBudgets();
+  renderHomeGoalsList();
   renderHomeGoals();
 }
 
 // placeholder — יבנו בשלבים הבאים
-let cachedBudgets = [];
-async function loadBudgets() {
-  const res = await sb.from('home_budgets').select('*').eq('user_id', currentUser.id).order('created_at');
-  cachedBudgets = res.data || [];
-  renderHomeBudgets();
+let cachedGoals = [];
+async function loadGoals() {
+  const res = await sb.from('home_goals').select('*').eq('user_id', currentUser.id).order('created_at');
+  cachedGoals = res.data || [];
+  renderHomeGoalsList();
 }
-async function addBudget() {
-  const cat = $('bud-cat').value.trim(), limit = parseFloat($('bud-limit').value);
-  if (!cat || !limit || limit <= 0) return;
-  $('btn-add-bud').disabled = true;
-  await sb.from('home_budgets').insert({ user_id: currentUser.id, category: cat, monthly_limit: limit });
-  $('bud-cat').value = ''; $('bud-limit').value = '';
-  $('btn-add-bud').disabled = false;
-  await loadBudgets();
+async function addGoal() {
+  const name = $('goal-name').value.trim(), target = parseFloat($('goal-target').value);
+  if (!name || !target || target <= 0) return;
+  $('btn-add-goal').disabled = true;
+  await sb.from('home_goals').insert({ user_id: currentUser.id, name, target_amount: target, saved_amount: 0 });
+  $('goal-name').value = ''; $('goal-target').value = '';
+  $('btn-add-goal').disabled = false;
+  await loadGoals();
 }
-async function deleteBudget(id) {
-  if (!confirm('למחוק תקציב זה?')) return;
-  await sb.from('home_budgets').delete().eq('id', id);
-  await loadBudgets();
+async function deleteGoal(id) {
+  if (!confirm('למחוק יעד זה?')) return;
+  await sb.from('home_goals').delete().eq('id', id);
+  await loadGoals();
 }
-function renderHomeBudgets() {
-  const el = $('budgets-list');
+// עדכון סכום שנחסך — הוספה/הפחתה
+async function updateGoalSaved(id, delta) {
+  const g = cachedGoals.find(x => x.id === id);
+  if (!g) return;
+  let amt = delta;
+  if (delta === 'custom') {
+    const input = prompt('כמה להוסיף לחיסכון? (מספר שלילי מפחית)', '500');
+    if (input === null) return;
+    amt = parseFloat(input);
+    if (isNaN(amt)) return;
+  }
+  const newSaved = Math.max(0, (g.saved_amount || 0) + amt);
+  await sb.from('home_goals').update({ saved_amount: newSaved }).eq('id', id);
+  await loadGoals();
+}
+function renderHomeGoalsList() {
+  const el = $('goals-list');
   if (!el) return;
-  if (!cachedBudgets.length) { el.innerHTML = '<div class="empty">עדיין לא הוגדרו תקציבים. הוסף קטגוריה למעלה.</div>'; return; }
-  // חשב הוצאה בפועל לכל קטגוריה מהעסקאות של החודש
-  const spent = {};
-  cachedTx.filter(t => t.type === 'expense').forEach(t => {
-    const c = t.category || 'אחר';
-    spent[c] = (spent[c] || 0) + t.amount;
-  });
-  el.innerHTML = cachedBudgets.map(b => {
-    const used = spent[b.category] || 0;
-    const pct = b.monthly_limit > 0 ? Math.round(used / b.monthly_limit * 100) : 0;
-    const over = used > b.monthly_limit;
-    const barColor = over ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--green)';
-    const remaining = b.monthly_limit - used;
-    return '<div style="padding:12px 0;border-bottom:1px solid var(--border)">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
-        '<div style="font-weight:600">' + esc(b.category) + '</div>' +
-        '<div style="display:flex;align-items:center;gap:10px">' +
-          '<span style="font-size:13px;color:' + (over ? 'var(--red)' : 'var(--muted)') + '">' + fmt(used) + ' / ' + fmt(b.monthly_limit) + '</span>' +
-          '<button class="btn-del" onclick="deleteBudget(\'' + b.id + '\')">&#128465;</button>' +
+  if (!cachedGoals.length) { el.innerHTML = '<div class="empty">עדיין אין יעדים. הוסף יעד ראשון למעלה 🎯</div>'; return; }
+  el.innerHTML = cachedGoals.map(g => {
+    const saved = g.saved_amount || 0;
+    const target = g.target_amount || 0;
+    const pct = target > 0 ? Math.min(Math.round(saved / target * 100), 100) : 0;
+    const done = saved >= target && target > 0;
+    const remaining = Math.max(0, target - saved);
+    const barColor = done ? 'var(--green)' : 'var(--blue)';
+    return '<div style="padding:14px 0;border-bottom:1px solid var(--border)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+        '<div style="font-weight:700;font-size:15px">' + (done ? '✅ ' : '') + esc(g.name) + '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<span style="font-size:13px;font-weight:600;color:' + barColor + '">' + fmt(saved) + ' / ' + fmt(target) + '</span>' +
+          '<button class="btn-del" onclick="deleteGoal(\'' + g.id + '\')">&#128465;</button>' +
         '</div>' +
       '</div>' +
-      '<div class="bar-bg"><div class="bar-fill" style="width:' + Math.min(pct, 100) + '%;background:' + barColor + '"></div></div>' +
-      '<div style="font-size:11px;color:' + (over ? 'var(--red)' : 'var(--muted)') + ';margin-top:4px">' +
-        (over ? '⚠️ חריגה של ' + fmt(Math.abs(remaining)) : 'נשאר ' + fmt(remaining)) + ' · ' + pct + '%' +
+      '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">' +
+        '<div style="font-size:12px;color:var(--muted)">' + (done ? '🎉 הגעת ליעד!' : 'נשאר ' + fmt(remaining) + ' · ' + pct + '%') + '</div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button class="btn-paid-quick" onclick="updateGoalSaved(\'' + g.id + '\',\'custom\')">➕ עדכן</button>' +
+        '</div>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -3431,8 +3432,7 @@ function showPage(id, el) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
   if (id === 'recurring') renderRecurring();
-  if (id === 'goals') calcCompound();
-  if (id === 'budgets') renderHomeBudgets();
+  if (id === 'goals') { calcCompound(); renderHomeGoalsList(); }
 }
 
 function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('open'); if (icon) icon.textContent = body.classList.contains('open') ? '\u25b2' : '\u25bc'; }
