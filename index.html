@@ -2672,7 +2672,7 @@ function renderMonthView() {
   const monthDetailIds = monthDetails.map(d => d.id);
 
   // הכנסות: אירועים עם מחיר (לפי תאריך) + הכנסות ידניות/בנק
-  const evRows = monthDetails.filter(d => d.price > 0).sort((a, b) => (a.event_date || '') > (b.event_date || '') ? 1 : -1);
+  const evRows = appMode === 'home' ? [] : monthDetails.filter(d => d.price > 0).sort((a, b) => (a.event_date || '') > (b.event_date || '') ? 1 : -1);
   const txIncomeRows = cachedTx.filter(x => x.type === 'income');
 
   let incHtml = evRows.map(d => {
@@ -2686,6 +2686,17 @@ function renderMonthView() {
       sel + '<div class="mv-amount">' + fmt(d.price) + '</div></div>';
   }).join('');
 
+  // במצב בית — הוסף את המשכורת מהעסק (אם קיימת) לראש רשימת ההכנסות
+  let bizSalary = 0;
+  if (appMode === 'home') {
+    try { bizSalary = (JSON.parse(localStorage.getItem('cf_biz_salary') || '{}'))[month] || 0; } catch (e) {}
+    if (bizSalary > 0) {
+      incHtml += '<div class="mv-row mv-paid mv-static" title="משכורת מהעסק"><div class="mv-date">—</div>' +
+        '<div class="mv-name">🏢 משכורת מהעסק <span class="mv-sub">· 50% מצפי הרווח</span></div>' +
+        '<span class="badge badge-paid mv-badge-sm">' + t('נכנס') + '</span><div class="mv-amount">' + fmt(bizSalary) + '</div></div>';
+    }
+  }
+
   incHtml += txIncomeRows.map(x =>
     '<div class="mv-row mv-paid mv-static" title="' + esc(x.description) + '"><div class="mv-date">—</div>' +
     '<div class="mv-name">' + esc(x.description) + ' <span class="mv-sub">· ' + t('הכנסה ידנית') + '</span></div>' +
@@ -2693,13 +2704,13 @@ function renderMonthView() {
   ).join('');
 
   incEl.innerHTML = incHtml || '<div class="empty">' + t('אין הכנסות החודש') + '</div>';
-  const incCount = evRows.length + txIncomeRows.length;
+  const incCount = evRows.length + txIncomeRows.length + (bizSalary > 0 ? 1 : 0);
   $('mv-income-count').textContent = incCount ? incCount + ' ' + (currentLang === 'en' ? 'items' : 'פריטים') : '';
 
   const paidEv = evRows.filter(d => mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
   const pendEv = evRows.filter(d => !mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
   const txInc = txIncomeRows.reduce((s, x) => s + x.amount, 0);
-  const inTotal = paidEv + txInc;
+  const inTotal = paidEv + txInc + bizSalary;
   $('mv-income-totals').innerHTML =
     '<div class="mv-tot-row"><span style="color:var(--green)">' + t('נכנס') + '</span><span style="color:var(--green);font-weight:600">' + fmt(inTotal) + '</span></div>' +
     '<div class="mv-tot-row"><span style="color:var(--amber)">' + t('ממתין') + '</span><span style="color:var(--amber);font-weight:600">' + fmt(pendEv) + '</span></div>' +
