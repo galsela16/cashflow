@@ -774,7 +774,47 @@ tr:last-child td{border-bottom:none}
 
     <!-- goals (home mode) -->
     <div id="page-goals" class="page">
-      <div id="goals-content"></div>
+      <div class="section">
+        <div class="section-title">🐷 מחשבון ריבית דריבית</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">בדוק כמה החיסכון שלך יצמח לאורך זמן, כולל הפקדות חודשיות וריבית מצטברת.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+          <div>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">💰 סכום התחלתי (₪)</label>
+            <input id="ci-principal" type="number" value="10000" min="0" oninput="calcCompound()" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">📅 הפקדה חודשית (₪)</label>
+            <input id="ci-monthly" type="number" value="1000" min="0" oninput="calcCompound()" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">📈 ריבית שנתית (%)</label>
+            <input id="ci-rate" type="number" value="5" min="0" step="0.1" oninput="calcCompound()" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">⏳ מספר שנים</label>
+            <input id="ci-years" type="number" value="10" min="1" max="60" oninput="calcCompound()" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+        </div>
+
+        <div style="background:var(--green-soft);border-radius:var(--radius-sm);padding:18px;text-align:center;margin-bottom:16px">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:4px">💎 סה"כ בסוף התקופה</div>
+          <div style="font-size:34px;font-weight:800;color:var(--green)" id="ci-total">—</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px;text-align:center">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:2px">מהכיס (הפקדות)</div>
+            <div style="font-size:20px;font-weight:700" id="ci-deposited">—</div>
+          </div>
+          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px;text-align:center">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:2px">רווח מריבית</div>
+            <div style="font-size:20px;font-weight:700;color:var(--green)" id="ci-interest">—</div>
+          </div>
+        </div>
+
+        <div class="section-title" style="font-size:15px">📊 צמיחה שנתית</div>
+        <div id="ci-chart" style="margin-top:10px"></div>
+      </div>
     </div>
   </div>
 
@@ -2170,7 +2210,59 @@ function renderHomeBudgets() {
     '</div>';
   }).join('');
 }
-function renderHomeGoals() {}
+function renderHomeGoals() { calcCompound(); }
+
+// מחשבון ריבית דריבית — הרכבה חודשית עם הפקדות
+function calcCompound() {
+  const principal = parseFloat($('ci-principal') ? $('ci-principal').value : 0) || 0;
+  const monthly = parseFloat($('ci-monthly') ? $('ci-monthly').value : 0) || 0;
+  const annualRate = parseFloat($('ci-rate') ? $('ci-rate').value : 0) || 0;
+  const years = parseInt($('ci-years') ? $('ci-years').value : 0) || 0;
+  if (!$('ci-total')) return;
+
+  const monthlyRate = annualRate / 100 / 12;
+  const yearlyData = [];
+  let balance = principal;
+  let deposited = principal;
+
+  for (let y = 1; y <= years; y++) {
+    for (let m = 0; m < 12; m++) {
+      balance = balance * (1 + monthlyRate) + monthly;
+      deposited += monthly;
+    }
+    yearlyData.push({ year: y, balance: Math.round(balance), deposited: Math.round(deposited) });
+  }
+
+  const total = Math.round(balance);
+  const interest = total - deposited;
+
+  $('ci-total').textContent = fmt(total);
+  $('ci-deposited').textContent = fmt(deposited);
+  $('ci-interest').textContent = fmt(interest);
+
+  // גרף עמודות פשוט — צמיחה שנתית (כיס + ריבית)
+  const chart = $('ci-chart');
+  if (!chart) return;
+  if (!yearlyData.length) { chart.innerHTML = '<div class="empty">הזן מספר שנים</div>'; return; }
+  const max = Math.max(...yearlyData.map(d => d.balance)) || 1;
+  chart.innerHTML = yearlyData.map(d => {
+    const depPct = d.balance > 0 ? (d.deposited / d.balance * 100) : 0;
+    const wPct = (d.balance / max * 100);
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11.5px">' +
+      '<div style="flex:0 0 42px;color:var(--muted)">שנה ' + d.year + '</div>' +
+      '<div style="flex:1;background:var(--bg);border-radius:100px;height:18px;overflow:hidden;position:relative">' +
+        '<div style="width:' + wPct + '%;height:100%;background:var(--green);border-radius:100px;position:relative">' +
+          '<div style="width:' + depPct + '%;height:100%;background:#94a3b8"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="flex:0 0 auto;font-weight:600;min-width:64px;text-align:left">' + fmt(d.balance) + '</div>' +
+    '</div>';
+  }).join('') +
+  '<div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--muted)">' +
+    '<div style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#94a3b8;display:inline-block"></span>הפקדות</div>' +
+    '<div style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--green);display:inline-block"></span>כולל ריבית</div>' +
+  '</div>';
+}
 
 // ── RENDER ALL ──
 function renderAll() {
@@ -3328,6 +3420,8 @@ function showPage(id, el) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
   if (id === 'recurring') renderRecurring();
+  if (id === 'goals') calcCompound();
+  if (id === 'budgets') renderHomeBudgets();
 }
 
 function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('open'); if (icon) icon.textContent = body.classList.contains('open') ? '\u25b2' : '\u25bc'; }
