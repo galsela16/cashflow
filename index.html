@@ -132,6 +132,24 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .settings-section-title{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text)}
 .settings-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text)}
 .main{max-width:1240px;margin:0 auto;padding:1.25rem 1.5rem 5rem}
+
+/* ── טבלת תכנון ציוד ── */
+.eq-total-pill{background:var(--blue-soft,#eff6ff);color:var(--blue);border-radius:100px;padding:6px 16px;font-size:13px;font-weight:600}
+.eq-table{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface)}
+.eq-row{display:grid;grid-template-columns:2.2fr .8fr 1.2fr 1.2fr 46px;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13.5px}
+.eq-row:last-child{border-bottom:none}
+.eq-head{background:var(--bg);font-weight:600;font-size:12px;color:var(--muted)}
+.eq-row:not(.eq-head):not(.eq-foot):hover{background:var(--blue-soft,#f8faff)}
+.eq-foot{background:var(--bg);font-weight:800;font-size:14.5px;border-top:1.5px solid var(--border)}
+.eq-c-name{font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.eq-c-total{font-weight:700;text-align:left}
+.eq-c-act{text-align:center}
+.eq-input{width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;color:var(--text)}
+.eq-input:focus{outline:none;border-color:var(--blue)}
+@media(max-width:600px){
+  .eq-row{grid-template-columns:1.6fr .7fr 1fr 1fr 38px;gap:6px;padding:9px 8px;font-size:12px}
+  .eq-input{padding:4px 5px;font-size:12px}
+}
 .month-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
 .export-wrap{position:relative;margin-right:auto}
 .export-btn{padding:8px 16px;border:1.5px solid var(--border);border-radius:100px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);transition:all .15s;white-space:nowrap}
@@ -508,7 +526,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="business" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" data-mode="business" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
-      <button class="tab" data-mode="home" onclick="showPage('investments',this)">📈 השקעות</button>
+      <button class="tab" data-mode="business" onclick="showPage('equipment',this)">🛠️ תכנון ציוד</button>
       <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
@@ -814,39 +832,32 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
 
-    <!-- investments (home mode) -->
-    <div id="page-investments" class="page">
-      <div class="section" style="margin-bottom:1rem">
-        <div class="section-title">📈 תיק ההשקעות</div>
-        <div class="cards-row" style="margin-bottom:16px">
-          <div class="card"><div class="card-label">💰 סה"כ הושקע</div><div class="card-value" id="inv-total-invested">—</div></div>
-          <div class="card card-soft-green"><div class="card-label">📊 שווי נוכחי</div><div class="card-value c-green" id="inv-total-value">—</div></div>
-        </div>
-        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;text-align:center;margin-bottom:6px">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:3px">רווח / הפסד</div>
-          <div style="font-size:26px;font-weight:800" id="inv-total-profit">—</div>
-          <div style="font-size:12px;margin-top:2px" id="inv-total-pct"></div>
-        </div>
-      </div>
-
+    <!-- equipment planning (business mode) -->
+    <div id="page-equipment" class="page">
       <div class="section">
-        <div class="section-title">➕ הוסף השקעה</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px">
-          <div style="flex:2;min-width:140px">
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שם ההשקעה</label>
-            <input id="inv-name" placeholder="לדוגמה: קרן מדד S&P 500" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
-          </div>
-          <div style="flex:1;min-width:110px">
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סכום שהושקע (₪)</label>
-            <input id="inv-invested" type="number" placeholder="10000" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
-          </div>
-          <div style="flex:1;min-width:110px">
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שווי היום (₪)</label>
-            <input id="inv-value" type="number" placeholder="11500" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
-          </div>
-          <button class="btn btn-primary" id="btn-add-inv" onclick="addInvestment()" style="height:38px">הוסף</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+          <div class="section-title" style="margin-bottom:0">🛠️ תכנון השקעה בציוד</div>
+          <div class="eq-total-pill">סה"כ תכנון: <strong id="eq-grand-total">₪0</strong></div>
         </div>
-        <div id="investments-list"></div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">תכנן מראש איזה ציוד צריך לעסק, בכמה יחידות ובאיזה מחיר.</p>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px">
+          <div style="flex:2;min-width:150px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סוג הציוד</label>
+            <input id="eq-name" placeholder="לדוגמה: רמקול" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div style="flex:0 0 90px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">כמות</label>
+            <input id="eq-qty" type="number" value="1" min="1" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">מחיר ליחידה (₪)</label>
+            <input id="eq-price" type="number" placeholder="1200" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <button class="btn btn-primary" id="btn-add-eq" onclick="addEquipment()" style="height:38px">+ הוסף</button>
+        </div>
+
+        <div id="equipment-table"></div>
       </div>
     </div>
   </div>
@@ -860,7 +871,7 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" onclick="showPage('recurring',this)" data-page="recurring"><span class="bnav-icon">🔄</span>קבועות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
-    <button class="bnav-item" data-mode="home" onclick="showPage('investments',this)" data-page="investments"><span class="bnav-icon">📈</span>השקעות</button>
+    <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">🛠️</span>ציוד</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
@@ -1872,7 +1883,7 @@ function setMode(mode) {
   const activePage = document.querySelector('.page.active');
   const activeId = activePage ? activePage.id.replace('page-', '') : '';
   const businessOnly = ['events', 'employees', 'clients', 'profitfirst', 'alerts'];
-  const homeOnly = ['goals', 'investments'];
+  const homeOnly = ['goals'];
   const invalid = (mode === 'home' && businessOnly.includes(activeId)) ||
                   (mode === 'business' && homeOnly.includes(activeId));
   if (invalid || !activePage) {
@@ -2092,7 +2103,6 @@ async function loadAll() {
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
     await autoImportRecurring(month, uid, cachedTx);
     await loadGoals();
-    await loadInvestments();
     renderHome();
     return;
   }
@@ -2117,6 +2127,8 @@ async function loadAll() {
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
   await autoImportRecurring(month, uid, cachedTx);
   renderAll();
+  // טען תכנון ציוד (מצב עסק)
+  loadEquipment();
   // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
   loadGCal();
 }
@@ -2252,88 +2264,77 @@ function renderHomeGoalsList() {
 }
 function renderHomeGoals() { calcCompound(); }
 
-// ── השקעות (מצב בית) ──
-let cachedInvestments = [];
-async function loadInvestments() {
-  const res = await sb.from('home_investments').select('*').eq('user_id', currentUser.id).order('created_at');
-  cachedInvestments = res.data || [];
-  renderInvestments();
+// ── תכנון השקעה בציוד (מצב עסק) ──
+let cachedEquipment = [];
+async function loadEquipment() {
+  const res = await sb.from('equipment_plans').select('*').eq('user_id', currentUser.id).order('created_at');
+  cachedEquipment = res.data || [];
+  renderEquipment();
 }
-async function addInvestment() {
-  const name = $('inv-name').value.trim();
-  const invested = parseFloat($('inv-invested').value) || 0;
-  const value = parseFloat($('inv-value').value);
-  if (!name || invested <= 0) return;
-  const current = isNaN(value) ? invested : value; // אם לא הוזן שווי — נניח שווה להשקעה
-  $('btn-add-inv').disabled = true;
-  await sb.from('home_investments').insert({ user_id: currentUser.id, name, invested_amount: invested, current_value: current });
-  $('inv-name').value = ''; $('inv-invested').value = ''; $('inv-value').value = '';
-  $('btn-add-inv').disabled = false;
-  await loadInvestments();
+async function addEquipment() {
+  const name = $('eq-name').value.trim();
+  const qty = parseFloat($('eq-qty').value) || 1;
+  const price = parseFloat($('eq-price').value) || 0;
+  if (!name || price <= 0) return;
+  $('btn-add-eq').disabled = true;
+  await sb.from('equipment_plans').insert({ user_id: currentUser.id, name, quantity: qty, unit_price: price });
+  $('eq-name').value = ''; $('eq-qty').value = '1'; $('eq-price').value = '';
+  $('btn-add-eq').disabled = false;
+  await loadEquipment();
 }
-async function deleteInvestment(id) {
-  if (!confirm('למחוק השקעה זו?')) return;
-  await sb.from('home_investments').delete().eq('id', id);
-  await loadInvestments();
+async function deleteEquipment(id) {
+  if (!confirm('למחוק פריט זה?')) return;
+  await sb.from('equipment_plans').delete().eq('id', id);
+  await loadEquipment();
 }
-// עדכון השווי הנוכחי של השקעה
-async function updateInvestmentValue(id) {
-  const inv = cachedInvestments.find(x => x.id === id);
-  if (!inv) return;
-  const input = prompt('מה השווי הנוכחי של "' + inv.name + '"?', inv.current_value);
-  if (input === null) return;
-  const val = parseFloat(input);
+// עריכת כמות או מחיר ישירות מהטבלה
+async function updateEquipment(id, field, value) {
+  const val = parseFloat(value);
   if (isNaN(val) || val < 0) return;
-  await sb.from('home_investments').update({ current_value: val }).eq('id', id);
-  await loadInvestments();
+  const patch = {};
+  patch[field] = val;
+  await sb.from('equipment_plans').update(patch).eq('id', id);
+  await loadEquipment();
 }
-function renderInvestments() {
-  const el = $('investments-list');
+function renderEquipment() {
+  const el = $('equipment-table');
   if (!el) return;
-  const totalInvested = cachedInvestments.reduce((s, i) => s + (i.invested_amount || 0), 0);
-  const totalValue = cachedInvestments.reduce((s, i) => s + (i.current_value || 0), 0);
-  const profit = totalValue - totalInvested;
-  const pct = totalInvested > 0 ? (profit / totalInvested * 100) : 0;
+  const grand = cachedEquipment.reduce((s, e) => s + (e.quantity || 0) * (e.unit_price || 0), 0);
+  const gt = $('eq-grand-total');
+  if (gt) gt.textContent = fmt(grand);
 
-  // כרטיסי סיכום
-  if ($('inv-total-invested')) $('inv-total-invested').textContent = fmt(totalInvested);
-  if ($('inv-total-value')) $('inv-total-value').textContent = fmt(totalValue);
-  const pEl = $('inv-total-profit');
-  if (pEl) {
-    pEl.textContent = (profit >= 0 ? '+' : '−') + fmt(Math.abs(profit));
-    pEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
-  }
-  const pctEl = $('inv-total-pct');
-  if (pctEl) {
-    pctEl.textContent = (profit >= 0 ? '▲ ' : '▼ ') + Math.abs(pct).toFixed(1) + '% תשואה';
-    pctEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
-  }
-
-  if (!cachedInvestments.length) {
-    el.innerHTML = '<div class="empty">עדיין אין השקעות. הוסף את הראשונה למעלה 📈</div>';
+  if (!cachedEquipment.length) {
+    el.innerHTML = '<div class="empty">עדיין לא תוכנן ציוד. הוסף פריט ראשון למעלה 🛠️</div>';
     return;
   }
-  el.innerHTML = cachedInvestments.map(i => {
-    const inv = i.invested_amount || 0, cur = i.current_value || 0;
-    const p = cur - inv;
-    const ppct = inv > 0 ? (p / inv * 100) : 0;
-    const up = p >= 0;
-    const color = up ? 'var(--green)' : 'var(--red)';
-    return '<div style="padding:12px 0;border-bottom:1px solid var(--border)">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
-        '<div style="font-weight:700;font-size:14.5px">' + esc(i.name) + '</div>' +
-        '<div style="display:flex;align-items:center;gap:8px">' +
-          '<button class="btn-paid-quick" onclick="updateInvestmentValue(\'' + i.id + '\')">✏️ עדכן שווי</button>' +
-          '<button class="btn-del" onclick="deleteInvestment(\'' + i.id + '\')">&#128465;</button>' +
-        '</div>' +
+  el.innerHTML =
+    '<div class="eq-table">' +
+      '<div class="eq-row eq-head">' +
+        '<div class="eq-c-name">סוג הציוד</div>' +
+        '<div class="eq-c-qty">כמות</div>' +
+        '<div class="eq-c-price">מחיר ליחידה</div>' +
+        '<div class="eq-c-total">סה"כ</div>' +
+        '<div class="eq-c-act"></div>' +
       '</div>' +
-      '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px">' +
-        '<div><span style="color:var(--muted)">הושקע:</span> <strong>' + fmt(inv) + '</strong></div>' +
-        '<div><span style="color:var(--muted)">שווי היום:</span> <strong>' + fmt(cur) + '</strong></div>' +
-        '<div style="color:' + color + ';font-weight:700">' + (up ? '▲ +' : '▼ −') + fmt(Math.abs(p)) + ' (' + Math.abs(ppct).toFixed(1) + '%)</div>' +
+      cachedEquipment.map(e => {
+        const qty = e.quantity || 0, price = e.unit_price || 0;
+        const total = qty * price;
+        return '<div class="eq-row">' +
+          '<div class="eq-c-name">' + esc(e.name) + '</div>' +
+          '<div class="eq-c-qty"><input type="number" min="1" value="' + qty + '" onchange="updateEquipment(\'' + e.id + '\',\'quantity\',this.value)" class="eq-input"></div>' +
+          '<div class="eq-c-price"><input type="number" min="0" value="' + price + '" onchange="updateEquipment(\'' + e.id + '\',\'unit_price\',this.value)" class="eq-input"></div>' +
+          '<div class="eq-c-total">' + fmt(total) + '</div>' +
+          '<div class="eq-c-act"><button class="btn-del" onclick="deleteEquipment(\'' + e.id + '\')">&#128465;</button></div>' +
+        '</div>';
+      }).join('') +
+      '<div class="eq-row eq-foot">' +
+        '<div class="eq-c-name">סה"כ תכנון</div>' +
+        '<div class="eq-c-qty"></div>' +
+        '<div class="eq-c-price"></div>' +
+        '<div class="eq-c-total">' + fmt(grand) + '</div>' +
+        '<div class="eq-c-act"></div>' +
       '</div>' +
     '</div>';
-  }).join('');
 }
 
 // מחשבון ריבית דריבית — הרכבה חודשית עם הפקדות
@@ -3556,7 +3557,7 @@ function showPage(id, el) {
   // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
   if (id === 'recurring') renderRecurring();
   if (id === 'goals') { calcCompound(); renderHomeGoalsList(); }
-  if (id === 'investments') renderInvestments();
+  if (id === 'equipment') renderEquipment();
 }
 
 function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('open'); if (icon) icon.textContent = body.classList.contains('open') ? '\u25b2' : '\u25bc'; }
