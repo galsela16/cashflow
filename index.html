@@ -508,6 +508,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="business" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" data-mode="business" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
+      <button class="tab" data-mode="home" onclick="showPage('investments',this)">📈 השקעות</button>
       <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
@@ -812,6 +813,42 @@ tr:last-child td{border-bottom:none}
         <div id="ci-chart" style="margin-top:10px"></div>
       </div>
     </div>
+
+    <!-- investments (home mode) -->
+    <div id="page-investments" class="page">
+      <div class="section" style="margin-bottom:1rem">
+        <div class="section-title">📈 תיק ההשקעות</div>
+        <div class="cards-row" style="margin-bottom:16px">
+          <div class="card"><div class="card-label">💰 סה"כ הושקע</div><div class="card-value" id="inv-total-invested">—</div></div>
+          <div class="card card-soft-green"><div class="card-label">📊 שווי נוכחי</div><div class="card-value c-green" id="inv-total-value">—</div></div>
+        </div>
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;text-align:center;margin-bottom:6px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:3px">רווח / הפסד</div>
+          <div style="font-size:26px;font-weight:800" id="inv-total-profit">—</div>
+          <div style="font-size:12px;margin-top:2px" id="inv-total-pct"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">➕ הוסף השקעה</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px">
+          <div style="flex:2;min-width:140px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שם ההשקעה</label>
+            <input id="inv-name" placeholder="לדוגמה: קרן מדד S&P 500" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סכום שהושקע (₪)</label>
+            <input id="inv-invested" type="number" placeholder="10000" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שווי היום (₪)</label>
+            <input id="inv-value" type="number" placeholder="11500" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <button class="btn btn-primary" id="btn-add-inv" onclick="addInvestment()" style="height:38px">הוסף</button>
+        </div>
+        <div id="investments-list"></div>
+      </div>
+    </div>
   </div>
 
   <div class="bottom-nav">
@@ -823,6 +860,7 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" onclick="showPage('recurring',this)" data-page="recurring"><span class="bnav-icon">🔄</span>קבועות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
+    <button class="bnav-item" data-mode="home" onclick="showPage('investments',this)" data-page="investments"><span class="bnav-icon">📈</span>השקעות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
@@ -1834,7 +1872,7 @@ function setMode(mode) {
   const activePage = document.querySelector('.page.active');
   const activeId = activePage ? activePage.id.replace('page-', '') : '';
   const businessOnly = ['events', 'employees', 'clients', 'profitfirst', 'alerts'];
-  const homeOnly = ['budgets', 'goals'];
+  const homeOnly = ['goals', 'investments'];
   const invalid = (mode === 'home' && businessOnly.includes(activeId)) ||
                   (mode === 'business' && homeOnly.includes(activeId));
   if (invalid || !activePage) {
@@ -2054,6 +2092,7 @@ async function loadAll() {
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
     await autoImportRecurring(month, uid, cachedTx);
     await loadGoals();
+    await loadInvestments();
     renderHome();
     return;
   }
@@ -2212,6 +2251,90 @@ function renderHomeGoalsList() {
   }).join('');
 }
 function renderHomeGoals() { calcCompound(); }
+
+// ── השקעות (מצב בית) ──
+let cachedInvestments = [];
+async function loadInvestments() {
+  const res = await sb.from('home_investments').select('*').eq('user_id', currentUser.id).order('created_at');
+  cachedInvestments = res.data || [];
+  renderInvestments();
+}
+async function addInvestment() {
+  const name = $('inv-name').value.trim();
+  const invested = parseFloat($('inv-invested').value) || 0;
+  const value = parseFloat($('inv-value').value);
+  if (!name || invested <= 0) return;
+  const current = isNaN(value) ? invested : value; // אם לא הוזן שווי — נניח שווה להשקעה
+  $('btn-add-inv').disabled = true;
+  await sb.from('home_investments').insert({ user_id: currentUser.id, name, invested_amount: invested, current_value: current });
+  $('inv-name').value = ''; $('inv-invested').value = ''; $('inv-value').value = '';
+  $('btn-add-inv').disabled = false;
+  await loadInvestments();
+}
+async function deleteInvestment(id) {
+  if (!confirm('למחוק השקעה זו?')) return;
+  await sb.from('home_investments').delete().eq('id', id);
+  await loadInvestments();
+}
+// עדכון השווי הנוכחי של השקעה
+async function updateInvestmentValue(id) {
+  const inv = cachedInvestments.find(x => x.id === id);
+  if (!inv) return;
+  const input = prompt('מה השווי הנוכחי של "' + inv.name + '"?', inv.current_value);
+  if (input === null) return;
+  const val = parseFloat(input);
+  if (isNaN(val) || val < 0) return;
+  await sb.from('home_investments').update({ current_value: val }).eq('id', id);
+  await loadInvestments();
+}
+function renderInvestments() {
+  const el = $('investments-list');
+  if (!el) return;
+  const totalInvested = cachedInvestments.reduce((s, i) => s + (i.invested_amount || 0), 0);
+  const totalValue = cachedInvestments.reduce((s, i) => s + (i.current_value || 0), 0);
+  const profit = totalValue - totalInvested;
+  const pct = totalInvested > 0 ? (profit / totalInvested * 100) : 0;
+
+  // כרטיסי סיכום
+  if ($('inv-total-invested')) $('inv-total-invested').textContent = fmt(totalInvested);
+  if ($('inv-total-value')) $('inv-total-value').textContent = fmt(totalValue);
+  const pEl = $('inv-total-profit');
+  if (pEl) {
+    pEl.textContent = (profit >= 0 ? '+' : '−') + fmt(Math.abs(profit));
+    pEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+  const pctEl = $('inv-total-pct');
+  if (pctEl) {
+    pctEl.textContent = (profit >= 0 ? '▲ ' : '▼ ') + Math.abs(pct).toFixed(1) + '% תשואה';
+    pctEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  if (!cachedInvestments.length) {
+    el.innerHTML = '<div class="empty">עדיין אין השקעות. הוסף את הראשונה למעלה 📈</div>';
+    return;
+  }
+  el.innerHTML = cachedInvestments.map(i => {
+    const inv = i.invested_amount || 0, cur = i.current_value || 0;
+    const p = cur - inv;
+    const ppct = inv > 0 ? (p / inv * 100) : 0;
+    const up = p >= 0;
+    const color = up ? 'var(--green)' : 'var(--red)';
+    return '<div style="padding:12px 0;border-bottom:1px solid var(--border)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+        '<div style="font-weight:700;font-size:14.5px">' + esc(i.name) + '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<button class="btn-paid-quick" onclick="updateInvestmentValue(\'' + i.id + '\')">✏️ עדכן שווי</button>' +
+          '<button class="btn-del" onclick="deleteInvestment(\'' + i.id + '\')">&#128465;</button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px">' +
+        '<div><span style="color:var(--muted)">הושקע:</span> <strong>' + fmt(inv) + '</strong></div>' +
+        '<div><span style="color:var(--muted)">שווי היום:</span> <strong>' + fmt(cur) + '</strong></div>' +
+        '<div style="color:' + color + ';font-weight:700">' + (up ? '▲ +' : '▼ −') + fmt(Math.abs(p)) + ' (' + Math.abs(ppct).toFixed(1) + '%)</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
 
 // מחשבון ריבית דריבית — הרכבה חודשית עם הפקדות
 function calcCompound() {
@@ -3433,6 +3556,7 @@ function showPage(id, el) {
   // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
   if (id === 'recurring') renderRecurring();
   if (id === 'goals') { calcCompound(); renderHomeGoalsList(); }
+  if (id === 'investments') renderInvestments();
 }
 
 function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('open'); if (icon) icon.textContent = body.classList.contains('open') ? '\u25b2' : '\u25bc'; }
