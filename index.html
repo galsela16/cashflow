@@ -133,7 +133,7 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .settings-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text)}
 .main{max-width:1240px;margin:0 auto;padding:1.25rem 1.5rem 5rem}
 
-/* ── טבלת תכנון ציוד ── */
+/* ── טבלת השקעות לעסק ── */
 .eq-total-pill{background:var(--blue-soft,#eff6ff);color:var(--blue);border-radius:100px;padding:6px 16px;font-size:13px;font-weight:600}
 .eq-table{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface)}
 .eq-row{display:grid;grid-template-columns:2.2fr .8fr 1.2fr 1.2fr 46px;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13.5px}
@@ -526,7 +526,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="business" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
       <button class="tab" data-mode="business" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
-      <button class="tab" data-mode="business" onclick="showPage('equipment',this)">🛠️ תכנון ציוד</button>
+      <button class="tab" data-mode="business" onclick="showPage('equipment',this)">📈 השקעות לעסק</button>
       <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
@@ -836,10 +836,10 @@ tr:last-child td{border-bottom:none}
     <div id="page-equipment" class="page">
       <div class="section">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">
-          <div class="section-title" style="margin-bottom:0">🛠️ תכנון השקעה בציוד</div>
-          <div class="eq-total-pill">סה"כ תכנון: <strong id="eq-grand-total">₪0</strong></div>
+          <div class="section-title" style="margin-bottom:0">📈 השקעות לעסק</div>
+          <div class="eq-total-pill">סה"כ השקעה: <strong id="eq-grand-total">₪0</strong></div>
         </div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">תכנן מראש איזה ציוד צריך לעסק, בכמה יחידות ובאיזה מחיר.</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">תכנן את ההשקעות בעסק — איזה ציוד, בכמה יחידות ובאיזה מחיר.</p>
 
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px">
           <div style="flex:2;min-width:150px">
@@ -871,7 +871,7 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" onclick="showPage('recurring',this)" data-page="recurring"><span class="bnav-icon">🔄</span>קבועות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
-    <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">🛠️</span>ציוד</button>
+    <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">📈</span>השקעות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
@@ -2127,7 +2127,7 @@ async function loadAll() {
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
   await autoImportRecurring(month, uid, cachedTx);
   renderAll();
-  // טען תכנון ציוד (מצב עסק)
+  // טען השקעות לעסק
   loadEquipment();
   // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
   loadGCal();
@@ -2264,7 +2264,7 @@ function renderHomeGoalsList() {
 }
 function renderHomeGoals() { calcCompound(); }
 
-// ── תכנון השקעה בציוד (מצב עסק) ──
+// ── השקעות לעסק ──
 let cachedEquipment = [];
 async function loadEquipment() {
   const res = await sb.from('equipment_plans').select('*').eq('user_id', currentUser.id).order('created_at');
@@ -2304,7 +2304,7 @@ function renderEquipment() {
   if (gt) gt.textContent = fmt(grand);
 
   if (!cachedEquipment.length) {
-    el.innerHTML = '<div class="empty">עדיין לא תוכנן ציוד. הוסף פריט ראשון למעלה 🛠️</div>';
+    el.innerHTML = '<div class="empty">עדיין לא נוספו השקעות. הוסף פריט ראשון למעלה 📈</div>';
     return;
   }
   el.innerHTML =
@@ -2328,7 +2328,7 @@ function renderEquipment() {
         '</div>';
       }).join('') +
       '<div class="eq-row eq-foot">' +
-        '<div class="eq-c-name">סה"כ תכנון</div>' +
+        '<div class="eq-c-name">סה"כ השקעה</div>' +
         '<div class="eq-c-qty"></div>' +
         '<div class="eq-c-price"></div>' +
         '<div class="eq-c-total">' + fmt(grand) + '</div>' +
