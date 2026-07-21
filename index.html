@@ -925,7 +925,7 @@ tr:last-child td{border-bottom:none}
       <button class="btn-del" onclick="closeBankModal()">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">זיהינו את הרשומות הבאות. בדוק, תקן את הסוג והקטגוריה במידת הצורך, והסר שורות שאינך רוצה לייבא.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">זיהינו את הרשומות הבאות ושייכנו כל אחת ל<strong>עסק</strong> או ל<strong>בית</strong> באופן אוטומטי. הזיהוי הוא ניחוש לפי שם העסקה — כדאי לעבור ולתקן במידת הצורך לפני הייבוא.</p>
       <div id="bank-preview" style="max-height:400px;overflow-y:auto"></div>
       <div class="msg" id="bank-msg"></div>
     </div>
@@ -1542,7 +1542,7 @@ function parseLeumiHtml(htmlText) {
     // כרטיס אשראי — הכל הוצאות
     bankParsedRows.push({
       include: true, date, desc, amount, type: 'expense',
-      category: guessCategory(desc)
+      category: guessCategory(desc), mode: guessMode(desc)
     });
   });
 
@@ -1592,7 +1592,8 @@ function parseBankRows(rows) {
       include: true,
       date: dateCol >= 0 ? String(r[dateCol] || '').trim() : '',
       desc, amount, type,
-      category: type === 'expense' ? guessCategory(desc) : 'אחר'
+      category: type === 'expense' ? guessCategory(desc) : 'אחר',
+      mode: guessMode(desc)
     });
   }
 
@@ -1604,21 +1605,76 @@ function parseBankRows(rows) {
   $('bank-modal').style.display = 'flex';
 }
 
+// זיהוי אוטומטי: האם ההוצאה שייכת לעסק או לבית (ניחוש לפי מילות מפתח)
+const HOME_KEYWORDS = [
+  // סופרים ומזון
+  'סופר', 'שופרסל', 'רמי לוי', 'ויקטורי', 'טיב טעם', 'יינות ביתן', 'אושר עד', 'מגה', 'יוחננוף', 'am:pm', 'טסקו',
+  'wolt', 'וולט', 'tenbis', 'תן ביס', '10bis', 'משלוח', 'מקדונלד', 'burger', 'דומינו', 'פיצה',
+  // בית ושירותים
+  'ארנונה', 'עיריי', 'חשמל', 'מי ', 'מים', 'גז ', 'בזק', 'hot', 'yes', 'פרטנר', 'סלקום', 'גולן טלקום', 'רמי לוי תקשורת',
+  'משכנתא', 'שכר דירה', 'ועד בית',
+  // בריאות
+  'בית מרקחת', 'סופר פארם', 'ניו פארם', 'מכבי', 'כללית', 'מאוחדת', 'לאומית', 'קופת חולים', 'ביטוח בריאות', 'ביטוח לאומי',
+  // ביגוד ופנאי
+  'זארה', 'zara', 'קסטרו', 'castro', 'fox', 'h&m', 'רנואר', 'גולף', 'אמריקן איגל',
+  'netflix', 'נטפליקס', 'spotify', 'ספוטיפיי', 'disney', 'סינמה', 'יס פלנט', 'רב חן',
+  // חינוך וילדים (ללא "בית ספר"/"מתנ״ס" — אלה לקוחות של העסק)
+  'גן ילדים', 'צהרון', 'חוג'
+];
+const BIZ_KEYWORDS = [
+  // ציוד ומקצועי
+  'ksp', 'באג', 'ivory', 'אייבורי', 'ליין', 'הגברה', 'תאורה', 'במה', 'מחסן', 'השכרת ציוד',
+  // תוכנות ושירותים עסקיים
+  'google', 'microsoft', 'adobe', 'zoom', 'aws', 'openai', 'canva', 'dropbox', 'slack', 'monday',
+  'רואה חשבון', 'עורך דין', 'יועץ', 'ייעוץ',
+  // שיווק
+  'facebook', 'meta', 'instagram', 'tiktok', 'google ads', 'שיווק', 'פרסום', 'קמפיין',
+  // חניה ונסיעות עבודה
+  'פנגו', 'pango', 'cellopark', 'סלופארק', 'חניון', 'כביש 6',
+  // עסקי
+  'ביטוח עסק', 'מס הכנסה', 'ביטוח לאומי עצמאי'
+];
+function guessMode(desc) {
+  const d = (desc || '').toLowerCase();
+  const hitHome = HOME_KEYWORDS.some(k => d.includes(k.toLowerCase()));
+  const hitBiz = BIZ_KEYWORDS.some(k => d.includes(k.toLowerCase()));
+  if (hitBiz && !hitHome) return 'business';
+  if (hitHome && !hitBiz) return 'home';
+  // לא ברור (או שניהם) — ברירת מחדל: המצב שבו המשתמש נמצא כרגע
+  return appMode;
+}
+
 function renderBankPreview() {
-  const cats = ['שירותים', 'שכירות', 'ציוד', 'שיווק', 'ביטוח', 'תוכנות', 'רכב', 'אחר'];
+  const bizCats = ['שירותים', 'שכירות', 'ציוד', 'שיווק', 'ביטוח', 'תוכנות', 'רכב', 'אחר'];
   $('bank-preview').innerHTML =
     '<table style="width:100%;font-size:12.5px"><thead><tr>' +
     '<th style="width:30px"><input type="checkbox" checked onchange="toggleAllBank(this)"></th>' +
-    '<th>תיאור</th><th>סכום</th><th>סוג</th><th>קטגוריה</th></tr></thead><tbody>' +
-    bankParsedRows.map((row, i) =>
-      '<tr>' +
+    '<th>תיאור</th><th>סכום</th><th>שיוך</th><th>סוג</th><th>קטגוריה</th></tr></thead><tbody>' +
+    bankParsedRows.map((row, i) => {
+      const cats = row.mode === 'home' ? HOME_CATEGORIES : bizCats;
+      if (!cats.includes(row.category)) row.category = cats[cats.length - 1];
+      return '<tr>' +
       '<td><input type="checkbox" ' + (row.include ? 'checked' : '') + ' onchange="bankParsedRows[' + i + '].include=this.checked"></td>' +
       '<td>' + esc(row.desc) + (row.date ? '<div style="font-size:10px;color:var(--muted)">' + esc(row.date) + '</div>' : '') + '</td>' +
       '<td style="font-weight:600;color:' + (row.type === 'income' ? 'var(--green)' : 'var(--red)') + '">' + fmt(row.amount) + '</td>' +
+      '<td><select onchange="setBankRowMode(' + i + ',this.value)" style="font-size:12px;padding:3px">' +
+        '<option value="business"' + (row.mode === 'business' ? ' selected' : '') + '>🏢 עסק</option>' +
+        '<option value="home"' + (row.mode === 'home' ? ' selected' : '') + '>🏠 בית</option></select></td>' +
       '<td><select onchange="bankParsedRows[' + i + '].type=this.value" style="font-size:12px;padding:3px"><option value="income"' + (row.type === 'income' ? ' selected' : '') + '>הכנסה</option><option value="expense"' + (row.type === 'expense' ? ' selected' : '') + '>הוצאה</option></select></td>' +
       '<td><select onchange="bankParsedRows[' + i + '].category=this.value" style="font-size:12px;padding:3px">' + cats.map(c => '<option value="' + c + '"' + (row.category === c ? ' selected' : '') + '>' + c + '</option>').join('') + '</select></td>' +
-      '</tr>'
-    ).join('') + '</tbody></table>';
+      '</tr>';
+    }).join('') + '</tbody></table>';
+}
+
+// שינוי שיוך שורה (עסק/בית) — מרנדר מחדש כדי להתאים את רשימת הקטגוריות
+function setBankRowMode(i, mode) {
+  bankParsedRows[i].mode = mode;
+  const cats = mode === 'home' ? HOME_CATEGORIES : ['שירותים', 'שכירות', 'ציוד', 'שיווק', 'ביטוח', 'תוכנות', 'רכב', 'אחר'];
+  if (!cats.includes(bankParsedRows[i].category)) {
+    bankParsedRows[i].category = mode === 'home' ? guessCategory(bankParsedRows[i].desc) : 'אחר';
+    if (!cats.includes(bankParsedRows[i].category)) bankParsedRows[i].category = 'אחר';
+  }
+  renderBankPreview();
 }
 
 function toggleAllBank(cb) {
@@ -1633,17 +1689,33 @@ async function importBankRows() {
   if (!toImport.length) { $('bank-msg').textContent = 'לא נבחרו רשומות'; $('bank-msg').className = 'msg err'; return; }
   const btn = $('bank-import-btn'); btn.disabled = true; btn.textContent = '⏳ מייבא...';
   const month = getMonth();
-  const records = toImport.map(r => ({
+  const build = r => ({
     user_id: currentUser.id, month,
     description: r.desc, amount: r.amount, type: r.type,
     category: r.type === 'expense' ? r.category : 'אחר'
-  }));
-  const { error } = await sb.from(TX_TABLE()).insert(records);
+  });
+  // פיצול לפי שיוך: עסק → transactions, בית → home_transactions
+  const bizRecords = toImport.filter(r => r.mode !== 'home').map(build);
+  const homeRecords = toImport.filter(r => r.mode === 'home').map(build);
+
+  let err = null;
+  if (bizRecords.length) {
+    const res = await sb.from('transactions').insert(bizRecords);
+    if (res.error) err = res.error;
+  }
+  if (!err && homeRecords.length) {
+    const res = await sb.from('home_transactions').insert(homeRecords);
+    if (res.error) err = res.error;
+  }
+
   btn.disabled = false; btn.textContent = 'ייבא רשומות מסומנות';
-  if (error) { $('bank-msg').textContent = 'שגיאה: ' + error.message; $('bank-msg').className = 'msg err'; return; }
+  if (err) { $('bank-msg').textContent = 'שגיאה: ' + err.message; $('bank-msg').className = 'msg err'; return; }
   closeBankModal();
   await loadAll();
-  alert('✅ ' + records.length + ' רשומות יובאו בהצלחה!');
+  const parts = [];
+  if (bizRecords.length) parts.push(bizRecords.length + ' לעסק');
+  if (homeRecords.length) parts.push(homeRecords.length + ' לבית');
+  alert('✅ יובאו ' + toImport.length + ' רשומות (' + parts.join(', ') + ')');
 }
 
 const HEB_DAYS = ['\u05e8\u05d0\u05e9\u05d5\u05df','\u05e9\u05e0\u05d9','\u05e9\u05dc\u05d9\u05e9\u05d9','\u05e8\u05d1\u05d9\u05e2\u05d9','\u05d7\u05de\u05d9\u05e9\u05d9','\u05e9\u05d9\u05e9\u05d9','\u05e9\u05d1\u05ea'];
