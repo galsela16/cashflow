@@ -642,9 +642,12 @@ tr:last-child td{border-bottom:none}
         <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
       </div>
       <div class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <div class="section-title" style="margin-bottom:0">רשומות החודש</div>
-          <button class="btn-del-multi" id="tx-del-multi" onclick="deleteSelectedTx()" style="display:none">🗑 מחק מסומנות (<span id="tx-sel-count">0</span>)</button>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn-outline" onclick="resetMonthExpenses()" title="מוחק את הוצאות החודש למעט הקבועות">♻️ אפס הוצאות החודש</button>
+            <button class="btn-del-multi" id="tx-del-multi" onclick="deleteSelectedTx()" style="display:none">🗑 מחק מסומנות (<span id="tx-sel-count">0</span>)</button>
+          </div>
         </div>
         <table><thead><tr><th style="width:30px"><input type="checkbox" id="tx-check-all" onchange="toggleAllTx(this)"></th><th>תיאור</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th></th></tr></thead>
         <tbody id="tx-table"></tbody></table>
@@ -1224,6 +1227,7 @@ const I18N = {
   // Employee modal
   'עריכת פרטי עובד': 'Edit employee', 'מנהל': 'Manager', 'קבלן': 'Contractor', 'שכיר': 'Employee',
   'שעתי': 'Hourly', 'רשומות החודש': 'Records this month', 'הוסף רשומה': 'Add record', 'סכום חודשי': 'Monthly amount',
+  '♻️ אפס הוצאות החודש': '♻️ Reset this month\'s expenses',
   // Profit First
   'ערוך אחוזים': 'Edit percentages', 'סה"כ:': 'Total:', 'סה"כ: ₪0 / חודש': 'Total: ₪0 / month',
   'נלקח אוטומטית מ"נכנס מלקוחות"': 'Taken automatically from "Received from clients"',
@@ -3378,6 +3382,29 @@ function toggleAllTx(cb) {
   document.querySelectorAll('.tx-check').forEach(c => c.checked = cb.checked);
   updateTxSelCount();
 }
+// איפוס הוצאות החודש הנוכחי — למעט הוצאות קבועות (המסומנות "(קבועה)")
+async function resetMonthExpenses() {
+  const month = getMonth();
+  // רק הוצאות של החודש שאינן קבועות
+  const targets = cachedTx.filter(t =>
+    t.type === 'expense' && !(t.description && t.description.includes('(קבועה)'))
+  );
+  if (!targets.length) {
+    alert('אין הוצאות למחיקה החודש (הקבועות נשמרות).');
+    return;
+  }
+  const total = targets.reduce((s, t) => s + (t.amount || 0), 0);
+  const msg = 'לאפס את הוצאות החודש?\n\n' +
+    'יימחקו ' + targets.length + ' הוצאות בסך ' + fmt(total) + '.\n' +
+    'ההוצאות הקבועות וההכנסות יישארו.\n\n' +
+    'הפעולה אינה ניתנת לביטול.';
+  if (!confirm(msg)) return;
+  const ids = targets.map(t => t.id);
+  const { error } = await sb.from(TX_TABLE()).delete().in('id', ids);
+  if (error) { alert('שגיאה במחיקה: ' + error.message); return; }
+  await loadAll();
+}
+
 async function deleteSelectedTx() {
   const ids = Array.from(document.querySelectorAll('.tx-check:checked')).map(c => c.value);
   if (!ids.length) return;
