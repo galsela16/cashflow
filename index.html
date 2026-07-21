@@ -1260,7 +1260,11 @@ const getMonth = () => $('yearSel').value + '-' + $('monthSel').value.padStart(2
 // מחזיר את פרטי האירועים של החודש הנבחר (משותף לכמה פונקציות)
 const getMonthDetails = (month) => {
   const m = month || getMonth();
-  const matching = cachedEventDetails.filter(d => d.month === m || (d.event_date && d.event_date.slice(0, 7) === m));
+  // התאריך הוא מקור האמת: אם קיים event_date — משייכים לפיו בלבד.
+  // שדה month משמש רק כגיבוי לרשומות ישנות שאין להן תאריך.
+  const matching = cachedEventDetails.filter(d =>
+    d.event_date ? d.event_date.slice(0, 7) === m : d.month === m
+  );
   // סנן כפילויות שנוצרו מבאג אזור-זמן: אותו שם + אותו מחיר + תאריכים סמוכים = אירוע אחד
   const seen = [];
   const unique = [];
