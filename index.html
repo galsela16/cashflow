@@ -2975,6 +2975,8 @@ function buildEventsData() {
   const manualEvents = cachedEventDetails.filter(d => d.month === month && d.is_manual);
   const allEvents = [
     ...gcalEvents
+      // סנן לחודש הנבחר בלבד — מונע "דליפה" של אירועי גבול (למשל 1 ביולי בתצוגת יוני)
+      .filter(ev => localDateStr(ev.start).slice(0, 7) === month)
       .filter(ev => !isEventHidden(ev.title, localDateStr(ev.start)))
       .map(ev => ({ title: ev.title, start: ev.start, allDay: ev.allDay, source: 'gcal' })),
     ...manualEvents.map(d => ({ title: d.event_title, start: d.event_date + 'T00:00:00', allDay: true, source: 'manual', detailId: d.id }))
