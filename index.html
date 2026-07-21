@@ -2823,7 +2823,7 @@ function renderEmpStatus(monthDetailIds) {
     ewks.forEach(w => {
       const det = cachedEventDetails.find(d => d.id === w.event_detail_id);
       const btn = w.status !== '\u05e9\u05d5\u05dc\u05dd' ? payBtn('updateEventWorkerStatus', w.id) : '';
-      detailRows += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;color:var(--muted)"><span>' + (det ? esc(det.event_title) : '\u05d0\u05d9\u05e8\u05d5\u05e2') + (det && det.event_date ? ' \u00b7 ' + det.event_date : '') + '</span><span style="display:flex;align-items:center">' + fmt(w.amount) + ' ' + statusBadge(w.status) + btn + '</span></div>';
+      detailRows += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;color:var(--muted)"><span' + (det ? ' onclick="event.stopPropagation();mvEditEvent(\'' + det.id + '\')" style="cursor:pointer;text-decoration:underline dotted" title="פתח את האירוע"' : '') + '>' + (det ? esc(det.event_title) : '\u05d0\u05d9\u05e8\u05d5\u05e2') + (det && det.event_date ? ' \u00b7 ' + det.event_date : '') + '</span><span style="display:flex;align-items:center">' + fmt(w.amount) + ' ' + statusBadge(w.status) + btn + '</span></div>';
     });
     evs.forEach(e => {
       const btn = e.status !== '\u05e9\u05d5\u05dc\u05dd' ? payBtn('updateEmpEventStatus', e.id) : '';
