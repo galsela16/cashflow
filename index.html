@@ -2543,6 +2543,7 @@ function renderAll() {
   renderClientsList();
   renderEventsList();
   renderAlerts(income, expense, salary, net, pendingIncome);
+  refreshTxPanel(); // שמור על פאנל הפירוט מעודכן (למשל אחרי החלפת חודש)
 }
 
 // פירוט מלא של צפי הרווח — שקיפות מוחלטת של החישוב
@@ -2573,6 +2574,16 @@ function renderProfitBreakdown() {
     '<div style="display:flex;justify-content:space-between;padding:10px 0 2px;margin-top:6px;border-top:2px solid var(--border);font-weight:800;font-size:15px"><span>= צפי רווח</span><span style="color:' + (d.pendingNet >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmt(d.pendingNet) + '</span></div>' +
     '<div style="font-size:11px;color:var(--muted);margin-top:8px">סה"כ צפוי להיכנס: ' + fmt(totalIn) + ' · סה"כ צפוי לצאת: ' + fmt(totalOut) + '</div>' +
     '</div>';
+}
+
+// מרענן את פאנל הפירוט אם הוא פתוח (למשל אחרי החלפת חודש)
+function refreshTxPanel() {
+  const panel = $('tx-panel');
+  if (!panel || panel.style.display === 'none') return;
+  const t = panel.dataset.type;
+  if (!t) return;
+  panel.style.display = 'none'; // מאפס כדי ש-toggleTxPanel יבנה מחדש במקום לסגור
+  toggleTxPanel(t);
 }
 
 function toggleTxPanel(type) {
