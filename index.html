@@ -3334,16 +3334,31 @@ function renderHiddenEvents() {
 
 // פונקציה מאוחדת לפתיחת מודל עריכת אירוע
 async function openEditEventModal({ title, date, source, detailId }) {
-  currentEventDate = date;
   isNewManualEvent = source === 'manual';
 
-  const res = await sb.from('event_details').select('*').eq('user_id', currentUser.id).eq('event_title', title).eq('event_date', date).maybeSingle();
-  const detail = res.data;
+  // חיפוש אמין: אם יש מזהה — לפיו. אחרת לפי שם+תאריך (רשומות ישנות).
+  let detail = null;
+  if (detailId) {
+    const r = await sb.from('event_details').select('*').eq('id', detailId).maybeSingle();
+    detail = r.data || null;
+  }
+  if (!detail && title && date) {
+    const r = await sb.from('event_details').select('*').eq('user_id', currentUser.id).eq('event_title', title).eq('event_date', date).maybeSingle();
+    detail = r.data || null;
+  }
   currentEditDetailId = detail ? detail.id : (detailId || null);
 
-  $('modal-event-title').textContent = title;
-  $('modal-ev-title').value = title; $('modal-ev-title').style.display = source === 'manual' ? 'block' : 'none';
-  $('modal-ev-date').value = date; $('modal-ev-date').style.display = source === 'manual' ? 'block' : 'none';
+  // התאריך שמוצג: מהרשומה אם קיים, אחרת מה שהגיע מהיומן
+  const shownDate = (detail && detail.event_date) ? detail.event_date : (date || '');
+  currentEventDate = shownDate;
+  const shownTitle = title || (detail && detail.event_title) || '';
+
+  $('modal-event-title').textContent = shownTitle || 'פרטי אירוע';
+  $('modal-ev-title').value = shownTitle;
+  $('modal-ev-title').style.display = source === 'manual' ? 'block' : 'none';
+  // שדה התאריך תמיד פתוח לעריכה — מאפשר לתקן אירועים ללא תאריך או עם תאריך שגוי
+  $('modal-ev-date').value = shownDate;
+  $('modal-ev-date').style.display = 'block';
   fillClientSelect(detail ? detail.client_id : null);
   $('modal-price').value = detail ? detail.price || '' : '';
   $('modal-status').value = detail ? detail.status || 'לא יצאה דרישת תשלום' : 'לא יצאה דרישת תשלום';
@@ -3402,7 +3417,8 @@ async function deleteEventFromModal() {
 async function saveEvent() {
   const uid = currentUser.id;
   const title = $('modal-ev-title').value.trim() || $('modal-event-title').textContent;
-  const date = currentEventDate || $('modal-ev-date').value || new Date().toISOString().slice(0, 10);
+  // התאריך שבשדה הוא מקור האמת (מאפשר תיקון תאריך של אירוע קיים)
+  const date = $('modal-ev-date').value || currentEventDate || new Date().toISOString().slice(0, 10);
   const clientId = $('modal-client').value || null;
   const price = parseFloat($('modal-price').value) || 0;
   const status = $('modal-status').value;
