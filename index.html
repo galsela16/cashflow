@@ -239,6 +239,11 @@ tr:last-child td{border-bottom:none}
 .badge-pending{background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d}
 .badge-late{background:var(--red-soft);color:var(--red);border:1px solid #fca5a5}
 .btn-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:2px 6px;border-radius:4px}
+.btn-edit-sm{background:none;border:none;cursor:pointer;color:var(--blue,#2563eb);font-size:15px;padding:2px 6px;border-radius:4px}
+.btn-edit-sm:hover{background:var(--blue-soft,#eff6ff)}
+.btn-save-sm{background:var(--green,#0d9c6e);border:none;cursor:pointer;color:#fff;font-size:14px;padding:3px 9px;border-radius:6px;font-weight:700}
+.btn-cancel-sm{background:none;border:1px solid var(--border);cursor:pointer;color:var(--muted);font-size:13px;padding:3px 8px;border-radius:6px}
+.btn-cancel-sm:hover{background:var(--bg)}
 .btn-del-multi{background:var(--red-soft,#fef2f2);border:1.5px solid var(--red);color:var(--red);cursor:pointer;font-size:13px;font-weight:600;padding:7px 14px;border-radius:100px;transition:all .15s}
 .btn-del-multi:hover{background:var(--red);color:#fff}
 .income-row:hover{background:var(--bg)}
@@ -3628,7 +3633,42 @@ function renderRecurring() {
   const total = cachedRecurring.reduce((s, r) => s + r.amount, 0);
   if (totalEl) totalEl.textContent = '\u05e1\u05d4"\u05db: ' + fmt(total) + ' / \u05d7\u05d5\u05d3\u05e9';
   if (!cachedRecurring.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea</td></tr>'; return; }
-  tb.innerHTML = cachedRecurring.map(r => '<tr><td style="font-weight:500">' + esc(r.description) + '</td><td style="font-size:12px;color:var(--muted)">' + esc(r.category) + '</td><td style="font-weight:600;color:var(--red)">' + fmt(r.amount) + '</td><td><button class="btn-del" onclick="deleteRecurring(\'' + r.id + '\')">&#128465;</button></td></tr>').join('');
+  tb.innerHTML = cachedRecurring.map(r => '<tr id="rec-row-' + r.id + '"><td style="font-weight:500">' + esc(r.description) + '</td><td style="font-size:12px;color:var(--muted)">' + esc(r.category) + '</td><td style="font-weight:600;color:var(--red)">' + fmt(r.amount) + '</td><td style="white-space:nowrap"><button class="btn-edit-sm" onclick="editRecurring(\'' + r.id + '\')" title="ערוך">&#9998;</button> <button class="btn-del" onclick="deleteRecurring(\'' + r.id + '\')" title="מחק">&#128465;</button></td></tr>').join('');
+}
+// מעבר למצב עריכה — הופך את השורה לשדות ניתנים לעריכה
+const REC_CATEGORIES = ['שכירות', 'ביטוח', 'תוכנות', 'טלפון', 'רכב', 'שיווק', 'אחר'];
+function editRecurring(id) {
+  const r = cachedRecurring.find(x => x.id === id);
+  const row = $('rec-row-' + id);
+  if (!r || !row) return;
+  const catOpts = REC_CATEGORIES.map(c => '<option value="' + c + '"' + (r.category === c ? ' selected' : '') + '>' + c + '</option>').join('');
+  row.innerHTML =
+    '<td><input id="rec-e-desc-' + id + '" value="' + esc(r.description) + '" style="width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:8px;font-size:13px"></td>' +
+    '<td><select id="rec-e-cat-' + id + '" style="width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:8px;font-size:13px">' + catOpts + '</select></td>' +
+    '<td><input id="rec-e-amount-' + id + '" type="number" min="0" value="' + r.amount + '" style="width:90px;padding:5px 7px;border:1px solid var(--border);border-radius:8px;font-size:13px"></td>' +
+    '<td style="white-space:nowrap"><button class="btn-save-sm" onclick="saveRecurring(\'' + id + '\')" title="שמור">&#10003;</button> <button class="btn-cancel-sm" onclick="renderRecurring()" title="בטל">&#10005;</button></td>';
+  $('rec-e-desc-' + id).focus();
+}
+async function saveRecurring(id) {
+  const desc = $('rec-e-desc-' + id).value.trim();
+  const category = $('rec-e-cat-' + id).value;
+  const amount = parseFloat($('rec-e-amount-' + id).value);
+  if (!desc || !amount || amount <= 0) { alert('נא למלא תיאור וסכום תקין'); return; }
+  const old = cachedRecurring.find(x => x.id === id);
+  // עדכן את ההגדרה הקבועה
+  await sb.from(REC_TABLE()).update({ description: desc, category, amount }).eq('id', id);
+  // עדכן גם את ההוצאה שכבר יובאה לחודש הנוכחי (אם קיימת) לפי התיאור הישן
+  if (old) {
+    const oldImported = (old.description || '') + ' (קבועה)';
+    const newImported = desc + ' (קבועה)';
+    await sb.from(TX_TABLE())
+      .update({ description: newImported, category, amount })
+      .eq('user_id', currentUser.id)
+      .eq('month', getMonth())
+      .eq('description', oldImported);
+  }
+  await loadRecurring();
+  await loadAll();
 }
 async function addRecurring() {
   const desc = $('r-desc').value.trim(), amount = parseFloat($('r-amount').value), category = $('r-cat').value;
