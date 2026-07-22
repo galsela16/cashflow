@@ -658,6 +658,7 @@ tr:last-child td{border-bottom:none}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <div class="section-title" style="margin-bottom:0">רשומות החודש</div>
           <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn-outline" onclick="cleanDuplicates()" title="מסיר רשומות כפולות בחודש זה">🧹 נקה כפילויות</button>
             <button class="btn-outline" onclick="resetMonthExpenses()" title="מוחק את הוצאות החודש למעט הקבועות">♻️ אפס הוצאות החודש</button>
             <button class="btn-del-multi" id="tx-del-multi" onclick="deleteSelectedTx()" style="display:none">🗑 מחק מסומנות (<span id="tx-sel-count">0</span>)</button>
           </div>
@@ -3522,6 +3523,32 @@ async function resetMonthExpenses() {
   if (error) { alert('שגיאה במחיקה: ' + error.message); return; }
   await loadAll();
 }
+
+// ניקוי כפילויות בחודש הנוכחי — משאיר עותק אחד מכל רשומה זהה (תיאור+סכום+סוג)
+async function cleanDuplicates() {
+  const month = getMonth();
+  const seen = new Map();      // key -> id שנשמר
+  const dupIds = [];
+  // עבור לפי created_at (cachedTx כבר ממוין) — שומר את הראשון, מסמן את השאר
+  for (const t of [...cachedTx].reverse()) { // reverse כדי לשמור את המוקדם ביותר
+    const key = (t.description || '') + '|' + (t.amount || 0) + '|' + (t.type || '');
+    if (seen.has(key)) {
+      dupIds.push(t.id);
+    } else {
+      seen.set(key, t.id);
+    }
+  }
+  if (!dupIds.length) {
+    alert('לא נמצאו כפילויות בחודש זה. 👍');
+    return;
+  }
+  if (!confirm('נמצאו ' + dupIds.length + ' רשומות כפולות החודש.\nלמחוק את הכפילויות ולהשאיר עותק אחד מכל אחת?\n\nהפעולה אינה ניתנת לביטול.')) return;
+  const { error } = await sb.from(TX_TABLE()).delete().in('id', dupIds);
+  if (error) { alert('שגיאה: ' + error.message); return; }
+  await loadAll();
+  alert('✅ נמחקו ' + dupIds.length + ' כפילויות.');
+}
+
 
 async function deleteSelectedTx() {
   const ids = Array.from(document.querySelectorAll('.tx-check:checked')).map(c => c.value);
