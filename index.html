@@ -239,6 +239,18 @@ tr:last-child td{border-bottom:none}
 .badge-pending{background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d}
 .badge-late{background:var(--red-soft);color:var(--red);border:1px solid #fca5a5}
 .btn-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:2px 6px;border-radius:4px}
+/* ── סיכום שנתי ── */
+.annual-chart{display:flex;align-items:flex-end;gap:6px;height:200px;padding:10px 4px 0;overflow-x:auto}
+.annual-col{flex:1;min-width:34px;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+.annual-bars{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:3px}
+.annual-bar{width:44%;border-radius:4px 4px 0 0;min-height:2px;transition:height .3s;position:relative;cursor:default}
+.annual-bar.inc{background:var(--green,#0d9c6e)}
+.annual-bar.exp{background:var(--red,#dc2626)}
+.annual-bar:hover{opacity:.8}
+.annual-mlabel{font-size:11px;color:var(--muted);white-space:nowrap}
+.annual-legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:12px;color:var(--muted)}
+.annual-legend span{display:inline-flex;align-items:center;gap:5px}
+.annual-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
 .btn-edit-sm{background:none;border:none;cursor:pointer;color:var(--blue,#2563eb);font-size:15px;padding:2px 6px;border-radius:4px}
 .btn-edit-sm:hover{background:var(--blue-soft,#eff6ff)}
 .btn-save-sm{background:var(--green,#0d9c6e);border:none;cursor:pointer;color:#fff;font-size:14px;padding:3px 9px;border-radius:6px;font-weight:700}
@@ -615,6 +627,17 @@ tr:last-child td{border-bottom:none}
           <div class="pill pill-tax"><span class="pill-label">🧾 מס צפוי</span><span class="pill-value" style="color:var(--red)" id="d-tax-pending-db">—</span></div>
           <div class="pill"><span class="pill-label">% מס</span><input type="number" id="tax-rate-db" value="20" min="0" max="100" class="tax-input" oninput="updateTaxFromDB()" /><span class="pill-label">%</span></div>
         </div>
+      </div>
+
+      <!-- 6. Annual summary -->
+      <div class="dash-group" id="annual-summary">
+        <div class="dash-group-title">📅 סיכום שנתי · <span id="annual-year">—</span></div>
+        <div class="cards-row" style="margin-bottom:14px">
+          <div class="card card-soft-green"><div class="card-label">💵 סה"כ נכנס</div><div class="card-value c-green" id="annual-income">—</div></div>
+          <div class="card"><div class="card-label">💸 סה"כ יצא</div><div class="card-value c-red" id="annual-expense">—</div></div>
+          <div class="card"><div class="card-label">💰 רווח שנתי</div><div class="card-value" id="annual-profit">—</div></div>
+        </div>
+        <div id="annual-chart" class="annual-chart"><div class="empty">טוען נתונים שנתיים…</div></div>
       </div>
 
       </div><!-- /business-dashboard -->
@@ -2483,6 +2506,76 @@ function calcCompound() {
   '</div>';
 }
 
+// ── סיכום שנתי ──
+async function renderAnnualSummary() {
+  const yearEl = $('annual-year');
+  const chartEl = $('annual-chart');
+  if (!chartEl) return;
+  const year = $('yearSel') ? $('yearSel').value : String(new Date().getFullYear());
+  if (yearEl) yearEl.textContent = year;
+
+  const uid = currentUser.id;
+  // שלוף את כל העסקאות של השנה (12 חודשים) בשאילתה אחת
+  const { data: txs } = await sb.from('transactions')
+    .select('month,amount,type')
+    .eq('user_id', uid)
+    .gte('month', year + '-01')
+    .lte('month', year + '-12');
+
+  // אתחל 12 חודשים
+  const inc = new Array(12).fill(0);
+  const exp = new Array(12).fill(0);
+
+  (txs || []).forEach(t => {
+    const mi = parseInt((t.month || '').slice(5, 7), 10) - 1;
+    if (mi < 0 || mi > 11) return;
+    if (t.type === 'income') inc[mi] += t.amount || 0;
+    else exp[mi] += t.amount || 0;
+  });
+
+  // הוסף הכנסה מאירועים ששולמו (לפי שנת התאריך)
+  cachedEventDetails.forEach(d => {
+    if (!d.event_date || !d.price) return;
+    if (d.event_date.slice(0, 4) !== year) return;
+    if (d.status === 'בוצע תשלום' || d.status === 'בוצע תשלום + חשבונית מס') {
+      const mi = parseInt(d.event_date.slice(5, 7), 10) - 1;
+      if (mi >= 0 && mi <= 11) inc[mi] += d.price;
+    }
+  });
+
+  const totalInc = inc.reduce((a, b) => a + b, 0);
+  const totalExp = exp.reduce((a, b) => a + b, 0);
+  const profit = totalInc - totalExp;
+
+  if ($('annual-income')) $('annual-income').textContent = fmt(totalInc);
+  if ($('annual-expense')) $('annual-expense').textContent = fmt(totalExp);
+  const pEl = $('annual-profit');
+  if (pEl) { pEl.textContent = fmt(profit); pEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)'; }
+
+  const max = Math.max(...inc, ...exp, 1);
+  const MONTHS_HE = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יונ', 'יול', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ'];
+  let bars = '';
+  for (let i = 0; i < 12; i++) {
+    const ih = Math.round(inc[i] / max * 100);
+    const eh = Math.round(exp[i] / max * 100);
+    bars += '<div class="annual-col">' +
+      '<div class="annual-bars">' +
+        '<div class="annual-bar inc" style="height:' + ih + '%" title="נכנס ' + MONTHS_HE[i] + ': ' + fmt(inc[i]) + '"></div>' +
+        '<div class="annual-bar exp" style="height:' + eh + '%" title="יצא ' + MONTHS_HE[i] + ': ' + fmt(exp[i]) + '"></div>' +
+      '</div>' +
+      '<div class="annual-mlabel">' + MONTHS_HE[i] + '</div>' +
+    '</div>';
+  }
+  chartEl.innerHTML = bars;
+  // מקרא (פעם אחת)
+  let legend = chartEl.parentElement.querySelector('.annual-legend');
+  if (!legend) {
+    chartEl.insertAdjacentHTML('afterend',
+      '<div class="annual-legend"><span><i style="background:var(--green,#0d9c6e)"></i>נכנס</span>' +
+      '<span><i style="background:var(--red,#dc2626)"></i>יצא</span></div>');
+  }
+}
+
 // ── RENDER ALL ──
 function renderAll() {
   // מצב בית — דלג על רינדור העסק (מטופל ב-renderHome)
@@ -2558,6 +2651,7 @@ function renderAll() {
   renderEventsList();
   renderAlerts(income, expense, salary, net, pendingIncome);
   refreshTxPanel(); // שמור על פאנל הפירוט מעודכן (למשל אחרי החלפת חודש)
+  renderAnnualSummary(); // סיכום שנתי (רץ ברקע, לא מעכב)
 }
 
 // פירוט מלא של צפי הרווח — שקיפות מוחלטת של החישוב
