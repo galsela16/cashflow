@@ -514,6 +514,7 @@ tr:last-child td{border-bottom:none}
           <button onclick="closeExportMenu();exportPDF()"><span>📄</span> PDF (להדפסה)</button>
         </div>
       </div>
+      <button class="export-btn" data-mode="business" onclick="openAnnualModal()">📅 סיכום שנתי</button>
     </div>
 
     <!-- hidden elements needed by JS -->
@@ -627,17 +628,6 @@ tr:last-child td{border-bottom:none}
           <div class="pill pill-tax"><span class="pill-label">🧾 מס צפוי</span><span class="pill-value" style="color:var(--red)" id="d-tax-pending-db">—</span></div>
           <div class="pill"><span class="pill-label">% מס</span><input type="number" id="tax-rate-db" value="20" min="0" max="100" class="tax-input" oninput="updateTaxFromDB()" /><span class="pill-label">%</span></div>
         </div>
-      </div>
-
-      <!-- 6. Annual summary -->
-      <div class="dash-group" id="annual-summary">
-        <div class="dash-group-title">📅 סיכום שנתי · <span id="annual-year">—</span></div>
-        <div class="cards-row" style="margin-bottom:14px">
-          <div class="card card-soft-green"><div class="card-label">💵 סה"כ נכנס</div><div class="card-value c-green" id="annual-income">—</div></div>
-          <div class="card"><div class="card-label">💸 סה"כ יצא</div><div class="card-value c-red" id="annual-expense">—</div></div>
-          <div class="card"><div class="card-label">💰 רווח שנתי</div><div class="card-value" id="annual-profit">—</div></div>
-        </div>
-        <div id="annual-chart" class="annual-chart"><div class="empty">טוען נתונים שנתיים…</div></div>
       </div>
 
       </div><!-- /business-dashboard -->
@@ -926,8 +916,26 @@ tr:last-child td{border-bottom:none}
       <div style="font-size:48px;margin-bottom:16px">⭐</div>
       <div style="font-size:20px;font-weight:700;margin-bottom:8px">שדרג לפרו</div>
       <div style="font-size:14px;color:var(--muted);margin-bottom:24px">ניהול עובדים, לקוחות ואירועים זמין בתוכנית פרו בסך ₪16 לחודש</div>
-      <a href="https://project-7bqkz.vercel.app/#pricing" target="_blank" class="btn-add" style="display:block;margin-bottom:12px;text-decoration:none;text-align:center">שדרג עכשיו →</a>
+      <a href="https://cashflowhq.app/#pricing" target="_blank" class="btn-add" style="display:block;margin-bottom:12px;text-decoration:none;text-align:center">שדרג עכשיו →</a>
       <button class="btn-outline" onclick="closeUpgradeModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Annual Summary Modal -->
+<div class="modal-overlay" id="annual-modal" style="display:none" onclick="if(event.target===this)closeAnnualModal()">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-body" style="padding:1.5rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:19px;font-weight:700">📅 סיכום שנתי · <span id="annual-year">—</span></div>
+        <button class="btn-del" onclick="closeAnnualModal()" style="font-size:20px">&#10005;</button>
+      </div>
+      <div class="cards-row" style="margin-bottom:16px">
+        <div class="card card-soft-green"><div class="card-label">💵 סה"כ נכנס</div><div class="card-value c-green" id="annual-income">—</div></div>
+        <div class="card"><div class="card-label">💸 סה"כ יצא</div><div class="card-value c-red" id="annual-expense">—</div></div>
+        <div class="card"><div class="card-label">💰 רווח שנתי</div><div class="card-value" id="annual-profit">—</div></div>
+      </div>
+      <div id="annual-chart" class="annual-chart"><div class="empty">טוען נתונים שנתיים…</div></div>
     </div>
   </div>
 </div>
@@ -2507,6 +2515,15 @@ function calcCompound() {
 }
 
 // ── סיכום שנתי ──
+function openAnnualModal() {
+  const m = $('annual-modal');
+  if (m) m.style.display = 'flex';
+  renderAnnualSummary();
+}
+function closeAnnualModal() {
+  const m = $('annual-modal');
+  if (m) m.style.display = 'none';
+}
 async function renderAnnualSummary() {
   const yearEl = $('annual-year');
   const chartEl = $('annual-chart');
@@ -2651,7 +2668,6 @@ function renderAll() {
   renderEventsList();
   renderAlerts(income, expense, salary, net, pendingIncome);
   refreshTxPanel(); // שמור על פאנל הפירוט מעודכן (למשל אחרי החלפת חודש)
-  renderAnnualSummary(); // סיכום שנתי (רץ ברקע, לא מעכב)
 }
 
 // פירוט מלא של צפי הרווח — שקיפות מוחלטת של החישוב
