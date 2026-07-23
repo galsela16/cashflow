@@ -38,6 +38,10 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 #abundance-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;user-select:none;display:none}
 #abundance-bg span{position:absolute;font-family:'Courier New',monospace;font-weight:700;color:#0b1f33;white-space:nowrap}
 #app-screen.home-mode #abundance-bg span{color:#5a3a20}
+/* ── שורות פירוט: גרירה וקטלוג ── */
+.gi-row{transition:background .12s}
+.gi-row:hover{background:rgba(0,0,0,.02)}
+.gi-handle:active{cursor:grabbing}
 #app-screen .topbar{z-index:200}
 #app-screen .main,#app-screen .bottom-nav{position:relative;z-index:1}
 #app-screen .topbar{background:rgba(255,255,255,.7);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.5);box-shadow:0 4px 24px rgba(80,120,150,.1)}
@@ -2920,8 +2924,16 @@ function goalItemsHtml(g) {
   const shown = (items.length > LIMIT && !expanded) ? items.slice(0, LIMIT) : items;
 
   const rows = items.length
-    ? shown.map(i =>
-        '<div style="display:flex;align-items:center;gap:3px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)">' +
+    ? '<div id="gi-list-' + g.id + '">' + shown.map(i => {
+        const col = i.color || '';
+        const dot = col ? col : 'transparent';
+        return '<div class="gi-row" draggable="true" data-id="' + i.id + '" data-goal="' + g.id + '" ' +
+          'ondragstart="giDragStart(event)" ondragover="giDragOver(event)" ondrop="giDrop(event)" ondragend="giDragEnd(event)" ' +
+          'style="display:flex;align-items:center;gap:3px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border);' +
+          (col ? 'border-right:3px solid ' + col + ';padding-right:5px;' : 'border-right:3px solid transparent;padding-right:5px;') + '">' +
+          '<span class="gi-handle" title="גרור לסידור" style="cursor:grab;color:var(--muted);font-size:12px;padding:0 1px;user-select:none">⋮⋮</span>' +
+          '<span onclick="cycleGoalItemColor(\'' + i.id + '\')" title="קטלוג בצבע" ' +
+            'style="width:11px;height:11px;border-radius:50%;background:' + dot + ';border:1.5px solid ' + (col ? col : 'var(--border)') + ';cursor:pointer;flex:0 0 auto"></span>' +
           '<input value="' + esc(i.name) + '" ' +
             'onchange="updateGoalItemName(\'' + i.id + '\',this.value)" ' +
             'style="flex:1;min-width:0;padding:4px 5px;border:1px solid transparent;border-radius:6px;font-size:12.5px;background:transparent;color:var(--text)" ' +
@@ -2936,8 +2948,8 @@ function goalItemsHtml(g) {
             'style="width:58px;padding:4px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:left">' +
           '<span style="min-width:52px;text-align:left;font-weight:700;font-size:12px">' + fmt(itemLineTotal(i)) + '</span>' +
           '<button class="btn-del" style="font-size:13px;padding:2px 3px" onclick="deleteGoalItem(\'' + i.id + '\')" title="מחק">&#128465;</button>' +
-        '</div>'
-      ).join('')
+        '</div>';
+      }).join('') + '</div>'
     : '<div style="font-size:12px;color:var(--muted);padding:6px 0">אין רכיבים עדיין — הוסף למטה כדי לפרק את היעד.</div>';
 
   const moreRow = (items.length > LIMIT)
@@ -3031,6 +3043,74 @@ async function updateGoalItemName(itemId, value) {
   await sb.from('goal_items').update({ name }).eq('id', itemId);
   const item = cachedGoalItems.find(i => i.id === itemId);
   if (item) item.name = name;
+}
+
+// ── קטלוג בצבע ──
+const GI_COLORS = ['#2563eb', '#0d9c6e', '#b45309', '#dc2626', '#7c3aed', '#0891b2'];
+async function cycleGoalItemColor(itemId) {
+  const item = cachedGoalItems.find(i => i.id === itemId);
+  if (!item) return;
+  const cur = item.color || '';
+  const idx = GI_COLORS.indexOf(cur);
+  // מחזוריות: ללא צבע → צבעים לפי הסדר → חזרה לללא צבע
+  const next = (idx === -1) ? GI_COLORS[0] : (idx === GI_COLORS.length - 1 ? null : GI_COLORS[idx + 1]);
+  await sb.from('goal_items').update({ color: next }).eq('id', itemId);
+  item.color = next;
+  renderHomeGoalsList();
+}
+
+// ── גרירה לסידור מחדש ──
+let giDragId = null;
+function giDragStart(e) {
+  const row = e.currentTarget;
+  giDragId = row.getAttribute('data-id');
+  row.style.opacity = '0.4';
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', giDragId); } catch (err) {}
+}
+function giDragEnd(e) {
+  e.currentTarget.style.opacity = '';
+  document.querySelectorAll('.gi-row').forEach(r => { r.style.borderTop = ''; });
+}
+function giDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.currentTarget;
+  if (row.getAttribute('data-id') === giDragId) return;
+  document.querySelectorAll('.gi-row').forEach(r => { r.style.borderTop = ''; });
+  row.style.borderTop = '2px solid var(--blue,#2563eb)';
+}
+async function giDrop(e) {
+  e.preventDefault();
+  const row = e.currentTarget;
+  row.style.borderTop = '';
+  const targetId = row.getAttribute('data-id');
+  const goalId = row.getAttribute('data-goal');
+  if (!giDragId || giDragId === targetId) return;
+
+  // אם הרשימה מכווצת — סידור מחדש עלול להיות מבלבל
+  const allItems = itemsForGoal(goalId);
+  if (allItems.length > 5 && expandedGoalItems !== goalId) {
+    alert('כדי לסדר מחדש, לחץ קודם על "הצג את כל הרכיבים".');
+    giDragId = null;
+    return;
+  }
+
+  const items = allItems.slice();
+  const from = items.findIndex(i => i.id === giDragId);
+  const to = items.findIndex(i => i.id === targetId);
+  if (from === -1 || to === -1) return;
+
+  const [moved] = items.splice(from, 1);
+  items.splice(to, 0, moved);
+
+  // כתוב מחדש את הסדר לכל הרכיבים
+  await Promise.all(items.map((i, idx) =>
+    sb.from('goal_items').update({ sort_order: idx }).eq('id', i.id)
+  ));
+  giDragId = null;
+  await loadGoalItems();
+  renderHomeGoalsList();
 }
 
 async function updateGoalItemQty(itemId, value) {
