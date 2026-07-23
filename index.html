@@ -546,7 +546,6 @@ tr:last-child td{border-bottom:none}
     <div class="tabs">
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
-      <button class="tab" onclick="showPage('recurring',this)">🔄 קבועות</button>
       <button class="tab" data-mode="business" data-feature="events" onclick="checkAccess('events') && showPage('events',this)">🎯 אירועים</button>
       <button class="tab" data-mode="business" data-feature="employees" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
       <button class="tab" data-mode="business" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
@@ -654,6 +653,29 @@ tr:last-child td{border-bottom:none}
           </div>
         </div>
       </div>
+
+      <!-- הוצאות קבועות (מתקפל) -->
+      <div class="section">
+        <div class="section-title mv-toggle" onclick="toggleRecurringPanel()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+          <span>🔄 הוצאות קבועות <span id="rec-total-inline" style="font-size:12px;color:var(--muted);font-weight:400"></span></span>
+          <span id="rec-chevron" style="font-size:12px;color:var(--muted);transition:transform .2s">▾</span>
+        </div>
+        <div id="rec-panel-wrap" style="display:none;margin-top:14px">
+          <div class="form-row">
+            <input type="text" id="r-desc" placeholder="תיאור" />
+            <input type="number" id="r-amount" placeholder="סכום ₪ לחודש" min="0" />
+            <select id="r-cat"><option value="שכירות">שכירות</option><option value="ביטוח">ביטוח</option><option value="תוכנות">תוכנות</option><option value="טלפון">טלפון</option><option value="רכב">רכב</option><option value="שיווק">שיווק</option><option value="אחר">אחר</option></select>
+          </div>
+          <button class="btn-add" id="btn-add-rec" onclick="addRecurring()" style="margin-bottom:16px">+ הוסף</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-weight:600;font-size:14px">רשימת הקבועות</div>
+            <div style="background:var(--red-soft);border-radius:100px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--red)" id="rec-total">סה"כ: ₪0 / חודש</div>
+          </div>
+          <table><thead><tr><th>תיאור</th><th>קטגוריה</th><th>סכום חודשי</th><th></th></tr></thead>
+          <tbody id="rec-table"></tbody></table>
+        </div>
+      </div>
+
       <div class="section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div class="section-title" style="margin-bottom:0">הוסף רשומה</div>
@@ -735,27 +757,6 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <!-- recurring -->
-    <div id="page-recurring" class="page">
-      <div class="section">
-        <div class="section-title">הוסף הוצאה קבועה</div>
-        <div class="form-row">
-          <input type="text" id="r-desc" placeholder="תיאור" />
-          <input type="number" id="r-amount" placeholder="סכום ₪ לחודש" min="0" />
-          <select id="r-cat"><option value="שכירות">שכירות</option><option value="ביטוח">ביטוח</option><option value="תוכנות">תוכנות</option><option value="טלפון">טלפון</option><option value="רכב">רכב</option><option value="שיווק">שיווק</option><option value="אחר">אחר</option></select>
-        </div>
-        <button class="btn-add" id="btn-add-rec" onclick="addRecurring()">+ הוסף</button>
-      </div>
-      <div class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-          <div class="section-title" style="margin-bottom:0">הוצאות קבועות</div>
-          <div style="background:var(--red-soft);border-radius:100px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--red)" id="rec-total">סה"כ: ₪0 / חודש</div>
-        </div>
-        <table><thead><tr><th>תיאור</th><th>קטגוריה</th><th>סכום חודשי</th><th></th></tr></thead>
-        <tbody id="rec-table"></tbody></table>
-      </div>
-
-    </div>
-
     <!-- profit first -->
     <div id="page-profitfirst" class="page">
       <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1rem;color:#fff">
@@ -939,7 +940,6 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" data-mode="business" onclick="checkAccess('events') && showPage('events',this)" data-page="events"><span class="bnav-icon">🎯</span>אירועים</button>
     <button class="bnav-item" data-mode="business" onclick="checkAccess('employees') && showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
     <button class="bnav-item" data-mode="business" onclick="checkAccess('clients') && showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
-    <button class="bnav-item" onclick="showPage('recurring',this)" data-page="recurring"><span class="bnav-icon">🔄</span>קבועות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">📈</span>השקעות</button>
@@ -2245,6 +2245,11 @@ async function enterApp(user) {
     if (wrap) wrap.style.display = 'grid';
     if (chev) chev.style.transform = 'rotate(180deg)';
   }
+  if (localStorage.getItem('cf_rec_open') === '1') {
+    const rw = $('rec-panel-wrap'), rc = $('rec-chevron');
+    if (rw) rw.style.display = 'block';
+    if (rc) rc.style.transform = 'rotate(180deg)';
+  }
   // טען קודם הוצאות קבועות, ורק אז loadAll (שתלוי בהן לייבוא אוטומטי)
   await loadRecurring();
   await loadAll();
@@ -3263,6 +3268,17 @@ function toggleMonthView() {
   if (open) renderMonthView();
 }
 
+// פתיחה/סגירה של פאנל ההוצאות הקבועות (בתוך טאב הכנסות/הוצאות)
+function toggleRecurringPanel() {
+  const wrap = $('rec-panel-wrap'), chev = $('rec-chevron');
+  if (!wrap) return;
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+  localStorage.setItem('cf_rec_open', open ? '1' : '0');
+  if (open) renderRecurring();
+}
+
 function renderMonthView() {
   const wrap = $('mv-grid-wrap');
   if (wrap && wrap.style.display === 'none') return; // מכווץ — אין צורך לרנדר
@@ -4027,8 +4043,11 @@ async function loadRecurring() {
 }
 function renderRecurring() {
   const tb = $('rec-table'), totalEl = $('rec-total');
-  if (!tb) return;
   const total = cachedRecurring.reduce((s, r) => s + r.amount, 0);
+  // סכום מוצג בכותרת גם כשהפאנל סגור
+  const inline = $('rec-total-inline');
+  if (inline) inline.textContent = cachedRecurring.length ? '· ' + fmt(total) + ' / חודש' : '';
+  if (!tb) return;
   if (totalEl) totalEl.textContent = '\u05e1\u05d4"\u05db: ' + fmt(total) + ' / \u05d7\u05d5\u05d3\u05e9';
   if (!cachedRecurring.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea</td></tr>'; return; }
   tb.innerHTML = cachedRecurring.map(r => '<tr id="rec-row-' + r.id + '"><td style="font-weight:500">' + esc(r.description) + '</td><td style="font-size:12px;color:var(--muted)">' + esc(r.category) + '</td><td style="font-weight:600;color:var(--red)">' + fmt(r.amount) + '</td><td style="white-space:nowrap"><button class="btn-edit-sm" onclick="editRecurring(\'' + r.id + '\')" title="ערוך">&#9998;</button> <button class="btn-del" onclick="deleteRecurring(\'' + r.id + '\')" title="מחק">&#128465;</button></td></tr>').join('');
@@ -4133,7 +4152,7 @@ function showPage(id, el) {
   // גלול את תוכן העמוד לראש בעת מעבר סקשן
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
-  if (id === 'recurring') renderRecurring();
+  if (id === 'transactions') renderRecurring();
   if (id === 'goals') { calcCompound(); renderHomeGoalsList(); }
   if (id === 'equipment') renderEquipment();
   if (id === 'accounts') { renderAccounts(); loadSnapshots().then(renderReconcile); }
