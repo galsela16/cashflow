@@ -255,6 +255,19 @@ tr:last-child td{border-bottom:none}
 .goal-chip.fire{background:#fff7ed;color:#c2410c}
 .goal-actions{display:flex;gap:7px;align-items:center}
 .goal-actions .btn-paid-quick{flex:1;justify-content:center}
+/* ── חיסכון לילדים ── */
+.child-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.child-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.child-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+.child-name{font-weight:700;font-size:15.5px}
+.child-age{font-size:11.5px;color:var(--muted);margin-top:2px}
+.child-proj{text-align:left;white-space:nowrap}
+.child-proj-val{font-size:22px;font-weight:800;color:var(--green);line-height:1.1;letter-spacing:-.5px}
+.child-proj-lbl{font-size:10.5px;color:var(--muted)}
+.child-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px}
+.child-stat{background:var(--bg);border-radius:8px;padding:8px 10px}
+.child-stat-lbl{font-size:10.5px;color:var(--muted);margin-bottom:2px}
+.child-stat-val{font-size:14px;font-weight:700}
 /* ── מודל אירוע: פריסה קומפקטית ── */
 .ev-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
 .ev-form-grid .ev-span2{grid-column:1 / -1}
@@ -920,6 +933,48 @@ tr:last-child td{border-bottom:none}
 
         <div class="section-title" style="font-size:15px">📊 צמיחה שנתית</div>
         <div id="ci-chart" style="margin-top:10px"></div>
+      </div>
+
+      <!-- חיסכון לילדים -->
+      <div class="section" style="margin-top:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+          <div class="section-title" style="margin-bottom:0">👶 חיסכון לילדים</div>
+          <div class="eq-total-pill">סה"כ נחסך: <strong id="child-grand-total">₪0</strong></div>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">תכנן כמה יהיה לכל ילד בגיל היעד, ועקוב אחרי השווי בפועל.</p>
+
+        <div id="children-list" style="margin-bottom:18px"></div>
+
+        <div style="border-top:1px solid var(--border);padding-top:14px">
+          <div style="font-weight:600;font-size:14px;margin-bottom:10px">➕ הוסף ילד</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:10px">
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שם הילד</label>
+              <input id="child-name" placeholder="לדוגמה: נועה" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">תאריך לידה</label>
+              <input id="child-birth" type="date" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סכום קיים (₪)</label>
+              <input id="child-initial" type="number" min="0" placeholder="0" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">הפקדה חודשית (₪)</label>
+              <input id="child-monthly" type="number" min="0" placeholder="500" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">תשואה שנתית (%)</label>
+              <input id="child-rate" type="number" min="0" step="0.1" value="5" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">גיל יעד</label>
+              <input id="child-age" type="number" min="1" max="40" value="18" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-add-child" onclick="addChild()" style="width:100%">+ הוסף ילד</button>
+        </div>
       </div>
     </div>
 
@@ -2364,6 +2419,7 @@ async function loadAll() {
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
     await autoImportRecurring(month, uid, cachedTx);
     await loadGoalDeposits();
+    await loadChildren();
     await loadGoals();
     loadAccounts();
     loadSnapshots();
@@ -2561,6 +2617,146 @@ async function updateGoalSaved(id, delta) {
   }
   await loadGoalDeposits();
   await loadGoals();
+}
+
+// ── חיסכון לילדים ──
+let cachedChildren = [];
+
+async function loadChildren() {
+  const r = await sb.from('child_savings').select('*').eq('user_id', currentUser.id).order('created_at');
+  cachedChildren = r.data || [];
+  renderChildren();
+}
+
+async function addChild() {
+  const name = $('child-name').value.trim();
+  const birth = $('child-birth').value;
+  const initial = parseFloat($('child-initial').value) || 0;
+  const monthly = parseFloat($('child-monthly').value) || 0;
+  const rate = parseFloat($('child-rate').value) || 0;
+  const age = parseInt($('child-age').value) || 18;
+  if (!name) { alert('נא למלא שם'); return; }
+  $('btn-add-child').disabled = true;
+  await sb.from('child_savings').insert({
+    user_id: currentUser.id, child_name: name, birth_date: birth || null,
+    initial_amount: initial, monthly_deposit: monthly, annual_rate: rate,
+    target_age: age, current_value: initial,
+    value_updated_on: new Date().toISOString().slice(0, 10)
+  });
+  ['child-name', 'child-birth', 'child-initial', 'child-monthly'].forEach(id => { if ($(id)) $(id).value = ''; });
+  if ($('child-rate')) $('child-rate').value = '5';
+  if ($('child-age')) $('child-age').value = '18';
+  $('btn-add-child').disabled = false;
+  await loadChildren();
+}
+
+async function deleteChild(id) {
+  const c = cachedChildren.find(x => x.id === id);
+  if (!confirm('למחוק את החיסכון של "' + (c ? c.child_name : '') + '"?\nכל היסטוריית העדכונים תימחק גם.')) return;
+  await sb.from('child_savings').delete().eq('id', id);
+  await loadChildren();
+}
+
+// עדכון השווי בפועל (מהאפליקציה של בית ההשקעות)
+async function updateChildValue(id) {
+  const c = cachedChildren.find(x => x.id === id);
+  if (!c) return;
+  const input = prompt('מה השווי הנוכחי של החיסכון של "' + c.child_name + '"?', c.current_value || 0);
+  if (input === null) return;
+  const val = parseFloat(input);
+  if (isNaN(val) || val < 0) return;
+  const today = new Date().toISOString().slice(0, 10);
+  await sb.from('child_savings').update({ current_value: val, value_updated_on: today }).eq('id', id);
+  // רשום בהיסטוריה (לשלב ב' — גרף)
+  await sb.from('child_savings_log').insert({
+    user_id: currentUser.id, child_id: id, logged_on: today,
+    deposited: c.monthly_deposit || 0, total_value: val
+  });
+  await loadChildren();
+}
+
+// גיל נוכחי בשנים (עשרוני)
+function childAgeYears(birth) {
+  if (!birth) return null;
+  const b = new Date(birth + 'T00:00:00');
+  return (Date.now() - b) / (365.25 * 86400000);
+}
+
+// תחזית: כמה יהיה בגיל היעד (הרכבה חודשית)
+function projectChild(c) {
+  const rate = (c.annual_rate || 0) / 100 / 12;
+  const monthly = c.monthly_deposit || 0;
+  const ageNow = childAgeYears(c.birth_date);
+  const yearsLeft = ageNow === null ? (c.target_age || 18) : Math.max((c.target_age || 18) - ageNow, 0);
+  const months = Math.round(yearsLeft * 12);
+  let bal = c.current_value || 0;
+  let deposited = 0;
+  for (let i = 0; i < months; i++) { bal = bal * (1 + rate) + monthly; deposited += monthly; }
+  return { future: Math.round(bal), months, yearsLeft, deposited: Math.round(deposited) };
+}
+
+function renderChildren() {
+  const el = $('children-list');
+  if (!el) return;
+  const grand = cachedChildren.reduce((s, c) => s + (c.current_value || 0), 0);
+  const gt = $('child-grand-total');
+  if (gt) gt.textContent = fmt(grand);
+
+  if (!cachedChildren.length) {
+    el.innerHTML = '<div class="empty">עדיין לא נוספו ילדים. הוסף את הראשון למטה 👶</div>';
+    return;
+  }
+  el.innerHTML = '<div class="child-cards">' + cachedChildren.map(c => {
+    const p = projectChild(c);
+    const ageNow = childAgeYears(c.birth_date);
+    const ageTxt = ageNow === null ? '' : 'גיל ' + ageNow.toFixed(1);
+    const yearsTxt = p.yearsLeft > 0 ? 'עוד ' + p.yearsLeft.toFixed(1) + ' שנים לגיל ' + (c.target_age || 18) : 'הגיע לגיל היעד 🎉';
+    const gain = p.future - (c.current_value || 0) - p.deposited;
+    const dateStr = c.value_updated_on ? c.value_updated_on.split('-').reverse().join('/') : '—';
+
+    return '<div class="child-card">' +
+      '<div class="child-top">' +
+        '<div style="min-width:0">' +
+          '<div class="child-name">👶 ' + esc(c.child_name) + '</div>' +
+          '<div class="child-age">' + (ageTxt ? ageTxt + ' · ' : '') + yearsTxt + '</div>' +
+        '</div>' +
+        '<div class="child-proj">' +
+          '<div class="child-proj-val">' + fmt(p.future) + '</div>' +
+          '<div class="child-proj-lbl">צפוי בגיל ' + (c.target_age || 18) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="child-stats">' +
+        '<div class="child-stat"><div class="child-stat-lbl">שווי היום</div><div class="child-stat-val">' + fmt(c.current_value || 0) + '</div></div>' +
+        '<div class="child-stat"><div class="child-stat-lbl">הפקדה חודשית</div><div class="child-stat-val">' + fmt(c.monthly_deposit || 0) + '</div></div>' +
+        '<div class="child-stat"><div class="child-stat-lbl">עוד יופקד</div><div class="child-stat-val">' + fmt(p.deposited) + '</div></div>' +
+        '<div class="child-stat"><div class="child-stat-lbl">רווח מריבית</div><div class="child-stat-val" style="color:var(--green)">' + fmt(Math.max(0, gain)) + '</div></div>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">תשואה ' + (c.annual_rate || 0) + '% · עודכן ' + dateStr + '</div>' +
+      '<div class="goal-actions">' +
+        '<button class="btn-paid-quick" onclick="updateChildValue(\'' + c.id + '\')">💰 עדכן שווי</button>' +
+        '<button class="btn-edit-sm" onclick="editChild(\'' + c.id + '\')" title="ערוך">&#9998;</button>' +
+        '<button class="btn-del" onclick="deleteChild(\'' + c.id + '\')" title="מחק">&#128465;</button>' +
+      '</div>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+// עריכת פרטי ילד
+async function editChild(id) {
+  const c = cachedChildren.find(x => x.id === id);
+  if (!c) return;
+  const monthly = prompt('הפקדה חודשית (₪) עבור ' + c.child_name + ':', c.monthly_deposit || 0);
+  if (monthly === null) return;
+  const rate = prompt('תשואה שנתית צפויה (%):', c.annual_rate || 5);
+  if (rate === null) return;
+  const age = prompt('גיל יעד:', c.target_age || 18);
+  if (age === null) return;
+  await sb.from('child_savings').update({
+    monthly_deposit: parseFloat(monthly) || 0,
+    annual_rate: parseFloat(rate) || 0,
+    target_age: parseInt(age) || 18
+  }).eq('id', id);
+  await loadChildren();
 }
 
 // עריכת יעד — הופך את הכרטיס לטופס עריכה במקום
@@ -4616,7 +4812,7 @@ function showPage(id, el) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
   if (id === 'transactions') renderRecurring();
-  if (id === 'goals') { calcCompound(); renderHomeGoalsList(); }
+  if (id === 'goals') { calcCompound(); renderHomeGoalsList(); renderChildren(); }
   if (id === 'equipment') renderEquipment();
   if (id === 'accounts') { renderAccounts(); loadSnapshots().then(renderReconcile); }
 }
