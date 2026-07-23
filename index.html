@@ -2885,21 +2885,21 @@ function goalItemsHtml(g) {
 
   const rows = items.length
     ? shown.map(i =>
-        '<div style="display:flex;align-items:center;gap:5px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)">' +
+        '<div style="display:flex;align-items:center;gap:3px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)">' +
           '<input value="' + esc(i.name) + '" ' +
             'onchange="updateGoalItemName(\'' + i.id + '\',this.value)" ' +
-            'style="flex:1;min-width:0;padding:4px 7px;border:1px solid transparent;border-radius:6px;font-size:12.5px;background:transparent;color:var(--text)" ' +
+            'style="flex:1;min-width:0;padding:4px 5px;border:1px solid transparent;border-radius:6px;font-size:12.5px;background:transparent;color:var(--text)" ' +
             'onfocus="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'" ' +
             'onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'">' +
           '<input type="number" min="1" step="1" value="' + ((i.quantity === null || i.quantity === undefined) ? 1 : i.quantity) + '" ' +
             'onchange="updateGoalItemQty(\'' + i.id + '\',this.value)" title="כמות" ' +
-            'style="width:46px;padding:4px 5px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;text-align:center">' +
-          '<span style="color:var(--muted);font-size:11px">×</span>' +
+            'style="width:34px;padding:4px 2px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center">' +
+          '<span style="color:var(--muted);font-size:10px">×</span>' +
           '<input type="number" min="0" value="' + (i.amount || 0) + '" ' +
             'onchange="updateGoalItem(\'' + i.id + '\',this.value)" title="מחיר ליחידה" ' +
-            'style="width:76px;padding:4px 7px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;text-align:left">' +
-          '<span style="min-width:66px;text-align:left;font-weight:700">' + fmt(itemLineTotal(i)) + '</span>' +
-          '<button class="btn-del" style="font-size:14px" onclick="deleteGoalItem(\'' + i.id + '\')" title="מחק">&#128465;</button>' +
+            'style="width:58px;padding:4px 4px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:left">' +
+          '<span style="min-width:52px;text-align:left;font-weight:700;font-size:12px">' + fmt(itemLineTotal(i)) + '</span>' +
+          '<button class="btn-del" style="font-size:13px;padding:2px 3px" onclick="deleteGoalItem(\'' + i.id + '\')" title="מחק">&#128465;</button>' +
         '</div>'
       ).join('')
     : '<div style="font-size:12px;color:var(--muted);padding:6px 0">אין רכיבים עדיין — הוסף למטה כדי לפרק את היעד.</div>';
@@ -2917,13 +2917,13 @@ function goalItemsHtml(g) {
     : '';
 
   const addRow =
-    '<div style="display:flex;gap:5px;margin-top:8px">' +
-      '<input id="gi-name-' + g.id + '" placeholder="רכיב (מלון, טיסות...)" ' +
+    '<div style="display:flex;gap:4px;margin-top:8px">' +
+      '<input id="gi-name-' + g.id + '" placeholder="רכיב..." ' +
         'style="flex:1;min-width:0;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:12.5px">' +
       '<input id="gi-qty-' + g.id + '" type="number" min="1" step="1" value="1" title="כמות" ' +
-        'style="width:46px;padding:6px 5px;border:1px solid var(--border);border-radius:7px;font-size:12.5px;text-align:center">' +
+        'style="width:34px;padding:6px 2px;border:1px solid var(--border);border-radius:7px;font-size:12px;text-align:center">' +
       '<input id="gi-amount-' + g.id + '" type="number" min="0" placeholder="₪" title="מחיר ליחידה" ' +
-        'style="width:76px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:12.5px">' +
+        'style="width:58px;padding:6px 4px;border:1px solid var(--border);border-radius:7px;font-size:12px">' +
       '<button class="btn-save-sm" onclick="addGoalItem(\'' + g.id + '\')">+</button>' +
     '</div>';
 
