@@ -3426,7 +3426,16 @@ function buildEventsData() {
       // סנן לחודש הנבחר בלבד — מונע "דליפה" של אירועי גבול (למשל 1 ביולי בתצוגת יוני)
       .filter(ev => localDateStr(ev.start).slice(0, 7) === month)
       .filter(ev => !isEventHidden(ev.title, localDateStr(ev.start)))
-      .map(ev => ({ title: ev.title, start: ev.start, allDay: ev.allDay, source: 'gcal' })),
+      .map(ev => {
+        // צרף את מזהה הרשומה אם קיימת — כך שעריכה תמצא אותה תמיד
+        const ds = localDateStr(ev.start);
+        let d = cachedEventDetails.find(x => x.event_title === ev.title && x.event_date === ds);
+        if (!d) {
+          const near = [addDays(ds, -1), addDays(ds, 1)];
+          d = cachedEventDetails.find(x => x.event_title === ev.title && near.includes(x.event_date));
+        }
+        return { title: ev.title, start: ev.start, allDay: ev.allDay, source: 'gcal', detailId: d ? d.id : '' };
+      }),
     ...manualEvents.map(d => ({ title: d.event_title, start: d.event_date + 'T00:00:00', allDay: true, source: 'manual', detailId: d.id }))
   ].sort((a, b) => a.start > b.start ? 1 : -1);
   allRenderedEvents = allEvents;
@@ -3802,8 +3811,18 @@ async function openEditEventModal({ title, date, source, detailId }) {
     detail = r.data || null;
   }
   if (!detail && title && date) {
-    const r = await sb.from('event_details').select('*').eq('user_id', currentUser.id).eq('event_title', title).eq('event_date', date).maybeSingle();
-    detail = r.data || null;
+    // התאמה מדויקת
+    detail = cachedEventDetails.find(d => d.event_title === title && d.event_date === date) || null;
+    // סובלנות לסטייה של יום (אירועים שנשמרו עם תאריך מאזור-זמן שגוי)
+    if (!detail) {
+      const near = [addDays(date, -1), addDays(date, 1)];
+      detail = cachedEventDetails.find(d => d.event_title === title && near.includes(d.event_date)) || null;
+    }
+    // גיבוי אחרון — שאילתה ישירה ל-DB
+    if (!detail) {
+      const r = await sb.from('event_details').select('*').eq('user_id', currentUser.id).eq('event_title', title).eq('event_date', date).maybeSingle();
+      detail = r.data || null;
+    }
   }
   currentEditDetailId = detail ? detail.id : (detailId || null);
 
