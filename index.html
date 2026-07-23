@@ -239,6 +239,12 @@ tr:last-child td{border-bottom:none}
 .badge-pending{background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d}
 .badge-late{background:var(--red-soft);color:var(--red);border:1px solid #fca5a5}
 .btn-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:2px 6px;border-radius:4px}
+/* ── תתי-לשוניות (תפעול ואירועים) ── */
+.ops-subtabs{display:flex;gap:6px;margin-bottom:1rem;border-bottom:1.5px solid var(--border);padding-bottom:0}
+.ops-subtab{background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;color:var(--muted);padding:9px 14px;margin-bottom:-1.5px;transition:color .15s,border-color .15s;white-space:nowrap}
+.ops-subtab:hover{color:var(--text)}
+.ops-subtab.active{color:var(--blue,#2563eb);border-bottom-color:var(--blue,#2563eb)}
+@media(max-width:600px){.ops-subtabs{overflow-x:auto;-webkit-overflow-scrolling:touch}.ops-subtab{font-size:13px;padding:8px 10px}}
 /* ── סיכום שנתי ── */
 .annual-chart{display:flex;align-items:flex-end;gap:6px;height:200px;padding:10px 4px 0;overflow-x:auto}
 .annual-col{flex:1;min-width:34px;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
@@ -546,9 +552,7 @@ tr:last-child td{border-bottom:none}
     <div class="tabs">
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
-      <button class="tab" data-mode="business" data-feature="events" onclick="checkAccess('events') && showPage('events',this)">🎯 אירועים</button>
-      <button class="tab" data-mode="business" data-feature="employees" onclick="checkAccess('employees') && showPage('employees',this)">👥 עובדים</button>
-      <button class="tab" data-mode="business" data-feature="clients" onclick="checkAccess('clients') && showPage('clients',this)">🤝 לקוחות</button>
+      <button class="tab" data-mode="business" data-feature="events" onclick="checkAccess('events') && showPage('ops',this)">🎯 תפעול ואירועים</button>
       <button class="tab" data-mode="business" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" data-mode="business" onclick="showPage('equipment',this)">📈 השקעות לעסק</button>
@@ -705,55 +709,65 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <!-- events -->
-    <div id="page-events" class="page">
-      <div class="section" style="margin-bottom:1rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div class="section-title" style="margin-bottom:0">אירועים החודש</div>
-            <div class="view-toggle">
-              <button class="view-toggle-btn active" id="vt-list" onclick="setEventView('list')">☰ רשימה</button>
-              <button class="view-toggle-btn" id="vt-cal" onclick="setEventView('calendar')">📅 יומן</button>
+    <!-- ops: events + employees + clients -->
+    <div id="page-ops" class="page">
+      <div class="ops-subtabs">
+        <button class="ops-subtab active" id="ops-tab-events" onclick="setOpsTab('events')">🎯 אירועים</button>
+        <button class="ops-subtab" id="ops-tab-employees" onclick="setOpsTab('employees')">👥 עובדים</button>
+        <button class="ops-subtab" id="ops-tab-clients" onclick="setOpsTab('clients')">🤝 לקוחות</button>
+      </div>
+
+      <!-- אירועים -->
+      <div id="ops-pane-events" class="ops-pane">
+        <div class="section" style="margin-bottom:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="section-title" style="margin-bottom:0">אירועים החודש</div>
+              <div class="view-toggle">
+                <button class="view-toggle-btn active" id="vt-list" onclick="setEventView('list')">☰ רשימה</button>
+                <button class="view-toggle-btn" id="vt-cal" onclick="setEventView('calendar')">📅 יומן</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-outline" id="gcal-btn" onclick="connectGCal()">📅 חבר יומן</button>
+              <button class="btn-outline" onclick="loadGCal(true)">🔄 רענן</button>
+              <button class="btn-add" onclick="openNewEventModal()">+ אירוע ידני</button>
             </div>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn-outline" id="gcal-btn" onclick="connectGCal()">📅 חבר יומן</button>
-            <button class="btn-outline" onclick="loadGCal(true)">🔄 רענן</button>
-            <button class="btn-add" onclick="openNewEventModal()">+ אירוע ידני</button>
+          <div id="events-list"><div class="empty">טוען אירועים...</div></div>
+          <div id="events-calendar" style="display:none"></div>
+          <div id="hidden-events-area" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <!-- עובדים -->
+      <div id="ops-pane-employees" class="ops-pane" style="display:none">
+        <div class="section">
+          <div class="section-title">הוסף עובד</div>
+          <div class="form-row">
+            <input type="text" id="e-name" placeholder="שם העובד" />
+            <input type="text" id="e-role" placeholder="תפקיד" />
+            <input type="tel" id="e-phone" placeholder="טלפון" />
           </div>
+          <button class="btn-add" id="btn-add-emp" onclick="addEmployee()">+ הוסף עובד</button>
         </div>
-        <div id="events-list"><div class="empty">טוען אירועים...</div></div>
-        <div id="events-calendar" style="display:none"></div>
-        <div id="hidden-events-area" style="margin-top:14px"></div>
+        <div id="emp-cards" class="emp-cards"></div>
       </div>
-    </div>
 
-    <!-- employees -->
-    <div id="page-employees" class="page">
-      <div class="section">
-        <div class="section-title">הוסף עובד</div>
-        <div class="form-row">
-          <input type="text" id="e-name" placeholder="שם העובד" />
-          <input type="text" id="e-role" placeholder="תפקיד" />
-          <input type="tel" id="e-phone" placeholder="טלפון" />
+      <!-- לקוחות -->
+      <div id="ops-pane-clients" class="ops-pane" style="display:none">
+        <div class="section">
+          <div class="section-title">הוסף לקוח</div>
+          <div class="form-row">
+            <input type="text" id="c-name" placeholder="שם הלקוח" />
+            <input type="tel" id="c-phone" placeholder="טלפון" />
+            <input type="email" id="c-email" placeholder="אימייל" />
+            <input type="text" id="c-bizid" placeholder="ח.פ / ע.מ" />
+          </div>
+          <button class="btn-add" id="btn-add-client" onclick="addClient()">+ הוסף לקוח</button>
         </div>
-        <button class="btn-add" id="btn-add-emp" onclick="addEmployee()">+ הוסף עובד</button>
+        <div id="clients-list"></div>
       </div>
-      <div id="emp-cards" class="emp-cards"></div>
-    </div>
-
-    <!-- clients -->
-    <div id="page-clients" class="page">
-      <div class="section">
-        <div class="section-title">הוסף לקוח</div>
-        <div class="form-row">
-          <input type="text" id="c-name" placeholder="שם הלקוח" />
-          <input type="tel" id="c-phone" placeholder="טלפון" />
-          <input type="email" id="c-email" placeholder="אימייל" />
-          <input type="text" id="c-bizid" placeholder="ח.פ / ע.מ" />
-        </div>
-        <button class="btn-add" id="btn-add-client" onclick="addClient()">+ הוסף לקוח</button>
-      </div>
-      <div id="clients-list"></div>
     </div>
 
     <!-- recurring -->
@@ -937,9 +951,7 @@ tr:last-child td{border-bottom:none}
   <div class="bottom-nav">
     <button class="bnav-item active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="bnav-icon">📊</span>סיכום</button>
     <button class="bnav-item" onclick="showPage('transactions',this)" data-page="transactions"><span class="bnav-icon">💸</span>הכנסות</button>
-    <button class="bnav-item" data-mode="business" onclick="checkAccess('events') && showPage('events',this)" data-page="events"><span class="bnav-icon">🎯</span>אירועים</button>
-    <button class="bnav-item" data-mode="business" onclick="checkAccess('employees') && showPage('employees',this)" data-page="employees"><span class="bnav-icon">👥</span>עובדים</button>
-    <button class="bnav-item" data-mode="business" onclick="checkAccess('clients') && showPage('clients',this)" data-page="clients"><span class="bnav-icon">🤝</span>לקוחות</button>
+    <button class="bnav-item" data-mode="business" onclick="checkAccess('events') && showPage('ops',this)" data-page="ops"><span class="bnav-icon">🎯</span>תפעול</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">📈</span>השקעות</button>
@@ -2064,7 +2076,7 @@ function setMode(mode) {
   // אם העמוד הנוכחי לא זמין במצב החדש — חזור לדשבורד
   const activePage = document.querySelector('.page.active');
   const activeId = activePage ? activePage.id.replace('page-', '') : '';
-  const businessOnly = ['events', 'employees', 'clients', 'profitfirst', 'alerts', 'equipment'];
+  const businessOnly = ['ops', 'profitfirst', 'alerts', 'equipment'];
   const homeOnly = ['goals'];
   const invalid = (mode === 'home' && businessOnly.includes(activeId)) ||
                   (mode === 'business' && homeOnly.includes(activeId));
@@ -2250,6 +2262,8 @@ async function enterApp(user) {
     if (rw) rw.style.display = 'block';
     if (rc) rc.style.transform = 'rotate(180deg)';
   }
+  // שחזר את תת-הלשונית האחרונה בטאב תפעול
+  if (typeof setOpsTab === 'function') setOpsTab(localStorage.getItem('cf_ops_tab') || 'events');
   // טען קודם הוצאות קבועות, ורק אז loadAll (שתלוי בהן לייבוא אוטומטי)
   await loadRecurring();
   await loadAll();
@@ -3266,6 +3280,18 @@ function toggleMonthView() {
   if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
   localStorage.setItem('cf_mv_open', open ? '1' : '0');
   if (open) renderMonthView();
+}
+
+// ── תתי-לשוניות: תפעול ואירועים ──
+function setOpsTab(which) {
+  const tabs = ['events', 'employees', 'clients'];
+  tabs.forEach(t => {
+    const pane = $('ops-pane-' + t), btn = $('ops-tab-' + t);
+    if (pane) pane.style.display = (t === which) ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', t === which);
+  });
+  localStorage.setItem('cf_ops_tab', which);
+  // התוכן כבר מרונדר ע"י renderAll — כאן רק מציגים/מסתירים
 }
 
 // פתיחה/סגירה של פאנל ההוצאות הקבועות (בתוך טאב הכנסות/הוצאות)
