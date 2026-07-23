@@ -553,7 +553,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="business" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" data-mode="business" onclick="showPage('equipment',this)">📈 השקעות לעסק</button>
-      <button class="tab" data-mode="business" onclick="showPage('accounts',this)">💳 מצב חשבונות</button>
+      <button class="tab" onclick="showPage('accounts',this)">💳 מצב חשבונות</button>
       <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
@@ -913,6 +913,7 @@ tr:last-child td{border-bottom:none}
 
       <div class="section">
         <div class="section-title">➕ הוסף חשבון</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">החשבון ישויך אוטומטית ל<strong id="acc-scope-hint">עסק</strong> (לפי המצב שבו אתה נמצא).</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px">
           <div style="flex:2;min-width:150px">
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שם החשבון</label>
@@ -942,7 +943,7 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">📈</span>השקעות</button>
-    <button class="bnav-item" data-mode="business" onclick="showPage('accounts',this)" data-page="accounts"><span class="bnav-icon">💳</span>חשבונות</button>
+    <button class="bnav-item" onclick="showPage('accounts',this)" data-page="accounts"><span class="bnav-icon">💳</span>חשבונות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
@@ -2063,7 +2064,7 @@ function setMode(mode) {
   // אם העמוד הנוכחי לא זמין במצב החדש — חזור לדשבורד
   const activePage = document.querySelector('.page.active');
   const activeId = activePage ? activePage.id.replace('page-', '') : '';
-  const businessOnly = ['events', 'employees', 'clients', 'profitfirst', 'alerts', 'equipment', 'accounts'];
+  const businessOnly = ['events', 'employees', 'clients', 'profitfirst', 'alerts', 'equipment'];
   const homeOnly = ['goals'];
   const invalid = (mode === 'home' && businessOnly.includes(activeId)) ||
                   (mode === 'business' && homeOnly.includes(activeId));
@@ -2284,6 +2285,8 @@ async function loadAll() {
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
     await autoImportRecurring(month, uid, cachedTx);
     await loadGoals();
+    loadAccounts();
+    loadSnapshots();
     renderHome();
     return;
   }
@@ -2527,6 +2530,10 @@ async function loadAccounts() {
   cachedAccounts = res.data || [];
   renderAccounts();
 }
+// חשבונות של המצב הפעיל בלבד (עסק / בית)
+function accountsForMode() {
+  return cachedAccounts.filter(a => (a.scope || 'business') === appMode);
+}
 async function addAccount() {
   const name = $('acc-name').value.trim();
   const hint = $('acc-hint').value.trim();
@@ -2536,7 +2543,8 @@ async function addAccount() {
   const today = new Date().toISOString().slice(0, 10);
   await sb.from('bank_accounts').insert({
     user_id: currentUser.id, name, account_hint: hint || null,
-    balance, updated_on: today, sort_order: cachedAccounts.length
+    balance, updated_on: today, sort_order: cachedAccounts.length,
+    scope: appMode   // משויך אוטומטית למצב שבו אתה נמצא
   });
   $('acc-name').value = ''; $('acc-hint').value = ''; $('acc-balance').value = '';
   $('btn-add-acc').disabled = false;
@@ -2558,16 +2566,20 @@ async function updateAccountBalance(id, value) {
 function renderAccounts() {
   const el = $('accounts-list');
   if (!el) return;
-  const grand = cachedAccounts.reduce((s, a) => s + (a.balance || 0), 0);
+  const hint = $('acc-scope-hint');
+  if (hint) hint.textContent = appMode === 'home' ? 'בית' : 'עסק';
+  const list = accountsForMode();
+  const grand = list.reduce((s, a) => s + (a.balance || 0), 0);
   const gt = $('acc-grand-total');
   if (gt) gt.textContent = fmt(grand);
 
-  if (!cachedAccounts.length) {
-    el.innerHTML = '<div class="empty">עדיין לא נוספו חשבונות. הוסף חשבון ראשון למטה 💳</div>';
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">עדיין לא נוספו חשבונות ' + (appMode === 'home' ? 'לבית' : 'לעסק') + '. הוסף חשבון ראשון למטה 💳</div>';
+    renderReconcile();
     return;
   }
   const today = new Date();
-  el.innerHTML = cachedAccounts.map(a => {
+  el.innerHTML = list.map(a => {
     const neg = (a.balance || 0) < 0;
     const dateStr = a.updated_on ? a.updated_on.split('-').reverse().join('/') : '—';
     // כמה ימים עברו מאז העדכון האחרון
@@ -2604,9 +2616,10 @@ function renderAccounts() {
 
 // ── ב' — עדכון כל היתרות בחלון אחד ──
 function openUpdateAllModal() {
-  if (!cachedAccounts.length) { alert('אין חשבונות לעדכון.'); return; }
+  const list = accountsForMode();
+  if (!list.length) { alert('אין חשבונות לעדכון.'); return; }
   const body = $('updall-body');
-  body.innerHTML = cachedAccounts.map(a =>
+  body.innerHTML = list.map(a =>
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">' +
       '<div style="font-weight:600;font-size:14px">' + esc(a.name) +
         (a.account_hint ? ' <span style="font-size:11px;color:var(--muted);font-weight:400">••' + esc(a.account_hint) + '</span>' : '') + '</div>' +
@@ -2622,12 +2635,11 @@ async function saveAllBalances() {
   const btn = $('btn-updall-save');
   btn.disabled = true; btn.textContent = '⏳ שומר...';
   const today = new Date().toISOString().slice(0, 10);
-  // שמור snapshot של המצב הקודם לפני העדכון (לצורך השוואה)
-  const prevTotal = cachedAccounts.reduce((s, a) => s + (a.balance || 0), 0);
+  const list = accountsForMode();
 
   const updates = [];
   const details = {};
-  for (const a of cachedAccounts) {
+  for (const a of list) {
     const el = $('updall-' + a.id);
     if (!el) continue;
     const val = parseFloat(el.value);
@@ -2638,10 +2650,10 @@ async function saveAllBalances() {
   await Promise.all(updates);
 
   const newTotal = Object.values(details).reduce((s, v) => s + v, 0);
-  // רשום snapshot חדש
+  // רשום snapshot חדש (לפי המצב הפעיל)
   await sb.from('balance_snapshots').insert({
     user_id: currentUser.id, taken_on: today,
-    total_balance: newTotal, details
+    total_balance: newTotal, details, scope: appMode
   });
 
   btn.disabled = false; btn.textContent = '💾 שמור הכל';
@@ -2656,6 +2668,7 @@ let cachedSnapshots = [];
 async function loadSnapshots() {
   const res = await sb.from('balance_snapshots')
     .select('*').eq('user_id', currentUser.id)
+    .eq('scope', appMode)
     .order('taken_on', { ascending: false }).limit(2);
   cachedSnapshots = res.data || [];
 }
@@ -2673,7 +2686,7 @@ async function renderReconcile() {
   const bankDelta = (curr.total_balance || 0) - (prev.total_balance || 0);
 
   // כמה תיעדת בין שני התאריכים (הכנסות פחות הוצאות)
-  const { data: txs } = await sb.from('transactions')
+  const { data: txs } = await sb.from(TX_TABLE())
     .select('amount,type,created_at')
     .eq('user_id', currentUser.id)
     .gt('created_at', prev.taken_on)
