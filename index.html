@@ -4075,7 +4075,8 @@ async function deleteEventFile(id) {
 // ניקוי אוטומטי — מוחק קבצים של אירועים שעברו לפני יותר משבוע
 async function cleanupOldEventFiles() {
   try {
-    const cutoff = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const weekAgo = Date.now() - 7 * 86400000;
+    const cutoff = new Date(weekAgo).toISOString().slice(0, 10);
     // אירועים שהסתיימו לפני יותר משבוע
     const { data: oldEvents } = await sb.from('event_details')
       .select('id').eq('user_id', currentUser.id).lt('event_date', cutoff);
@@ -4084,9 +4085,13 @@ async function cleanupOldEventFiles() {
     const { data: files } = await sb.from('event_files')
       .select('*').eq('user_id', currentUser.id).in('event_detail_id', ids);
     if (!files || !files.length) return;
-    await sb.storage.from('event-files').remove(files.map(f => f.storage_path));
-    await sb.from('event_files').delete().in('id', files.map(f => f.id));
-    console.log('נוקו ' + files.length + ' קבצים ישנים');
+    // חשוב: מוחקים רק קבצים שגם הם עצמם בני יותר משבוע.
+    // אחרת קובץ שהועלה עכשיו לאירוע ישן היה נמחק מיד.
+    const stale = files.filter(f => f.created_at && new Date(f.created_at).getTime() < weekAgo);
+    if (!stale.length) return;
+    await sb.storage.from('event-files').remove(stale.map(f => f.storage_path));
+    await sb.from('event_files').delete().in('id', stale.map(f => f.id));
+    console.log('נוקו ' + stale.length + ' קבצים ישנים');
   } catch (e) { /* ניקוי הוא best-effort — לא מפריע לשימוש */ }
 }
 
