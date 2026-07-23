@@ -2882,9 +2882,8 @@ function goalItemsHtml(g) {
     '</div>';
 
   const shareRow = items.length
-    ? '<div style="display:flex;gap:6px;margin-top:9px">' +
-        '<button class="btn-outline" style="flex:1;font-size:12px;padding:6px" onclick="shareGoalItems(\'' + g.id + '\')">💬 שלח בוואטסאפ</button>' +
-        '<button class="btn-outline" style="font-size:12px;padding:6px 10px" onclick="copyGoalItems(\'' + g.id + '\')" title="העתק">📋</button>' +
+    ? '<div style="margin-top:9px">' +
+        '<button class="btn-outline" style="width:100%;font-size:12px;padding:7px" onclick="copyGoalItems(\'' + g.id + '\')">📋 העתק את הרשימה</button>' +
       '</div>'
     : '';
 
@@ -2903,23 +2902,24 @@ function goalItemsText(goalId) {
   return txt;
 }
 
-function shareGoalItems(goalId) {
-  const txt = goalItemsText(goalId);
-  if (!txt) return;
-  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
-}
-
 async function copyGoalItems(goalId) {
   const txt = goalItemsText(goalId);
   if (!txt) return;
+  const btn = event && event.currentTarget ? event.currentTarget : null;
+  const done = () => {
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = '✅ הועתק';
+    setTimeout(() => { btn.textContent = orig; }, 1600);
+  };
   try {
     await navigator.clipboard.writeText(txt);
-    alert('✅ הפירוט הועתק');
+    done();
   } catch (e) {
     // גיבוי לדפדפנים שחוסמים גישה ללוח
     const ta = document.createElement('textarea');
     ta.value = txt; document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); alert('✅ הפירוט הועתק'); }
+    try { document.execCommand('copy'); done(); }
     catch (e2) { alert('לא הצלחתי להעתיק. אפשר לסמן ידנית.'); }
     document.body.removeChild(ta);
   }
