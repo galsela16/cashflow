@@ -2881,7 +2881,48 @@ function goalItemsHtml(g) {
       '<button class="btn-save-sm" onclick="addGoalItem(\'' + g.id + '\')">+</button>' +
     '</div>';
 
-  return header + '<div style="padding-bottom:4px">' + rows + totalRow + addRow + '</div>';
+  const shareRow = items.length
+    ? '<div style="display:flex;gap:6px;margin-top:9px">' +
+        '<button class="btn-outline" style="flex:1;font-size:12px;padding:6px" onclick="shareGoalItems(\'' + g.id + '\')">💬 שלח בוואטסאפ</button>' +
+        '<button class="btn-outline" style="font-size:12px;padding:6px 10px" onclick="copyGoalItems(\'' + g.id + '\')" title="העתק">📋</button>' +
+      '</div>'
+    : '';
+
+  return header + '<div style="padding-bottom:4px">' + rows + totalRow + addRow + shareRow + '</div>';
+}
+
+// בונה את טקסט הפירוט לשיתוף
+function goalItemsText(goalId) {
+  const g = cachedGoals.find(x => x.id === goalId);
+  const items = itemsForGoal(goalId);
+  if (!g || !items.length) return '';
+  const total = items.reduce((s, i) => s + (i.amount || 0), 0);
+  let txt = '🎯 ' + g.name + '\n\n';
+  items.forEach(i => { txt += '• ' + i.name + ' — ' + fmt(i.amount || 0) + '\n'; });
+  txt += '\nסה"כ: ' + fmt(total);
+  return txt;
+}
+
+function shareGoalItems(goalId) {
+  const txt = goalItemsText(goalId);
+  if (!txt) return;
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+}
+
+async function copyGoalItems(goalId) {
+  const txt = goalItemsText(goalId);
+  if (!txt) return;
+  try {
+    await navigator.clipboard.writeText(txt);
+    alert('✅ הפירוט הועתק');
+  } catch (e) {
+    // גיבוי לדפדפנים שחוסמים גישה ללוח
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); alert('✅ הפירוט הועתק'); }
+    catch (e2) { alert('לא הצלחתי להעתיק. אפשר לסמן ידנית.'); }
+    document.body.removeChild(ta);
+  }
 }
 
 async function addGoalItem(goalId) {
