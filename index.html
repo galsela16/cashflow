@@ -2541,6 +2541,11 @@ async function loadGoalItems() {
 function itemsForGoal(goalId) {
   return cachedGoalItems.filter(i => i.goal_id === goalId);
 }
+// סכום שורה = כמות × מחיר ליחידה
+function itemLineTotal(i) {
+  const q = (i.quantity === null || i.quantity === undefined) ? 1 : Number(i.quantity);
+  return (isNaN(q) ? 1 : q) * (i.amount || 0);
+}
 // סכום היעד נגזר מהרכיבים אם קיימים, אחרת מהערך שהוזן ידנית
 function goalTargetOf(g) {
   const items = itemsForGoal(g.id);
@@ -2850,7 +2855,7 @@ function toggleGoalItems(id) {
 
 function goalItemsHtml(g) {
   const items = itemsForGoal(g.id);
-  const total = items.reduce((s, i) => s + (i.amount || 0), 0);
+  const total = items.reduce((s, i) => s + itemLineTotal(i), 0);
   const open = openGoalItems === g.id;
 
   const header = '<div onclick="toggleGoalItems(\'' + g.id + '\')" ' +
@@ -2863,15 +2868,20 @@ function goalItemsHtml(g) {
 
   const rows = items.length
     ? items.map(i =>
-        '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)">' +
+        '<div style="display:flex;align-items:center;gap:5px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)">' +
           '<input value="' + esc(i.name) + '" ' +
             'onchange="updateGoalItemName(\'' + i.id + '\',this.value)" ' +
             'style="flex:1;min-width:0;padding:4px 7px;border:1px solid transparent;border-radius:6px;font-size:12.5px;background:transparent;color:var(--text)" ' +
             'onfocus="this.style.borderColor=\'var(--border)\';this.style.background=\'var(--surface)\'" ' +
             'onblur="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'">' +
+          '<input type="number" min="1" step="1" value="' + ((i.quantity === null || i.quantity === undefined) ? 1 : i.quantity) + '" ' +
+            'onchange="updateGoalItemQty(\'' + i.id + '\',this.value)" title="כמות" ' +
+            'style="width:46px;padding:4px 5px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;text-align:center">' +
+          '<span style="color:var(--muted);font-size:11px">×</span>' +
           '<input type="number" min="0" value="' + (i.amount || 0) + '" ' +
-            'onchange="updateGoalItem(\'' + i.id + '\',this.value)" ' +
-            'style="width:88px;padding:4px 7px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;text-align:left">' +
+            'onchange="updateGoalItem(\'' + i.id + '\',this.value)" title="מחיר ליחידה" ' +
+            'style="width:76px;padding:4px 7px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;text-align:left">' +
+          '<span style="min-width:66px;text-align:left;font-weight:700">' + fmt(itemLineTotal(i)) + '</span>' +
           '<button class="btn-del" style="font-size:14px" onclick="deleteGoalItem(\'' + i.id + '\')" title="מחק">&#128465;</button>' +
         '</div>'
       ).join('')
@@ -2883,11 +2893,13 @@ function goalItemsHtml(g) {
     : '';
 
   const addRow =
-    '<div style="display:flex;gap:6px;margin-top:8px">' +
+    '<div style="display:flex;gap:5px;margin-top:8px">' +
       '<input id="gi-name-' + g.id + '" placeholder="רכיב (מלון, טיסות...)" ' +
         'style="flex:1;min-width:0;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:12.5px">' +
-      '<input id="gi-amount-' + g.id + '" type="number" min="0" placeholder="₪" ' +
-        'style="width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:12.5px">' +
+      '<input id="gi-qty-' + g.id + '" type="number" min="1" step="1" value="1" title="כמות" ' +
+        'style="width:46px;padding:6px 5px;border:1px solid var(--border);border-radius:7px;font-size:12.5px;text-align:center">' +
+      '<input id="gi-amount-' + g.id + '" type="number" min="0" placeholder="₪" title="מחיר ליחידה" ' +
+        'style="width:76px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;font-size:12.5px">' +
       '<button class="btn-save-sm" onclick="addGoalItem(\'' + g.id + '\')">+</button>' +
     '</div>';
 
@@ -2905,9 +2917,13 @@ function goalItemsText(goalId) {
   const g = cachedGoals.find(x => x.id === goalId);
   const items = itemsForGoal(goalId);
   if (!g || !items.length) return '';
-  const total = items.reduce((s, i) => s + (i.amount || 0), 0);
+  const total = items.reduce((s, i) => s + itemLineTotal(i), 0);
   let txt = '🎯 ' + g.name + '\n\n';
-  items.forEach(i => { txt += '• ' + i.name + ' — ' + fmt(i.amount || 0) + '\n'; });
+  items.forEach(i => {
+    const q = (i.quantity === null || i.quantity === undefined) ? 1 : Number(i.quantity);
+    const qTxt = q > 1 ? ' ×' + q : '';
+    txt += '• ' + i.name + qTxt + ' — ' + fmt(itemLineTotal(i)) + '\n';
+  });
   txt += '\nסה"כ: ' + fmt(total);
   return txt;
 }
@@ -2938,9 +2954,11 @@ async function copyGoalItems(goalId) {
 async function addGoalItem(goalId) {
   const name = $('gi-name-' + goalId).value.trim();
   const amount = parseFloat($('gi-amount-' + goalId).value);
+  let qty = parseFloat($('gi-qty-' + goalId) ? $('gi-qty-' + goalId).value : 1);
+  if (isNaN(qty) || qty < 1) qty = 1;
   if (!name || isNaN(amount) || amount < 0) return;
   await sb.from('goal_items').insert({
-    user_id: currentUser.id, goal_id: goalId, name, amount,
+    user_id: currentUser.id, goal_id: goalId, name, amount, quantity: qty,
     sort_order: itemsForGoal(goalId).length
   });
   await syncGoalTarget(goalId);
@@ -2953,6 +2971,14 @@ async function updateGoalItemName(itemId, value) {
   await sb.from('goal_items').update({ name }).eq('id', itemId);
   const item = cachedGoalItems.find(i => i.id === itemId);
   if (item) item.name = name;
+}
+
+async function updateGoalItemQty(itemId, value) {
+  let q = parseFloat(value);
+  if (isNaN(q) || q < 1) q = 1;
+  const item = cachedGoalItems.find(i => i.id === itemId);
+  await sb.from('goal_items').update({ quantity: q }).eq('id', itemId);
+  if (item) await syncGoalTarget(item.goal_id);
 }
 
 async function updateGoalItem(itemId, value) {
@@ -2974,7 +3000,7 @@ async function syncGoalTarget(goalId) {
   await loadGoalItems();
   const items = itemsForGoal(goalId);
   if (items.length) {
-    const total = items.reduce((s, i) => s + (i.amount || 0), 0);
+    const total = items.reduce((s, i) => s + itemLineTotal(i), 0);
     await sb.from('home_goals').update({ target_amount: total }).eq('id', goalId);
   }
   await loadGoals();
