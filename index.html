@@ -3879,7 +3879,7 @@ async function openEditEventModal({ title, date, source, detailId }) {
     modalWorkers = [];
   }
   renderModalWorkers();
-  loadEventFiles(currentEditDetailId);
+  await loadEventFiles(currentEditDetailId);
   if ($('event-delete-btn')) $('event-delete-btn').style.display = currentEditDetailId ? 'inline-block' : 'none';
   // כפתור האיפוס מוצג גם לאירועי יומן שטרם נשמרו — כדי שהמשתמש יבין למה אין מה לאפס
   if ($('event-reset-btn')) $('event-reset-btn').style.display = 'inline-block';
@@ -3991,6 +3991,12 @@ async function loadEventFiles(detailId) {
   modalFiles = [];
   if (detailId) {
     const r = await sb.from('event_files').select('*').eq('event_detail_id', detailId).order('created_at');
+    if (r.error) {
+      console.error('loadEventFiles error:', r.error);
+      const el = $('modal-files-list');
+      if (el) el.innerHTML = '<div style="font-size:12px;color:var(--red)">שגיאה בטעינת קבצים: ' + esc(r.error.message) + '</div>';
+      return;
+    }
     modalFiles = r.data || [];
   }
   renderEventFiles();
@@ -4033,13 +4039,17 @@ async function uploadEventFiles(input) {
     const path = currentUser.id + '/' + currentEditDetailId + '/' + Date.now() + '_' + rand + '.' + ext;
     const up = await sb.storage.from('event-files').upload(path, file);
     if (up.error) { alert('שגיאה בהעלאת "' + file.name + '": ' + up.error.message); continue; }
-    await sb.from('event_files').insert({
+    const ins = await sb.from('event_files').insert({
       user_id: currentUser.id,
       event_detail_id: currentEditDetailId,
       file_name: file.name,
       storage_path: path,
       file_size: file.size
     });
+    if (ins.error) {
+      console.error('event_files insert error:', ins.error);
+      alert('הקובץ הועלה אך לא נרשם: ' + ins.error.message);
+    }
   }
   if (drop) drop.textContent = orig || '+ הוסף קובץ';
   await loadEventFiles(currentEditDetailId);
