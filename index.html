@@ -849,6 +849,10 @@ tr:last-child td{border-bottom:none}
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סכום יעד (₪)</label>
             <input id="goal-target" type="number" placeholder="15000" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
           </div>
+          <div style="flex:1;min-width:130px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">תאריך יעד (לא חובה)</label>
+            <input id="goal-deadline" type="date" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
           <button class="btn btn-primary" id="btn-add-goal" onclick="addGoal()" style="height:38px">הוסף יעד</button>
         </div>
         <div id="goals-list"></div>
@@ -2337,6 +2341,7 @@ async function loadAll() {
     // אין אירועים/עובדים/לקוחות במצב בית
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
     await autoImportRecurring(month, uid, cachedTx);
+    await loadGoalDeposits();
     await loadGoals();
     loadAccounts();
     loadSnapshots();
@@ -2446,10 +2451,15 @@ async function loadGoals() {
 }
 async function addGoal() {
   const name = $('goal-name').value.trim(), target = parseFloat($('goal-target').value);
+  const deadline = $('goal-deadline') ? $('goal-deadline').value : '';
   if (!name || !target || target <= 0) return;
   $('btn-add-goal').disabled = true;
-  await sb.from('home_goals').insert({ user_id: currentUser.id, name, target_amount: target, saved_amount: 0 });
+  await sb.from('home_goals').insert({
+    user_id: currentUser.id, name, target_amount: target, saved_amount: 0,
+    deadline: deadline || null
+  });
   $('goal-name').value = ''; $('goal-target').value = '';
+  if ($('goal-deadline')) $('goal-deadline').value = '';
   $('btn-add-goal').disabled = false;
   await loadGoals();
 }
@@ -2458,6 +2468,37 @@ async function deleteGoal(id) {
   await sb.from('home_goals').delete().eq('id', id);
   await loadGoals();
 }
+
+// היסטוריית הפקדות — לחישוב הרצף החודשי
+let cachedDeposits = [];
+async function loadGoalDeposits() {
+  const r = await sb.from('goal_deposits').select('*').eq('user_id', currentUser.id).order('deposited_on', { ascending: false });
+  cachedDeposits = r.data || [];
+}
+
+// כמה חודשים ברצף הופקד ליעד (כולל החודש הנוכחי או הקודם)
+function goalStreak(goalId) {
+  const months = new Set(
+    cachedDeposits.filter(d => d.goal_id === goalId && (d.amount || 0) > 0)
+      .map(d => (d.deposited_on || '').slice(0, 7))
+  );
+  if (!months.size) return 0;
+  const now = new Date();
+  let y = now.getFullYear(), m = now.getMonth(); // 0-based
+  const key = (yy, mm) => yy + '-' + String(mm + 1).padStart(2, '0');
+  // אם לא הופקד החודש — מתחילים לספור מהחודש הקודם (סלחני)
+  if (!months.has(key(y, m))) {
+    m--; if (m < 0) { m = 11; y--; }
+    if (!months.has(key(y, m))) return 0;
+  }
+  let streak = 0;
+  while (months.has(key(y, m))) {
+    streak++;
+    m--; if (m < 0) { m = 11; y--; }
+  }
+  return streak;
+}
+
 // עדכון סכום שנחסך — הוספה/הפחתה
 async function updateGoalSaved(id, delta) {
   const g = cachedGoals.find(x => x.id === id);
@@ -2469,39 +2510,121 @@ async function updateGoalSaved(id, delta) {
     amt = parseFloat(input);
     if (isNaN(amt)) return;
   }
-  const newSaved = Math.max(0, (g.saved_amount || 0) + amt);
+  const target = g.target_amount || 0;
+  const prevSaved = g.saved_amount || 0;
+  const newSaved = Math.max(0, prevSaved + amt);
   await sb.from('home_goals').update({ saved_amount: newSaved }).eq('id', id);
+  // רשום הפקדה (רק חיובית) — משמש לרצף החודשי
+  if (amt > 0) {
+    await sb.from('goal_deposits').insert({
+      user_id: currentUser.id, goal_id: id, amount: amt,
+      deposited_on: new Date().toISOString().slice(0, 10)
+    });
+  }
+  // ציוני דרך — חוגגים פעם אחת לכל שלב
+  if (target > 0) {
+    const prevPct = Math.floor(prevSaved / target * 100);
+    const newPct = Math.floor(newSaved / target * 100);
+    const last = g.last_milestone || 0;
+    const milestones = [25, 50, 75, 100];
+    let hit = 0;
+    milestones.forEach(ms => { if (newPct >= ms && ms > last) hit = ms; });
+    if (hit) {
+      await sb.from('home_goals').update({ last_milestone: hit }).eq('id', id);
+      setTimeout(() => {
+        if (hit === 100) alert('🎉 מזל טוב! הגעת ליעד "' + g.name + '"!');
+        else alert('🎯 כל הכבוד! עברת ' + hit + '% מהיעד "' + g.name + '"');
+      }, 100);
+    }
+  }
+  await loadGoalDeposits();
   await loadGoals();
 }
+
 function renderHomeGoalsList() {
   const el = $('goals-list');
   if (!el) return;
   if (!cachedGoals.length) { el.innerHTML = '<div class="empty">עדיין אין יעדים. הוסף יעד ראשון למעלה 🎯</div>'; return; }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
   el.innerHTML = cachedGoals.map(g => {
     const saved = g.saved_amount || 0;
     const target = g.target_amount || 0;
     const pct = target > 0 ? Math.min(Math.round(saved / target * 100), 100) : 0;
     const done = saved >= target && target > 0;
     const remaining = Math.max(0, target - saved);
-    const barColor = done ? 'var(--green)' : 'var(--blue)';
+    let barColor = done ? 'var(--green)' : 'var(--blue)';
+
+    // ── דדליין: כמה נשאר לחסוך בחודש, והאם בקצב ──
+    let deadlineHtml = '', paceHtml = '';
+    if (g.deadline && !done) {
+      const dl = new Date(g.deadline + 'T00:00:00');
+      const msLeft = dl - today;
+      const daysLeft = Math.ceil(msLeft / 86400000);
+      const dlStr = g.deadline.split('-').reverse().join('/');
+
+      if (daysLeft < 0) {
+        deadlineHtml = '<span style="color:var(--red);font-weight:600">⏰ עבר התאריך (' + dlStr + ')</span>';
+        barColor = 'var(--red)';
+      } else {
+        const monthsLeft = Math.max(daysLeft / 30.44, 0.1);
+        const perMonth = Math.ceil(remaining / monthsLeft);
+        deadlineHtml = '<span>🎯 עד ' + dlStr + ' · ' + daysLeft + ' ימים</span>';
+
+        // האם בקצב? משווים התקדמות בפועל להתקדמות הצפויה לפי הזמן שחלף
+        const created = g.created_at ? new Date(g.created_at) : null;
+        if (created) {
+          const totalMs = dl - created;
+          const elapsedMs = today - created;
+          if (totalMs > 0 && elapsedMs > 0) {
+            const expected = target * Math.min(elapsedMs / totalMs, 1);
+            const diff = saved - expected;
+            if (Math.abs(diff) < target * 0.02) {
+              paceHtml = '<span style="color:var(--green)">✓ בדיוק בקצב</span>';
+            } else if (diff > 0) {
+              paceHtml = '<span style="color:var(--green)">▲ ' + fmt(Math.round(diff)) + ' לפני הלוח</span>';
+            } else {
+              paceHtml = '<span style="color:var(--red)">▼ ' + fmt(Math.round(-diff)) + ' מאחור</span>';
+              barColor = 'var(--amber,#b45309)';
+            }
+          }
+        }
+        paceHtml += '<span style="color:var(--muted)"> · צריך ' + fmt(perMonth) + ' לחודש</span>';
+      }
+    }
+
+    // ── רצף חודשי ──
+    const streak = goalStreak(g.id);
+    const streakHtml = streak >= 2
+      ? '<span style="background:#fff7ed;color:#c2410c;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px">🔥 ' + streak + ' חודשים ברצף</span>'
+      : '';
+
     return '<div style="padding:14px 0;border-bottom:1px solid var(--border)">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-        '<div style="font-weight:700;font-size:15px">' + (done ? '✅ ' : '') + esc(g.name) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<span style="font-weight:700;font-size:15px">' + (done ? '✅ ' : '') + esc(g.name) + '</span>' +
+          streakHtml +
+        '</div>' +
         '<div style="display:flex;align-items:center;gap:8px">' +
           '<span style="font-size:13px;font-weight:600;color:' + barColor + '">' + fmt(saved) + ' / ' + fmt(target) + '</span>' +
           '<button class="btn-del" onclick="deleteGoal(\'' + g.id + '\')">&#128465;</button>' +
         '</div>' +
       '</div>' +
+      (deadlineHtml ? '<div style="font-size:11.5px;color:var(--muted);margin-bottom:6px">' + deadlineHtml + '</div>' : '') +
       '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">' +
-        '<div style="font-size:12px;color:var(--muted)">' + (done ? '🎉 הגעת ליעד!' : 'נשאר ' + fmt(remaining) + ' · ' + pct + '%') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap">' +
+        '<div style="font-size:12px;color:var(--muted)">' +
+          (done ? '🎉 הגעת ליעד!' : 'נשאר ' + fmt(remaining) + ' · ' + pct + '%') +
+        '</div>' +
         '<div style="display:flex;gap:6px">' +
           '<button class="btn-paid-quick" onclick="updateGoalSaved(\'' + g.id + '\',\'custom\')">➕ עדכן</button>' +
         '</div>' +
       '</div>' +
+      (paceHtml ? '<div style="font-size:11.5px;margin-top:5px">' + paceHtml + '</div>' : '') +
     '</div>';
   }).join('');
 }
+
 function renderHomeGoals() { calcCompound(); }
 
 // ── השקעות לעסק ──
