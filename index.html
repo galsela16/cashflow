@@ -2563,6 +2563,55 @@ async function updateGoalSaved(id, delta) {
   await loadGoals();
 }
 
+// עריכת יעד — הופך את הכרטיס לטופס עריכה במקום
+function editGoal(id) {
+  const g = cachedGoals.find(x => x.id === id);
+  const card = $('goal-card-' + id);
+  if (!g || !card) return;
+  card.innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:9px">' +
+      '<div>' +
+        '<label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:3px">שם היעד</label>' +
+        '<input id="goal-e-name-' + id + '" value="' + esc(g.name) + '" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">' +
+      '</div>' +
+      '<div style="display:flex;gap:8px">' +
+        '<div style="flex:1">' +
+          '<label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:3px">סכום יעד (₪)</label>' +
+          '<input id="goal-e-target-' + id + '" type="number" min="1" value="' + (g.target_amount || 0) + '" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">' +
+        '</div>' +
+        '<div style="flex:1">' +
+          '<label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:3px">נחסך עד כה (₪)</label>' +
+          '<input id="goal-e-saved-' + id + '" type="number" min="0" value="' + (g.saved_amount || 0) + '" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">' +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:3px">תאריך יעד</label>' +
+        '<input id="goal-e-deadline-' + id + '" type="date" value="' + (g.deadline || '') + '" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">' +
+      '</div>' +
+      '<div style="display:flex;gap:7px;margin-top:3px">' +
+        '<button class="btn-save-sm" style="flex:1" onclick="saveGoalEdit(\'' + id + '\')">✓ שמור</button>' +
+        '<button class="btn-cancel-sm" style="flex:1" onclick="renderHomeGoalsList()">✕ ביטול</button>' +
+      '</div>' +
+    '</div>';
+  const nameInput = $('goal-e-name-' + id);
+  if (nameInput) nameInput.focus();
+}
+
+async function saveGoalEdit(id) {
+  const name = $('goal-e-name-' + id).value.trim();
+  const target = parseFloat($('goal-e-target-' + id).value);
+  const saved = parseFloat($('goal-e-saved-' + id).value);
+  const deadline = $('goal-e-deadline-' + id).value;
+  if (!name || !target || target <= 0) { alert('נא למלא שם וסכום יעד תקין'); return; }
+  await sb.from('home_goals').update({
+    name,
+    target_amount: target,
+    saved_amount: isNaN(saved) ? 0 : Math.max(0, saved),
+    deadline: deadline || null
+  }).eq('id', id);
+  await loadGoals();
+}
+
 function renderHomeGoalsList() {
   const el = $('goals-list');
   if (!el) return;
@@ -2624,7 +2673,7 @@ function renderHomeGoalsList() {
     const streak = goalStreak(g.id);
     if (streak >= 2) chips.push('<span class="goal-chip fire">🔥 ' + streak + ' חודשים</span>');
 
-    return '<div class="' + cardCls + '">' +
+    return '<div class="' + cardCls + '" id="goal-card-' + g.id + '">' +
       '<div class="goal-card-top">' +
         '<div class="goal-name">' + (done ? '✅ ' : '') + esc(g.name) + '</div>' +
         '<div class="goal-pct" style="color:' + barColor + '">' + pct + '<small>%</small></div>' +
@@ -2640,6 +2689,7 @@ function renderHomeGoalsList() {
       '</div>' +
       '<div class="goal-actions">' +
         '<button class="btn-paid-quick" onclick="updateGoalSaved(\'' + g.id + '\',\'custom\')">➕ הוסף חיסכון</button>' +
+        '<button class="btn-edit-sm" onclick="editGoal(\'' + g.id + '\')" title="ערוך יעד">&#9998;</button>' +
         '<button class="btn-del" onclick="deleteGoal(\'' + g.id + '\')" title="מחק">&#128465;</button>' +
       '</div>' +
     '</div>';
