@@ -3814,7 +3814,8 @@ async function openEditEventModal({ title, date, source, detailId }) {
   }
   renderModalWorkers();
   if ($('event-delete-btn')) $('event-delete-btn').style.display = currentEditDetailId ? 'inline-block' : 'none';
-  if ($('event-reset-btn')) $('event-reset-btn').style.display = currentEditDetailId ? 'inline-block' : 'none';
+  // כפתור האיפוס מוצג גם לאירועי יומן שטרם נשמרו — כדי שהמשתמש יבין למה אין מה לאפס
+  if ($('event-reset-btn')) $('event-reset-btn').style.display = 'inline-block';
   $('event-modal').style.display = 'flex';
 }
 
@@ -3859,8 +3860,18 @@ async function deleteEventFromModal() {
 
 // איפוס אירוע — מנקה לקוח, מחיר, סטטוס, הערות ועובדים. משאיר שם ותאריך.
 async function resetEventFromModal() {
-  if (!currentEditDetailId) return;
   const title = $('modal-ev-title').value || $('modal-event-title').textContent || 'האירוע';
+  if (!currentEditDetailId) {
+    // אירוע יומן שטרם נשמרו לו פרטים — פשוט מנקים את הטופס
+    modalWorkers = [];
+    renderModalWorkers();
+    fillClientSelect(null);
+    $('modal-price').value = '';
+    $('modal-status').value = 'לא יצאה דרישת תשלום';
+    $('modal-notes').value = '';
+    alert('לאירוע זה עדיין לא נשמרו פרטים — הטופס נוקה.');
+    return;
+  }
   if (!confirm('לאפס את "' + title + '"?\n\nיימחקו: לקוח, מחיר, סטטוס תשלום, הערות והעובדים המשויכים.\nהשם והתאריך יישארו.\n\nהפעולה אינה ניתנת לביטול.')) return;
 
   // מחק את העובדים המשויכים
