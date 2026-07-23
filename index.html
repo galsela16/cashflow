@@ -897,10 +897,18 @@ tr:last-child td{border-bottom:none}
       <div class="section" style="margin-bottom:1rem">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">
           <div class="section-title" style="margin-bottom:0">💳 מצב חשבונות</div>
-          <div class="eq-total-pill">סה"כ בבנק: <strong id="acc-grand-total">₪0</strong></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <button class="btn-outline" onclick="openUpdateAllModal()">🔄 עדכן הכל</button>
+            <div class="eq-total-pill">סה"כ בבנק: <strong id="acc-grand-total">₪0</strong></div>
+          </div>
         </div>
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">שיקוף מדויק של היתרות בבנק. עדכן את היתרה מהאתר של הבנק (היתרה שמופיעה למעלה בדף החשבון).</p>
         <div id="accounts-list"></div>
+      </div>
+
+      <div class="section" style="margin-bottom:1rem">
+        <div class="section-title">🔍 בדיקת התאמה</div>
+        <div id="reconcile-box"></div>
       </div>
 
       <div class="section">
@@ -951,6 +959,21 @@ tr:last-child td{border-bottom:none}
       <div style="font-size:14px;color:var(--muted);margin-bottom:24px">ניהול עובדים, לקוחות ואירועים זמין בתוכנית פרו בסך ₪16 לחודש</div>
       <a href="https://cashflowhq.app/#pricing" target="_blank" class="btn-add" style="display:block;margin-bottom:12px;text-decoration:none;text-align:center">שדרג עכשיו →</a>
       <button class="btn-outline" onclick="closeUpgradeModal()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update All Balances Modal -->
+<div class="modal-overlay" id="updall-modal" style="display:none" onclick="if(event.target===this)closeUpdateAllModal()">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-body" style="padding:1.5rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:18px;font-weight:700">🔄 עדכון יתרות</div>
+        <button class="btn-del" onclick="closeUpdateAllModal()" style="font-size:20px">&#10005;</button>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">העתק את היתרה של כל חשבון מהאתר של הבנק.</p>
+      <div id="updall-body"></div>
+      <button class="btn btn-primary" id="btn-updall-save" onclick="saveAllBalances()" style="width:100%;margin-top:16px">💾 שמור הכל</button>
     </div>
   </div>
 </div>
@@ -2288,6 +2311,7 @@ async function loadAll() {
   // טען השקעות לעסק
   loadEquipment();
   loadAccounts();
+  loadSnapshots();
   // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
   loadGCal();
 }
@@ -2542,13 +2566,24 @@ function renderAccounts() {
     el.innerHTML = '<div class="empty">עדיין לא נוספו חשבונות. הוסף חשבון ראשון למטה 💳</div>';
     return;
   }
+  const today = new Date();
   el.innerHTML = cachedAccounts.map(a => {
     const neg = (a.balance || 0) < 0;
     const dateStr = a.updated_on ? a.updated_on.split('-').reverse().join('/') : '—';
+    // כמה ימים עברו מאז העדכון האחרון
+    let staleBadge = '';
+    if (a.updated_on) {
+      const days = Math.floor((today - new Date(a.updated_on + 'T00:00:00')) / 86400000);
+      if (days >= 7) {
+        const color = days >= 14 ? 'var(--red)' : 'var(--amber,#b45309)';
+        const bg = days >= 14 ? 'var(--red-soft,#fef2f2)' : '#fffbeb';
+        staleBadge = '<span style="background:' + bg + ';color:' + color + ';font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:100px;margin-inline-start:6px">🔔 ' + days + ' ימים</span>';
+      }
+    }
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap">' +
       '<div style="min-width:0">' +
         '<div style="font-weight:700;font-size:15px">' + esc(a.name) + (a.account_hint ? ' <span style="font-size:12px;color:var(--muted);font-weight:400">••' + esc(a.account_hint) + '</span>' : '') + '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">עודכן: ' + dateStr + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">עודכן: ' + dateStr + staleBadge + '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:10px">' +
         '<div style="display:flex;align-items:center;gap:4px">' +
@@ -2564,6 +2599,115 @@ function renderAccounts() {
     '<span>סה"כ בכל החשבונות</span>' +
     '<span style="color:' + (grand < 0 ? 'var(--red)' : 'var(--green)') + '">' + fmt(grand) + '</span>' +
   '</div>';
+  renderReconcile();
+}
+
+// ── ב' — עדכון כל היתרות בחלון אחד ──
+function openUpdateAllModal() {
+  if (!cachedAccounts.length) { alert('אין חשבונות לעדכון.'); return; }
+  const body = $('updall-body');
+  body.innerHTML = cachedAccounts.map(a =>
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">' +
+      '<div style="font-weight:600;font-size:14px">' + esc(a.name) +
+        (a.account_hint ? ' <span style="font-size:11px;color:var(--muted);font-weight:400">••' + esc(a.account_hint) + '</span>' : '') + '</div>' +
+      '<input type="number" id="updall-' + a.id + '" value="' + (a.balance || 0) + '" ' +
+      'style="width:130px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;text-align:left">' +
+    '</div>'
+  ).join('');
+  $('updall-modal').style.display = 'flex';
+}
+function closeUpdateAllModal() { $('updall-modal').style.display = 'none'; }
+
+async function saveAllBalances() {
+  const btn = $('btn-updall-save');
+  btn.disabled = true; btn.textContent = '⏳ שומר...';
+  const today = new Date().toISOString().slice(0, 10);
+  // שמור snapshot של המצב הקודם לפני העדכון (לצורך השוואה)
+  const prevTotal = cachedAccounts.reduce((s, a) => s + (a.balance || 0), 0);
+
+  const updates = [];
+  const details = {};
+  for (const a of cachedAccounts) {
+    const el = $('updall-' + a.id);
+    if (!el) continue;
+    const val = parseFloat(el.value);
+    if (isNaN(val)) continue;
+    updates.push(sb.from('bank_accounts').update({ balance: val, updated_on: today }).eq('id', a.id));
+    details[a.name] = val;
+  }
+  await Promise.all(updates);
+
+  const newTotal = Object.values(details).reduce((s, v) => s + v, 0);
+  // רשום snapshot חדש
+  await sb.from('balance_snapshots').insert({
+    user_id: currentUser.id, taken_on: today,
+    total_balance: newTotal, details
+  });
+
+  btn.disabled = false; btn.textContent = '💾 שמור הכל';
+  closeUpdateAllModal();
+  await loadAccounts();
+  await loadSnapshots();
+  renderReconcile();
+}
+
+// ── ג' — השוואה: כמה זז בבנק מול כמה תיעדת ──
+let cachedSnapshots = [];
+async function loadSnapshots() {
+  const res = await sb.from('balance_snapshots')
+    .select('*').eq('user_id', currentUser.id)
+    .order('taken_on', { ascending: false }).limit(2);
+  cachedSnapshots = res.data || [];
+}
+
+async function renderReconcile() {
+  const el = $('reconcile-box');
+  if (!el) return;
+  if (cachedSnapshots.length < 2) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted);line-height:1.7">' +
+      'כדי להשוות, צריך לפחות שני עדכונים. לחץ <strong>"עדכן הכל"</strong> עכשיו, ושוב בפעם הבאה — ואז נוכל להראות לך כמה כסף זז מול כמה תיעדת.' +
+      '</div>';
+    return;
+  }
+  const [curr, prev] = cachedSnapshots;
+  const bankDelta = (curr.total_balance || 0) - (prev.total_balance || 0);
+
+  // כמה תיעדת בין שני התאריכים (הכנסות פחות הוצאות)
+  const { data: txs } = await sb.from('transactions')
+    .select('amount,type,created_at')
+    .eq('user_id', currentUser.id)
+    .gt('created_at', prev.taken_on)
+    .lte('created_at', curr.taken_on + 'T23:59:59');
+
+  let inc = 0, exp = 0;
+  (txs || []).forEach(t => { if (t.type === 'income') inc += t.amount || 0; else exp += t.amount || 0; });
+  const trackedDelta = inc - exp;
+  const gap = bankDelta - trackedDelta;
+
+  const d1 = prev.taken_on.split('-').reverse().join('/');
+  const d2 = curr.taken_on.split('-').reverse().join('/');
+  const gapColor = Math.abs(gap) < 50 ? 'var(--green)' : 'var(--red)';
+  const gapLabel = Math.abs(gap) < 50
+    ? '✅ תואם — הכל מתועד'
+    : (gap < 0 ? '⚠️ ' + fmt(Math.abs(gap)) + ' יצאו מהבנק בלי שתועדו' : '⚠️ ' + fmt(Math.abs(gap)) + ' נכנסו לבנק בלי שתועדו');
+
+  el.innerHTML =
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">בין ' + d1 + ' ל-' + d2 + '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">' +
+      '<div style="background:var(--bg);border-radius:var(--radius-sm);padding:11px;text-align:center">' +
+        '<div style="font-size:11.5px;color:var(--muted);margin-bottom:3px">תזוזה בבנק</div>' +
+        '<div style="font-size:18px;font-weight:700;color:' + (bankDelta < 0 ? 'var(--red)' : 'var(--green)') + '">' +
+          (bankDelta >= 0 ? '+' : '−') + fmt(Math.abs(bankDelta)) + '</div>' +
+      '</div>' +
+      '<div style="background:var(--bg);border-radius:var(--radius-sm);padding:11px;text-align:center">' +
+        '<div style="font-size:11.5px;color:var(--muted);margin-bottom:3px">תיעדת באפליקציה</div>' +
+        '<div style="font-size:18px;font-weight:700;color:' + (trackedDelta < 0 ? 'var(--red)' : 'var(--green)') + '">' +
+          (trackedDelta >= 0 ? '+' : '−') + fmt(Math.abs(trackedDelta)) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="text-align:center;padding:11px;border-radius:var(--radius-sm);background:' + (Math.abs(gap) < 50 ? '#ecfdf5' : '#fef2f2') + '">' +
+      '<div style="font-size:14px;font-weight:700;color:' + gapColor + '">' + gapLabel + '</div>' +
+    '</div>';
 }
 
 // מחשבון ריבית דריבית — הרכבה חודשית עם הפקדות
@@ -3979,7 +4123,7 @@ function showPage(id, el) {
   if (id === 'recurring') renderRecurring();
   if (id === 'goals') { calcCompound(); renderHomeGoalsList(); }
   if (id === 'equipment') renderEquipment();
-  if (id === 'accounts') renderAccounts();
+  if (id === 'accounts') { renderAccounts(); loadSnapshots().then(renderReconcile); }
 }
 
 function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('open'); if (icon) icon.textContent = body.classList.contains('open') ? '\u25b2' : '\u25bc'; }
