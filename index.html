@@ -881,7 +881,7 @@ tr:last-child td{border-bottom:none}
             <input id="goal-name" placeholder="לדוגמה: טיול ליפן" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
           </div>
           <div style="flex:1;min-width:100px">
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סכום יעד (₪)</label>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סכום יעד (₪) · או פרק לרכיבים</label>
             <input id="goal-target" type="number" placeholder="15000" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
           </div>
           <div style="flex:1;min-width:130px">
@@ -2546,10 +2546,13 @@ async function loadGoals() {
 async function addGoal() {
   const name = $('goal-name').value.trim(), target = parseFloat($('goal-target').value);
   const deadline = $('goal-deadline') ? $('goal-deadline').value : '';
-  if (!name || !target || target <= 0) return;
+  // רק השם חובה — אפשר להוסיף יעד ולפרק אותו לרכיבים אחר כך
+  if (!name) { alert('נא למלא שם ליעד'); return; }
   $('btn-add-goal').disabled = true;
   await sb.from('home_goals').insert({
-    user_id: currentUser.id, name, target_amount: target, saved_amount: 0,
+    user_id: currentUser.id, name,
+    target_amount: (isNaN(target) || target < 0) ? 0 : target,
+    saved_amount: 0,
     deadline: deadline || null
   });
   $('goal-name').value = ''; $('goal-target').value = '';
@@ -2957,14 +2960,12 @@ async function saveGoalEdit(id) {
   const deadline = $('goal-e-deadline-' + id).value;
   const hasItems = itemsForGoal(id).length > 0;
   if (!name) { alert('נא למלא שם ליעד'); return; }
-  // אם יש רכיבים — הסכום נגזר מהם ולא נדרש בטופס
-  if (!hasItems && (!target || target <= 0)) { alert('נא למלא סכום יעד תקין'); return; }
   const patch = {
     name,
     saved_amount: isNaN(saved) ? 0 : Math.max(0, saved),
     deadline: deadline || null
   };
-  if (!hasItems) patch.target_amount = target;
+  if (!hasItems) patch.target_amount = (isNaN(target) || target < 0) ? 0 : target;
   await sb.from('home_goals').update(patch).eq('id', id);
   await loadGoals();
 }
@@ -3042,7 +3043,8 @@ function renderHomeGoalsList() {
       '</div>' +
       (chips.length ? '<div class="goal-meta">' + chips.join('') + '</div>' : '') +
       '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">' +
-        (done ? '🎉 הגעת ליעד!' : 'נשאר ' + fmt(remaining)) +
+        (target <= 0 ? '🧩 הוסף רכיבים בפירוט למטה כדי לקבוע את הסכום' :
+          (done ? '🎉 הגעת ליעד!' : 'נשאר ' + fmt(remaining))) +
       '</div>' +
       '<div class="goal-actions">' +
         '<button class="btn-paid-quick" onclick="updateGoalSaved(\'' + g.id + '\',\'custom\')">➕ הוסף חיסכון</button>' +
