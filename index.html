@@ -4024,8 +4024,13 @@ async function uploadEventFiles(input) {
 
   for (const file of files) {
     if (file.size > 10 * 1024 * 1024) { alert('הקובץ "' + file.name + '" גדול מ-10MB ולא הועלה.'); continue; }
-    const safe = file.name.replace(/[^\w.\-\u0590-\u05FF ]/g, '_');
-    const path = currentUser.id + '/' + currentEditDetailId + '/' + Date.now() + '_' + safe;
+    // נתיב האחסון חייב להיות ASCII בלבד — שומרים רק את הסיומת.
+    // השם המקורי (כולל עברית) נשמר ב-DB לצורך תצוגה.
+    const dot = file.name.lastIndexOf('.');
+    let ext = dot > -1 ? file.name.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+    if (!ext) ext = 'dat';
+    const rand = Math.random().toString(36).slice(2, 8);
+    const path = currentUser.id + '/' + currentEditDetailId + '/' + Date.now() + '_' + rand + '.' + ext;
     const up = await sb.storage.from('event-files').upload(path, file);
     if (up.error) { alert('שגיאה בהעלאת "' + file.name + '": ' + up.error.message); continue; }
     await sb.from('event_files').insert({
