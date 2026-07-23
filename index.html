@@ -2657,17 +2657,35 @@ async function deleteChild(id) {
   await loadChildren();
 }
 
-// עדכון השווי בפועל (מהאפליקציה של בית ההשקעות)
-async function updateChildValue(id) {
+// עדכון השווי בפועל — טופס קטן בתוך הכרטיס
+function updateChildValue(id) {
   const c = cachedChildren.find(x => x.id === id);
-  if (!c) return;
-  const input = prompt('מה השווי הנוכחי של החיסכון של "' + c.child_name + '"?', c.current_value || 0);
-  if (input === null) return;
-  const val = parseFloat(input);
+  const card = $('child-card-' + id);
+  if (!c || !card) return;
+  const box = document.createElement('div');
+  box.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid var(--border)';
+  box.innerHTML =
+    '<label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:4px">💰 מה השווי היום? (מהאפליקציה של בית ההשקעות)</label>' +
+    '<div style="display:flex;gap:7px">' +
+      '<input id="child-v-' + id + '" type="number" min="0" value="' + (c.current_value || 0) + '" ' +
+      'style="flex:1;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700">' +
+      '<button class="btn-save-sm" onclick="saveChildValue(\'' + id + '\')">✓</button>' +
+      '<button class="btn-cancel-sm" onclick="renderChildren()">✕</button>' +
+    '</div>';
+  card.appendChild(box);
+  const inp = $('child-v-' + id);
+  if (inp) { inp.focus(); inp.select(); }
+}
+
+async function saveChildValue(id) {
+  const c = cachedChildren.find(x => x.id === id);
+  const inp = $('child-v-' + id);
+  if (!c || !inp) return;
+  const val = parseFloat(inp.value);
   if (isNaN(val) || val < 0) return;
   const today = new Date().toISOString().slice(0, 10);
   await sb.from('child_savings').update({ current_value: val, value_updated_on: today }).eq('id', id);
-  // רשום בהיסטוריה (לשלב ב' — גרף)
+  // רשום בהיסטוריה (בסיס לגרף ההתקדמות)
   await sb.from('child_savings_log').insert({
     user_id: currentUser.id, child_id: id, logged_on: today,
     deposited: c.monthly_deposit || 0, total_value: val
@@ -2714,7 +2732,7 @@ function renderChildren() {
     const gain = p.future - (c.current_value || 0) - p.deposited;
     const dateStr = c.value_updated_on ? c.value_updated_on.split('-').reverse().join('/') : '—';
 
-    return '<div class="child-card">' +
+    return '<div class="child-card" id="child-card-' + c.id + '">' +
       '<div class="child-top">' +
         '<div style="min-width:0">' +
           '<div class="child-name">👶 ' + esc(c.child_name) + '</div>' +
@@ -2741,20 +2759,54 @@ function renderChildren() {
   }).join('') + '</div>';
 }
 
-// עריכת פרטי ילד
-async function editChild(id) {
+// עריכת פרטי ילד — הופך את הכרטיס לטופס עריכה במקום
+function editChild(id) {
   const c = cachedChildren.find(x => x.id === id);
-  if (!c) return;
-  const monthly = prompt('הפקדה חודשית (₪) עבור ' + c.child_name + ':', c.monthly_deposit || 0);
-  if (monthly === null) return;
-  const rate = prompt('תשואה שנתית צפויה (%):', c.annual_rate || 5);
-  if (rate === null) return;
-  const age = prompt('גיל יעד:', c.target_age || 18);
-  if (age === null) return;
+  const card = $('child-card-' + id);
+  if (!c || !card) return;
+  const F = (lbl, inputId, val, type, extra) =>
+    '<div style="flex:1;min-width:110px">' +
+      '<label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:3px">' + lbl + '</label>' +
+      '<input id="' + inputId + '" type="' + type + '" value="' + val + '" ' + (extra || '') +
+      ' style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">' +
+    '</div>';
+
+  card.innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:9px">' +
+      F('שם הילד', 'child-e-name-' + id, esc(c.child_name), 'text', '') +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        F('תאריך לידה', 'child-e-birth-' + id, c.birth_date || '', 'date', '') +
+        F('גיל יעד', 'child-e-age-' + id, c.target_age || 18, 'number', 'min="1" max="40"') +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        F('הפקדה חודשית (₪)', 'child-e-monthly-' + id, c.monthly_deposit || 0, 'number', 'min="0"') +
+        F('תשואה שנתית (%)', 'child-e-rate-' + id, c.annual_rate || 0, 'number', 'min="0" step="0.1"') +
+      '</div>' +
+      F('שווי נוכחי (₪)', 'child-e-value-' + id, c.current_value || 0, 'number', 'min="0"') +
+      '<div style="display:flex;gap:7px;margin-top:3px">' +
+        '<button class="btn-save-sm" style="flex:1" onclick="saveChildEdit(\'' + id + '\')">✓ שמור</button>' +
+        '<button class="btn-cancel-sm" style="flex:1" onclick="renderChildren()">✕ ביטול</button>' +
+      '</div>' +
+    '</div>';
+  const n = $('child-e-name-' + id);
+  if (n) n.focus();
+}
+
+async function saveChildEdit(id) {
+  const name = $('child-e-name-' + id).value.trim();
+  const birth = $('child-e-birth-' + id).value;
+  const age = parseInt($('child-e-age-' + id).value);
+  const monthly = parseFloat($('child-e-monthly-' + id).value);
+  const rate = parseFloat($('child-e-rate-' + id).value);
+  const value = parseFloat($('child-e-value-' + id).value);
+  if (!name) { alert('נא למלא שם'); return; }
   await sb.from('child_savings').update({
-    monthly_deposit: parseFloat(monthly) || 0,
-    annual_rate: parseFloat(rate) || 0,
-    target_age: parseInt(age) || 18
+    child_name: name,
+    birth_date: birth || null,
+    target_age: isNaN(age) ? 18 : age,
+    monthly_deposit: isNaN(monthly) ? 0 : Math.max(0, monthly),
+    annual_rate: isNaN(rate) ? 0 : Math.max(0, rate),
+    current_value: isNaN(value) ? 0 : Math.max(0, value)
   }).eq('id', id);
   await loadChildren();
 }
