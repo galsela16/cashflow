@@ -873,7 +873,11 @@ tr:last-child td{border-bottom:none}
     <!-- goals / savings (home mode) -->
     <div id="page-goals" class="page">
       <div class="section" style="margin-bottom:1rem">
-        <div class="section-title">🎯 יעדי חיסכון</div>
+        <div class="section-title mv-toggle" onclick="togglePanel('goals')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+          <span>🎯 יעדי חיסכון</span>
+          <span id="goals-chevron" style="font-size:12px;color:var(--muted);transition:transform .2s">▾</span>
+        </div>
+        <div id="goals-wrap" style="display:none;margin-top:14px">
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">הגדר יעדים ועקוב אחרי ההתקדמות שלך אליהם.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px">
           <div style="flex:2;min-width:130px">
@@ -891,14 +895,15 @@ tr:last-child td{border-bottom:none}
           <button class="btn btn-primary" id="btn-add-goal" onclick="addGoal()" style="height:38px">הוסף יעד</button>
         </div>
         <div id="goals-list"></div>
+        </div>
       </div>
 
       <div class="section">
-        <div class="section-title mv-toggle" onclick="toggleCalcPanel()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+        <div class="section-title mv-toggle" onclick="togglePanel('calc')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
           <span>🐷 מחשבון ריבית דריבית</span>
           <span id="calc-chevron" style="font-size:12px;color:var(--muted);transition:transform .2s">▾</span>
         </div>
-        <div id="calc-panel-wrap" style="display:none;margin-top:14px">
+        <div id="calc-wrap" style="display:none;margin-top:14px">
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">בדוק כמה החיסכון שלך יצמח לאורך זמן, כולל הפקדות חודשיות וריבית מצטברת.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
           <div>
@@ -942,10 +947,14 @@ tr:last-child td{border-bottom:none}
 
       <!-- חיסכון לילדים -->
       <div class="section" style="margin-top:1rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">
-          <div class="section-title" style="margin-bottom:0">👶 חיסכון לילדים</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:0;cursor:pointer" onclick="togglePanel('children')">
+          <div class="section-title" style="margin-bottom:0;display:flex;align-items:center;gap:8px">
+            <span>👶 חיסכון לילדים</span>
+            <span id="children-chevron" style="font-size:12px;color:var(--muted);transition:transform .2s;font-weight:400">▾</span>
+          </div>
           <div class="eq-total-pill">סה"כ נחסך: <strong id="child-grand-total">₪0</strong></div>
         </div>
+        <div id="children-wrap" style="display:none;margin-top:14px">
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">תכנן כמה יהיה לכל ילד בגיל היעד, ועקוב אחרי השווי בפועל.</p>
 
         <div id="children-list" style="margin-bottom:18px"></div>
@@ -979,6 +988,7 @@ tr:last-child td{border-bottom:none}
             </div>
           </div>
           <button class="btn btn-primary" id="btn-add-child" onclick="addChild()" style="width:100%">+ הוסף ילד</button>
+        </div>
         </div>
       </div>
     </div>
@@ -2382,11 +2392,7 @@ async function enterApp(user) {
     if (rw) rw.style.display = 'block';
     if (rc) rc.style.transform = 'rotate(180deg)';
   }
-  if (localStorage.getItem('cf_calc_open') === '1') {
-    const cw = $('calc-panel-wrap'), cc = $('calc-chevron');
-    if (cw) cw.style.display = 'block';
-    if (cc) cc.style.transform = 'rotate(180deg)';
-  }
+  restorePanels();
   // שחזר את תת-הלשונית האחרונה בטאב תפעול
   if (typeof setOpsTab === 'function') setOpsTab(localStorage.getItem('cf_ops_tab') || 'events');
   // טען קודם הוצאות קבועות, ורק אז loadAll (שתלוי בהן לייבוא אוטומטי)
@@ -2847,6 +2853,12 @@ async function saveChildEdit(id) {
 
 // ── פירוט רכיבים ליעד ──
 let openGoalItems = null; // איזה יעד פתוח כרגע לפירוט
+let expandedGoalItems = null; // איזה יעד מציג את כל הרכיבים
+
+function toggleGoalItemsExpand(id) {
+  expandedGoalItems = (expandedGoalItems === id) ? null : id;
+  renderHomeGoalsList();
+}
 
 function toggleGoalItems(id) {
   openGoalItems = (openGoalItems === id) ? null : id;
@@ -2866,8 +2878,13 @@ function goalItemsHtml(g) {
 
   if (!open) return header;
 
+  // רשימה ארוכה — מציגים 5 ראשונים עד שלוחצים "הצג הכל"
+  const LIMIT = 5;
+  const expanded = expandedGoalItems === g.id;
+  const shown = (items.length > LIMIT && !expanded) ? items.slice(0, LIMIT) : items;
+
   const rows = items.length
-    ? items.map(i =>
+    ? shown.map(i =>
         '<div style="display:flex;align-items:center;gap:5px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border)">' +
           '<input value="' + esc(i.name) + '" ' +
             'onchange="updateGoalItemName(\'' + i.id + '\',this.value)" ' +
@@ -2886,6 +2903,13 @@ function goalItemsHtml(g) {
         '</div>'
       ).join('')
     : '<div style="font-size:12px;color:var(--muted);padding:6px 0">אין רכיבים עדיין — הוסף למטה כדי לפרק את היעד.</div>';
+
+  const moreRow = (items.length > LIMIT)
+    ? '<div onclick="toggleGoalItemsExpand(\'' + g.id + '\')" ' +
+      'style="text-align:center;cursor:pointer;font-size:11.5px;color:var(--blue,#2563eb);padding:7px 0;font-weight:600">' +
+        (expanded ? '▲ הצג פחות' : '▼ הצג את כל ' + items.length + ' הרכיבים') +
+      '</div>'
+    : '';
 
   const totalRow = items.length
     ? '<div style="display:flex;justify-content:space-between;padding:7px 0 3px;font-size:12.5px;font-weight:800">' +
@@ -2909,7 +2933,7 @@ function goalItemsHtml(g) {
       '</div>'
     : '';
 
-  return header + '<div style="padding-bottom:4px">' + rows + totalRow + addRow + shareRow + '</div>';
+  return header + '<div style="padding-bottom:4px">' + rows + moreRow + totalRow + addRow + shareRow + '</div>';
 }
 
 // בונה את טקסט הפירוט לשיתוף
@@ -3974,15 +3998,31 @@ function setOpsTab(which) {
 }
 
 // פתיחה/סגירה של מחשבון הריבית דריבית
-function toggleCalcPanel() {
-  const wrap = $('calc-panel-wrap'), chev = $('calc-chevron');
+// פאנל מתקפל כללי (חיסכונות)
+function togglePanel(key) {
+  const wrap = $(key + '-wrap'), chev = $(key + '-chevron');
   if (!wrap) return;
   const open = wrap.style.display === 'none';
   wrap.style.display = open ? 'block' : 'none';
   if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
-  localStorage.setItem('cf_calc_open', open ? '1' : '0');
-  if (open) calcCompound();
+  localStorage.setItem('cf_panel_' + key, open ? '1' : '0');
+  if (open) {
+    if (key === 'calc') calcCompound();
+    if (key === 'goals') renderHomeGoalsList();
+    if (key === 'children') renderChildren();
+  }
 }
+function restorePanels() {
+  ['goals', 'children', 'calc'].forEach(key => {
+    const openSaved = localStorage.getItem('cf_panel_' + key);
+    // ברירת מחדל: יעדים פתוחים, השאר סגורים
+    const shouldOpen = openSaved === null ? (key === 'goals') : openSaved === '1';
+    const wrap = $(key + '-wrap'), chev = $(key + '-chevron');
+    if (wrap) wrap.style.display = shouldOpen ? 'block' : 'none';
+    if (chev) chev.style.transform = shouldOpen ? 'rotate(180deg)' : '';
+  });
+}
+
 
 // פתיחה/סגירה של פאנל ההוצאות הקבועות (בתוך טאב הכנסות/הוצאות)
 function toggleRecurringPanel() {
