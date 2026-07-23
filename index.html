@@ -553,6 +553,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="business" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" data-mode="business" onclick="showPage('equipment',this)">📈 השקעות לעסק</button>
+      <button class="tab" data-mode="business" onclick="showPage('accounts',this)">💳 מצב חשבונות</button>
       <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
@@ -890,6 +891,37 @@ tr:last-child td{border-bottom:none}
         <div id="equipment-table"></div>
       </div>
     </div>
+
+    <!-- bank accounts (business mode) -->
+    <div id="page-accounts" class="page">
+      <div class="section" style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+          <div class="section-title" style="margin-bottom:0">💳 מצב חשבונות</div>
+          <div class="eq-total-pill">סה"כ בבנק: <strong id="acc-grand-total">₪0</strong></div>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">שיקוף מדויק של היתרות בבנק. עדכן את היתרה מהאתר של הבנק (היתרה שמופיעה למעלה בדף החשבון).</p>
+        <div id="accounts-list"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">➕ הוסף חשבון</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px">
+          <div style="flex:2;min-width:150px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שם החשבון</label>
+            <input id="acc-name" placeholder="לדוגמה: הכנסות + מס" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div style="flex:0 0 110px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">4 ספרות אחרונות</label>
+            <input id="acc-hint" placeholder="6738" maxlength="4" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <div style="flex:1;min-width:110px">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">יתרה נוכחית (₪)</label>
+            <input id="acc-balance" type="number" placeholder="0" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          </div>
+          <button class="btn btn-primary" id="btn-add-acc" onclick="addAccount()" style="height:38px">+ הוסף</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="bottom-nav">
@@ -902,6 +934,7 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" data-mode="business" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">📈</span>השקעות</button>
+    <button class="bnav-item" data-mode="business" onclick="showPage('accounts',this)" data-page="accounts"><span class="bnav-icon">💳</span>חשבונות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
 </div>
@@ -2007,7 +2040,7 @@ function setMode(mode) {
   // אם העמוד הנוכחי לא זמין במצב החדש — חזור לדשבורד
   const activePage = document.querySelector('.page.active');
   const activeId = activePage ? activePage.id.replace('page-', '') : '';
-  const businessOnly = ['events', 'employees', 'clients', 'profitfirst', 'alerts'];
+  const businessOnly = ['events', 'employees', 'clients', 'profitfirst', 'alerts', 'equipment', 'accounts'];
   const homeOnly = ['goals'];
   const invalid = (mode === 'home' && businessOnly.includes(activeId)) ||
                   (mode === 'business' && homeOnly.includes(activeId));
@@ -2254,6 +2287,7 @@ async function loadAll() {
   renderAll();
   // טען השקעות לעסק
   loadEquipment();
+  loadAccounts();
   // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
   loadGCal();
 }
@@ -2460,6 +2494,76 @@ function renderEquipment() {
         '<div class="eq-c-act"></div>' +
       '</div>' +
     '</div>';
+}
+
+// ── מצב חשבונות בנק (שיקוף) ──
+let cachedAccounts = [];
+async function loadAccounts() {
+  const res = await sb.from('bank_accounts').select('*').eq('user_id', currentUser.id).order('sort_order').order('created_at');
+  cachedAccounts = res.data || [];
+  renderAccounts();
+}
+async function addAccount() {
+  const name = $('acc-name').value.trim();
+  const hint = $('acc-hint').value.trim();
+  const balance = parseFloat($('acc-balance').value) || 0;
+  if (!name) return;
+  $('btn-add-acc').disabled = true;
+  const today = new Date().toISOString().slice(0, 10);
+  await sb.from('bank_accounts').insert({
+    user_id: currentUser.id, name, account_hint: hint || null,
+    balance, updated_on: today, sort_order: cachedAccounts.length
+  });
+  $('acc-name').value = ''; $('acc-hint').value = ''; $('acc-balance').value = '';
+  $('btn-add-acc').disabled = false;
+  await loadAccounts();
+}
+async function deleteAccount(id) {
+  if (!confirm('למחוק חשבון זה?')) return;
+  await sb.from('bank_accounts').delete().eq('id', id);
+  await loadAccounts();
+}
+// עדכון יתרה — שומר גם את תאריך העדכון
+async function updateAccountBalance(id, value) {
+  const bal = parseFloat(value);
+  if (isNaN(bal)) return;
+  const today = new Date().toISOString().slice(0, 10);
+  await sb.from('bank_accounts').update({ balance: bal, updated_on: today }).eq('id', id);
+  await loadAccounts();
+}
+function renderAccounts() {
+  const el = $('accounts-list');
+  if (!el) return;
+  const grand = cachedAccounts.reduce((s, a) => s + (a.balance || 0), 0);
+  const gt = $('acc-grand-total');
+  if (gt) gt.textContent = fmt(grand);
+
+  if (!cachedAccounts.length) {
+    el.innerHTML = '<div class="empty">עדיין לא נוספו חשבונות. הוסף חשבון ראשון למטה 💳</div>';
+    return;
+  }
+  el.innerHTML = cachedAccounts.map(a => {
+    const neg = (a.balance || 0) < 0;
+    const dateStr = a.updated_on ? a.updated_on.split('-').reverse().join('/') : '—';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap">' +
+      '<div style="min-width:0">' +
+        '<div style="font-weight:700;font-size:15px">' + esc(a.name) + (a.account_hint ? ' <span style="font-size:12px;color:var(--muted);font-weight:400">••' + esc(a.account_hint) + '</span>' : '') + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">עודכן: ' + dateStr + '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<div style="display:flex;align-items:center;gap:4px">' +
+          '<span style="font-size:13px;color:var(--muted)">₪</span>' +
+          '<input type="number" value="' + (a.balance || 0) + '" onchange="updateAccountBalance(\'' + a.id + '\',this.value)" ' +
+          'style="width:120px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;text-align:left;color:' + (neg ? 'var(--red)' : 'var(--green)') + '">' +
+        '</div>' +
+        '<button class="btn-del" onclick="deleteAccount(\'' + a.id + '\')" title="מחק">&#128465;</button>' +
+      '</div>' +
+    '</div>';
+  }).join('') +
+  '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 2px;font-weight:800;font-size:16px">' +
+    '<span>סה"כ בכל החשבונות</span>' +
+    '<span style="color:' + (grand < 0 ? 'var(--red)' : 'var(--green)') + '">' + fmt(grand) + '</span>' +
+  '</div>';
 }
 
 // מחשבון ריבית דריבית — הרכבה חודשית עם הפקדות
@@ -3875,6 +3979,7 @@ function showPage(id, el) {
   if (id === 'recurring') renderRecurring();
   if (id === 'goals') { calcCompound(); renderHomeGoalsList(); }
   if (id === 'equipment') renderEquipment();
+  if (id === 'accounts') renderAccounts();
 }
 
 function toggleCard(empId) { const body = $('card-body-' + empId), icon = $('toggle-icon-' + empId); body.classList.toggle('open'); if (icon) icon.textContent = body.classList.contains('open') ? '\u25b2' : '\u25bc'; }
