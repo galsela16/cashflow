@@ -34,6 +34,10 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 /* מצב בית — גוון חמים יותר */
 #app-screen.home-mode{background:linear-gradient(145deg,#e0b896 0%,#e6c4a4 30%,#ebd0b4 60%,#e5bd9c 100%)}
 #app-screen.home-mode::before{background:linear-gradient(145deg,rgba(255,250,244,.78) 0%,rgba(254,247,239,.74) 35%,rgba(253,245,235,.72) 65%,rgba(255,249,242,.76) 100%)}
+/* ── רקע קוד השפע (ניסוי אדמין) ── */
+#abundance-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;user-select:none;display:none}
+#abundance-bg span{position:absolute;font-family:'Courier New',monospace;font-weight:700;color:#0b1f33;white-space:nowrap}
+#app-screen.home-mode #abundance-bg span{color:#5a3a20}
 #app-screen .topbar{z-index:200}
 #app-screen .main,#app-screen .bottom-nav{position:relative;z-index:1}
 #app-screen .topbar{background:rgba(255,255,255,.7);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.5);box-shadow:0 4px 24px rgba(80,120,150,.1)}
@@ -531,6 +535,7 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <div id="app-screen">
+<div id="abundance-bg" aria-hidden="true"></div>
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:14px">
       <div class="topbar-title"><span style="color:var(--text)">cash</span><span style="color:var(--blue)">flow</span></div>
@@ -2283,6 +2288,36 @@ async function saveNewPassword() {
 // מיילים של אדמינים — תמיד מקבלים גישת פרו מלאה
 const ADMIN_EMAILS = ['galsela16@gmail.com'];
 function isAdmin() { return currentUser && ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase()); }
+
+// ── רקע קוד השפע (ניסוי אדמין) ──
+// פיזור חופשי של הקוד 457854 ברקע, בגדלים/זוויות/שקיפויות משתנים.
+const ABUNDANCE_CODE = '457854';
+function renderAbundanceBg() {
+  const el = $('abundance-bg');
+  if (!el) return;
+  if (!isAdmin()) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+  const COLS = 4, ROWS = 6;           // רשת בסיס — נשברת ע"י ג'יטר כדי שלא תיראה מסודרת
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  let html = '';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      // מיקום בתוך התא + סטייה אקראית — יוצר פיזור אורגני
+      const top = (r / ROWS) * 100 + rnd(-6, 10);
+      const right = (c / COLS) * 100 + rnd(-6, 12);
+      const size = rnd(11, 28);
+      // מופעים גדולים שקופים יותר, קטנים בולטים יותר — שומר על איזון ויזואלי
+      const opacity = (0.145 - (size - 11) * 0.0045).toFixed(3);
+      const rot = rnd(-32, 32).toFixed(1);
+      const ls = rnd(1, 6).toFixed(1);
+      html += '<span style="top:' + top.toFixed(1) + '%;right:' + right.toFixed(1) + '%;' +
+        'font-size:' + size.toFixed(1) + 'px;opacity:' + opacity + ';letter-spacing:' + ls + 'px;' +
+        'transform:rotate(' + rot + 'deg)">' + ABUNDANCE_CODE + '</span>';
+    }
+  }
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
 // עקיפת תצוגה לאדמין (לבדיקת גרסאות) — null = ללא עקיפה
 let adminPlanOverride = localStorage.getItem('cf_admin_override') || null;
 
@@ -2393,6 +2428,7 @@ async function enterApp(user) {
     if (rc) rc.style.transform = 'rotate(180deg)';
   }
   restorePanels();
+  renderAbundanceBg();
   // שחזר את תת-הלשונית האחרונה בטאב תפעול
   if (typeof setOpsTab === 'function') setOpsTab(localStorage.getItem('cf_ops_tab') || 'events');
   // טען קודם הוצאות קבועות, ורק אז loadAll (שתלוי בהן לייבוא אוטומטי)
