@@ -233,6 +233,9 @@ td{padding:9px 0;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 .empty{text-align:center;color:var(--muted);padding:20px;font-size:13px}
 .badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500}
+/* בורר סטטוס בשורת אירוע — נראה כמו badge אבל ניתן לשינוי */
+.ev-status-sel{border:none;cursor:pointer;font-family:inherit;appearance:none;-webkit-appearance:none;padding:3px 9px;max-width:170px;text-overflow:ellipsis}
+.ev-status-sel:focus{outline:2px solid var(--blue,#2563eb);outline-offset:1px}
 .badge-income{background:var(--green-soft);color:var(--green);border:1px solid #a7f3d0}
 .badge-expense{background:var(--red-soft);color:var(--red);border:1px solid #fca5a5}
 .badge-paid{background:var(--green-soft);color:var(--green);border:1px solid #a7f3d0}
@@ -3494,7 +3497,21 @@ function eventActionsHtml(ev, info) {
     // אירוע יומן — הסתרה קבועה (לא יחזור בסנכרון)
     delBtn = '<button class="btn-del" onclick="event.stopPropagation();hideGcalEventByEl(this);return false;" data-title="' + esc(ev.title||'') + '" data-date="' + localDateStr(ev.start) + '" title="' + t('הסתר אירוע') + '">&#128465;</button>';
   }
-  return (info.detail ? '<span class="badge badge-' + info.statusCls + '">' + esc(info.detail.status) + '</span>' : '') + editBtn + delBtn;
+  // סטטוס תשלום — ניתן לשינוי ישירות מהרשימה (רק לאירוע עם פרטים שמורים)
+  let statusHtml = '';
+  if (info.detail) {
+    const isPaid = info.detail.status === 'בוצע תשלום' || info.detail.status === 'בוצע תשלום + חשבונית מס';
+    const sel = '<select class="ev-status-sel badge badge-' + info.statusCls + '" onclick="event.stopPropagation()" ' +
+      'onchange="event.stopPropagation();updateEventStatus(\'' + info.detail.id + '\',this.value)">' +
+      MV_STATUSES.map(s => '<option value="' + s + '"' + (info.detail.status === s ? ' selected' : '') + '>' + esc(s) + '</option>').join('') +
+      '</select>';
+    // כפתור מהיר לסימון כשולם — מוצג רק אם עוד לא שולם
+    const quickPaid = !isPaid
+      ? '<button class="btn-paid-quick" onclick="event.stopPropagation();updateEventStatus(\'' + info.detail.id + '\',\'בוצע תשלום\');return false;" title="סמן כשולם">✓ שולם</button>'
+      : '';
+    statusHtml = sel + quickPaid;
+  }
+  return statusHtml + editBtn + delBtn;
 }
 
 function renderEventsList() {
