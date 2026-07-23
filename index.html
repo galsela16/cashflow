@@ -233,6 +233,22 @@ td{padding:9px 0;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 .empty{text-align:center;color:var(--muted);padding:20px;font-size:13px}
 .badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500}
+/* ── מודל אירוע: פריסה קומפקטית ── */
+.ev-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.ev-form-grid .ev-span2{grid-column:1 / -1}
+.ev-form-grid .form-group{margin-bottom:0}
+.ev-form-grid label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:500}
+.ev-form-grid input,.ev-form-grid select,.ev-form-grid textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--text)}
+.ev-form-grid textarea{resize:vertical;min-height:52px}
+@media(max-width:520px){.ev-form-grid{grid-template-columns:1fr}}
+/* ── קבצים מצורפים ── */
+.ev-files{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.ev-file-row{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border-radius:8px;padding:7px 10px;font-size:13px}
+.ev-file-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--blue,#2563eb);cursor:pointer;text-decoration:none}
+.ev-file-name:hover{text-decoration:underline}
+.ev-file-size{font-size:11px;color:var(--muted);white-space:nowrap}
+.ev-file-drop{border:1.5px dashed var(--border);border-radius:8px;padding:12px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s}
+.ev-file-drop:hover{border-color:var(--blue,#2563eb);color:var(--blue,#2563eb)}
 /* בורר סטטוס בשורת אירוע — נראה כמו badge אבל ניתן לשינוי */
 .ev-status-sel{border:none;cursor:pointer;font-family:inherit;appearance:none;-webkit-appearance:none;padding:3px 9px;max-width:170px;text-overflow:ellipsis}
 .ev-status-sel:focus{outline:2px solid var(--blue,#2563eb);outline-offset:1px}
@@ -1170,23 +1186,35 @@ tr:last-child td{border-bottom:none}
       <button class="btn-del" onclick="closeEventModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group"><label>שם האירוע</label><input type="text" id="modal-ev-title" /></div>
-      <div class="form-group"><label>תאריך</label><input type="date" id="modal-ev-date" /></div>
-      <div class="form-group"><label>לקוח</label><select id="modal-client"></select></div>
-      <div class="form-group"><label>מחיר ללקוח (₪)</label><input type="number" id="modal-price" placeholder="0" min="0" /></div>
-      <div class="form-group"><label>סטטוס תשלום לקוח</label>
-        <select id="modal-status">
-          <option value="לא יצאה דרישת תשלום">לא יצאה דרישת תשלום</option>
-          <option value="יצאה דרישת תשלום">יצאה דרישת תשלום</option>
-          <option value="בוצע תשלום">בוצע תשלום</option>
-          <option value="בוצע תשלום + חשבונית מס">בוצע תשלום + חשבונית מס</option>
-        </select>
-      </div>
-      <div class="form-group"><label>הערות</label><textarea id="modal-notes" rows="2" placeholder="הערות..."></textarea></div>
-      <div class="form-group">
-        <label>עובדים באירוע</label>
-        <div id="modal-workers-list"></div>
-        <button class="btn-outline" style="margin-top:8px;width:100%" onclick="addWorkerRow()">+ הוסף עובד</button>
+      <div class="ev-form-grid">
+        <div class="form-group ev-span2"><label>שם האירוע</label><input type="text" id="modal-ev-title" /></div>
+        <div class="form-group"><label>תאריך</label><input type="date" id="modal-ev-date" /></div>
+        <div class="form-group"><label>מחיר ללקוח (₪)</label><input type="number" id="modal-price" placeholder="0" min="0" /></div>
+        <div class="form-group"><label>לקוח</label><select id="modal-client"></select></div>
+        <div class="form-group"><label>סטטוס תשלום</label>
+          <select id="modal-status">
+            <option value="לא יצאה דרישת תשלום">לא יצאה דרישת תשלום</option>
+            <option value="יצאה דרישת תשלום">יצאה דרישת תשלום</option>
+            <option value="בוצע תשלום">בוצע תשלום</option>
+            <option value="בוצע תשלום + חשבונית מס">בוצע תשלום + חשבונית מס</option>
+          </select>
+        </div>
+        <div class="form-group ev-span2"><label>הערות</label><textarea id="modal-notes" rows="2" placeholder="הערות..."></textarea></div>
+
+        <div class="form-group ev-span2">
+          <label>📎 קבצים מצורפים <span style="font-weight:400;color:var(--muted);font-size:11px">· נמחקים אוטומטית שבוע אחרי האירוע</span></label>
+          <div id="modal-files-list" class="ev-files"></div>
+          <div id="ev-file-drop" class="ev-file-drop" onclick="document.getElementById('ev-file-input').click()">
+            <span id="ev-file-drop-text">+ הוסף קובץ</span>
+          </div>
+          <input type="file" id="ev-file-input" multiple style="display:none" onchange="uploadEventFiles(this)" />
+        </div>
+
+        <div class="form-group ev-span2">
+          <label>עובדים באירוע</label>
+          <div id="modal-workers-list"></div>
+          <button class="btn-outline" style="margin-top:8px;width:100%" onclick="addWorkerRow()">+ הוסף עובד</button>
+        </div>
       </div>
     </div>
     <div class="modal-footer" style="justify-content:space-between">
@@ -2338,6 +2366,7 @@ async function loadAll() {
   renderAll();
   // טען השקעות לעסק
   loadEquipment();
+  cleanupOldEventFiles(); // ניקוי קבצים של אירועים שעברו (רקע)
   loadAccounts();
   loadSnapshots();
   // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
@@ -3741,6 +3770,7 @@ function openNewEventModal() {
   fillClientSelect(null);
   $('modal-price').value = ''; $('modal-status').value = '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd'; $('modal-notes').value = '';
   renderModalWorkers();
+  modalFiles = []; renderEventFiles();
   if ($('event-delete-btn')) $('event-delete-btn').style.display = 'none';
   if ($('event-reset-btn')) $('event-reset-btn').style.display = 'none';
   $('event-modal').style.display = 'flex';
@@ -3849,6 +3879,7 @@ async function openEditEventModal({ title, date, source, detailId }) {
     modalWorkers = [];
   }
   renderModalWorkers();
+  loadEventFiles(currentEditDetailId);
   if ($('event-delete-btn')) $('event-delete-btn').style.display = currentEditDetailId ? 'inline-block' : 'none';
   // כפתור האיפוס מוצג גם לאירועי יומן שטרם נשמרו — כדי שהמשתמש יבין למה אין מה לאפס
   if ($('event-reset-btn')) $('event-reset-btn').style.display = 'inline-block';
@@ -3885,6 +3916,10 @@ async function deleteEventFromModal() {
   if (!confirm('למחוק את "' + title + '"?\nהפעולה תמחק גם את פרטי העובדים של האירוע ואינה ניתנת לביטול.')) return;
   // מחק עובדים מקושרים ואז את האירוע
   await sb.from('event_workers').delete().eq('event_detail_id', currentEditDetailId);
+  // מחק גם קבצים מצורפים מהאחסון
+  if (modalFiles.length) {
+    await sb.storage.from('event-files').remove(modalFiles.map(f => f.storage_path));
+  }
   await sb.from('event_details').delete().eq('id', currentEditDetailId);
   closeEventModal();
   // סגור פאנל פירוט אם פתוח, ורענן
@@ -3912,6 +3947,12 @@ async function resetEventFromModal() {
 
   // מחק את העובדים המשויכים
   await sb.from('event_workers').delete().eq('event_detail_id', currentEditDetailId);
+  // מחק קבצים מצורפים (אחסון + רשומות)
+  if (modalFiles.length) {
+    await sb.storage.from('event-files').remove(modalFiles.map(f => f.storage_path));
+    await sb.from('event_files').delete().eq('event_detail_id', currentEditDetailId);
+    modalFiles = []; renderEventFiles();
+  }
   // נקה את שדות האירוע
   const { error } = await sb.from('event_details').update({
     client_id: null,
@@ -3934,6 +3975,104 @@ async function resetEventFromModal() {
   const panelType = panel ? panel.dataset.type : null;
   await loadAll();
   if (panel && panelType && panel.style.display !== 'none') { panel.style.display = 'none'; toggleTxPanel(panelType); }
+}
+
+// ── קבצים מצורפים לאירוע ──
+let modalFiles = [];
+
+function fmtSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+async function loadEventFiles(detailId) {
+  modalFiles = [];
+  if (detailId) {
+    const r = await sb.from('event_files').select('*').eq('event_detail_id', detailId).order('created_at');
+    modalFiles = r.data || [];
+  }
+  renderEventFiles();
+}
+
+function renderEventFiles() {
+  const el = $('modal-files-list');
+  if (!el) return;
+  if (!modalFiles.length) { el.innerHTML = ''; return; }
+  el.innerHTML = modalFiles.map(f =>
+    '<div class="ev-file-row">' +
+      '<a class="ev-file-name" onclick="openEventFile(\'' + f.id + '\');return false;">📄 ' + esc(f.file_name) + '</a>' +
+      '<span class="ev-file-size">' + fmtSize(f.file_size) + '</span>' +
+      '<button class="btn-del" onclick="deleteEventFile(\'' + f.id + '\')" title="מחק">&#128465;</button>' +
+    '</div>'
+  ).join('');
+}
+
+async function uploadEventFiles(input) {
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if (!files.length) return;
+  // חייבים אירוע שמור כדי לשייך אליו קבצים
+  if (!currentEditDetailId) {
+    alert('כדי לצרף קבצים, שמור קודם את האירוע (לחץ "שמור") ואז פתח אותו שוב.');
+    return;
+  }
+  const drop = $('ev-file-drop-text');
+  const orig = drop ? drop.textContent : '';
+  if (drop) drop.textContent = '⏳ מעלה...';
+
+  for (const file of files) {
+    if (file.size > 10 * 1024 * 1024) { alert('הקובץ "' + file.name + '" גדול מ-10MB ולא הועלה.'); continue; }
+    const safe = file.name.replace(/[^\w.\-\u0590-\u05FF ]/g, '_');
+    const path = currentUser.id + '/' + currentEditDetailId + '/' + Date.now() + '_' + safe;
+    const up = await sb.storage.from('event-files').upload(path, file);
+    if (up.error) { alert('שגיאה בהעלאת "' + file.name + '": ' + up.error.message); continue; }
+    await sb.from('event_files').insert({
+      user_id: currentUser.id,
+      event_detail_id: currentEditDetailId,
+      file_name: file.name,
+      storage_path: path,
+      file_size: file.size
+    });
+  }
+  if (drop) drop.textContent = orig || '+ הוסף קובץ';
+  await loadEventFiles(currentEditDetailId);
+}
+
+async function openEventFile(id) {
+  const f = modalFiles.find(x => x.id === id);
+  if (!f) return;
+  const { data, error } = await sb.storage.from('event-files').createSignedUrl(f.storage_path, 60);
+  if (error) { alert('שגיאה בפתיחת הקובץ: ' + error.message); return; }
+  window.open(data.signedUrl, '_blank');
+}
+
+async function deleteEventFile(id) {
+  const f = modalFiles.find(x => x.id === id);
+  if (!f) return;
+  if (!confirm('למחוק את "' + f.file_name + '"?')) return;
+  await sb.storage.from('event-files').remove([f.storage_path]);
+  await sb.from('event_files').delete().eq('id', id);
+  await loadEventFiles(currentEditDetailId);
+}
+
+// ניקוי אוטומטי — מוחק קבצים של אירועים שעברו לפני יותר משבוע
+async function cleanupOldEventFiles() {
+  try {
+    const cutoff = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    // אירועים שהסתיימו לפני יותר משבוע
+    const { data: oldEvents } = await sb.from('event_details')
+      .select('id').eq('user_id', currentUser.id).lt('event_date', cutoff);
+    if (!oldEvents || !oldEvents.length) return;
+    const ids = oldEvents.map(e => e.id);
+    const { data: files } = await sb.from('event_files')
+      .select('*').eq('user_id', currentUser.id).in('event_detail_id', ids);
+    if (!files || !files.length) return;
+    await sb.storage.from('event-files').remove(files.map(f => f.storage_path));
+    await sb.from('event_files').delete().in('id', files.map(f => f.id));
+    console.log('נוקו ' + files.length + ' קבצים ישנים');
+  } catch (e) { /* ניקוי הוא best-effort — לא מפריע לשימוש */ }
 }
 
 async function saveEvent() {
