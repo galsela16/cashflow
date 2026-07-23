@@ -894,7 +894,11 @@ tr:last-child td{border-bottom:none}
       </div>
 
       <div class="section">
-        <div class="section-title">🐷 מחשבון ריבית דריבית</div>
+        <div class="section-title mv-toggle" onclick="toggleCalcPanel()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+          <span>🐷 מחשבון ריבית דריבית</span>
+          <span id="calc-chevron" style="font-size:12px;color:var(--muted);transition:transform .2s">▾</span>
+        </div>
+        <div id="calc-panel-wrap" style="display:none;margin-top:14px">
         <p style="font-size:13px;color:var(--muted);margin-bottom:16px">בדוק כמה החיסכון שלך יצמח לאורך זמן, כולל הפקדות חודשיות וריבית מצטברת.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
           <div>
@@ -933,6 +937,7 @@ tr:last-child td{border-bottom:none}
 
         <div class="section-title" style="font-size:15px">📊 צמיחה שנתית</div>
         <div id="ci-chart" style="margin-top:10px"></div>
+        </div>
       </div>
 
       <!-- חיסכון לילדים -->
@@ -2376,6 +2381,11 @@ async function enterApp(user) {
     const rw = $('rec-panel-wrap'), rc = $('rec-chevron');
     if (rw) rw.style.display = 'block';
     if (rc) rc.style.transform = 'rotate(180deg)';
+  }
+  if (localStorage.getItem('cf_calc_open') === '1') {
+    const cw = $('calc-panel-wrap'), cc = $('calc-chevron');
+    if (cw) cw.style.display = 'block';
+    if (cc) cc.style.transform = 'rotate(180deg)';
   }
   // שחזר את תת-הלשונית האחרונה בטאב תפעול
   if (typeof setOpsTab === 'function') setOpsTab(localStorage.getItem('cf_ops_tab') || 'events');
@@ -3935,6 +3945,17 @@ function setOpsTab(which) {
   });
   localStorage.setItem('cf_ops_tab', which);
   // התוכן כבר מרונדר ע"י renderAll — כאן רק מציגים/מסתירים
+}
+
+// פתיחה/סגירה של מחשבון הריבית דריבית
+function toggleCalcPanel() {
+  const wrap = $('calc-panel-wrap'), chev = $('calc-chevron');
+  if (!wrap) return;
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+  localStorage.setItem('cf_calc_open', open ? '1' : '0');
+  if (open) calcCompound();
 }
 
 // פתיחה/סגירה של פאנל ההוצאות הקבועות (בתוך טאב הכנסות/הוצאות)
