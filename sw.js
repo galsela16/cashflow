@@ -1,52 +1,53 @@
 // CashflowHQ Service Worker
 // גרסה — שנה את המספר בכל פריסה כדי לאלץ עדכון אצל המשתמשים
-const CACHE = 'cashflowhq-v1';
+const CACHE = 'cashflowhq-v2';
 
-// קבצים בסיסיים לקאש (מעטפת האפליקציה)
+// נכסים סטטיים בלבד (לא ה-HTML — הוא תמיד מהרשת)
 const CORE = [
-  '/',
-  '/index.html',
   '/manifest.webmanifest',
   '/icon-192.png',
   '/icon-512.png'
 ];
 
-// התקנה — שומר את מעטפת האפליקציה
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(CORE).catch(() => {}))
-  );
-  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE).catch(() => {})));
+  self.skipWaiting(); // הגרסה החדשה נכנסת מיד לתוקף
 });
 
-// הפעלה — מנקה גרסאות ישנות של הקאש
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// אסטרטגיה: Network-first.
-// חשוב: לא נוגעים בבקשות ל-Supabase / Google — הן חייבות להיות תמיד רשת חיה.
 self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
+  const req = e.request;
+  const url = new URL(req.url);
 
-  // דלג על כל מה שאינו GET ועל בקשות למקורות חיצוניים (API, אימות, וכו')
-  if (e.request.method !== 'GET' || url.origin !== self.location.origin) {
-    return; // נותן לדפדפן לטפל כרגיל — ללא מעורבות ה-SW
+  // בקשות שאינן GET או למקורות חיצוניים (Supabase/Google) — לא נוגעים
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  // ניווט / HTML — תמיד מהרשת, תוך עקיפת מטמון הדפדפן.
+  const isHTML = req.mode === 'navigate' ||
+    (req.headers.get('accept') || '').includes('text/html');
+
+  if (isHTML) {
+    e.respondWith(
+      fetch(req, { cache: 'no-store' }).catch(() => caches.match('/index.html'))
+    );
+    return;
   }
 
+  // נכסים סטטיים — מהרשת עם גיבוי לקאש
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then((res) => {
-        // עדכן קאש ברקע רק לקבצים מקומיים תקינים
         const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
         return res;
       })
-      .catch(() => caches.match(e.request).then((r) => r || caches.match('/index.html')))
+      .catch(() => caches.match(req))
   );
 });
