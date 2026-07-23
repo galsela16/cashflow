@@ -233,6 +233,28 @@ td{padding:9px 0;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 .empty{text-align:center;color:var(--muted);padding:20px;font-size:13px}
 .badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500}
+/* ── כרטיסי יעדי חיסכון ── */
+.goal-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.goal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 16px 14px;box-shadow:0 1px 3px rgba(0,0,0,.05);transition:box-shadow .2s,transform .2s;position:relative;overflow:hidden}
+.goal-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.09)}
+.goal-card.done{border-color:var(--green);background:linear-gradient(180deg,#f0fdf9 0%,var(--surface) 60%)}
+.goal-card.behind{border-color:#fcd9a5}
+.goal-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+.goal-name{font-weight:700;font-size:15.5px;line-height:1.3;min-width:0;word-break:break-word}
+.goal-pct{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px;white-space:nowrap}
+.goal-pct small{font-size:15px;font-weight:700;margin-inline-start:1px}
+.goal-bar{height:9px;background:var(--bg);border-radius:100px;overflow:hidden;margin-bottom:9px}
+.goal-bar span{display:block;height:100%;border-radius:100px;transition:width .4s ease}
+.goal-amounts{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;margin-bottom:10px}
+.goal-saved{font-weight:700}
+.goal-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
+.goal-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:var(--bg);color:var(--muted);white-space:nowrap}
+.goal-chip.ok{background:#ecfdf5;color:#0d9c6e}
+.goal-chip.warn{background:#fffbeb;color:#b45309}
+.goal-chip.bad{background:#fef2f2;color:#dc2626}
+.goal-chip.fire{background:#fff7ed;color:#c2410c}
+.goal-actions{display:flex;gap:7px;align-items:center}
+.goal-actions .btn-paid-quick{flex:1;justify-content:center}
 /* ── מודל אירוע: פריסה קומפקטית ── */
 .ev-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
 .ev-form-grid .ev-span2{grid-column:1 / -1}
@@ -2544,85 +2566,84 @@ async function updateGoalSaved(id, delta) {
 function renderHomeGoalsList() {
   const el = $('goals-list');
   if (!el) return;
-  if (!cachedGoals.length) { el.innerHTML = '<div class="empty">עדיין אין יעדים. הוסף יעד ראשון למעלה 🎯</div>'; return; }
+  if (!cachedGoals.length) {
+    el.innerHTML = '<div class="empty">עדיין אין יעדים. הוסף יעד ראשון למעלה 🎯</div>';
+    return;
+  }
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
-  el.innerHTML = cachedGoals.map(g => {
+  el.innerHTML = '<div class="goal-cards">' + cachedGoals.map(g => {
     const saved = g.saved_amount || 0;
     const target = g.target_amount || 0;
     const pct = target > 0 ? Math.min(Math.round(saved / target * 100), 100) : 0;
     const done = saved >= target && target > 0;
     const remaining = Math.max(0, target - saved);
-    let barColor = done ? 'var(--green)' : 'var(--blue)';
 
-    // ── דדליין: כמה נשאר לחסוך בחודש, והאם בקצב ──
-    let deadlineHtml = '', paceHtml = '';
+    let barColor = done ? 'var(--green)' : 'var(--blue,#2563eb)';
+    let cardCls = done ? 'goal-card done' : 'goal-card';
+    const chips = [];
+
+    // ── דדליין + קצב ──
     if (g.deadline && !done) {
       const dl = new Date(g.deadline + 'T00:00:00');
-      const msLeft = dl - today;
-      const daysLeft = Math.ceil(msLeft / 86400000);
+      const daysLeft = Math.ceil((dl - today) / 86400000);
       const dlStr = g.deadline.split('-').reverse().join('/');
 
       if (daysLeft < 0) {
-        deadlineHtml = '<span style="color:var(--red);font-weight:600">⏰ עבר התאריך (' + dlStr + ')</span>';
+        chips.push('<span class="goal-chip bad">⏰ עבר ' + dlStr + '</span>');
         barColor = 'var(--red)';
+        cardCls = 'goal-card behind';
       } else {
         const monthsLeft = Math.max(daysLeft / 30.44, 0.1);
         const perMonth = Math.ceil(remaining / monthsLeft);
-        deadlineHtml = '<span>🎯 עד ' + dlStr + ' · ' + daysLeft + ' ימים</span>';
+        chips.push('<span class="goal-chip">🎯 ' + dlStr + ' · ' + daysLeft + ' ימים</span>');
+        chips.push('<span class="goal-chip">💰 ' + fmt(perMonth) + ' לחודש</span>');
 
-        // האם בקצב? משווים התקדמות בפועל להתקדמות הצפויה לפי הזמן שחלף
+        // האם בקצב
         const created = g.created_at ? new Date(g.created_at) : null;
         if (created) {
-          const totalMs = dl - created;
-          const elapsedMs = today - created;
+          const totalMs = dl - created, elapsedMs = today - created;
           if (totalMs > 0 && elapsedMs > 0) {
             const expected = target * Math.min(elapsedMs / totalMs, 1);
             const diff = saved - expected;
             if (Math.abs(diff) < target * 0.02) {
-              paceHtml = '<span style="color:var(--green)">✓ בדיוק בקצב</span>';
+              chips.push('<span class="goal-chip ok">✓ בקצב</span>');
             } else if (diff > 0) {
-              paceHtml = '<span style="color:var(--green)">▲ ' + fmt(Math.round(diff)) + ' לפני הלוח</span>';
+              chips.push('<span class="goal-chip ok">▲ ' + fmt(Math.round(diff)) + ' לפני</span>');
             } else {
-              paceHtml = '<span style="color:var(--red)">▼ ' + fmt(Math.round(-diff)) + ' מאחור</span>';
+              chips.push('<span class="goal-chip warn">▼ ' + fmt(Math.round(-diff)) + ' מאחור</span>');
               barColor = 'var(--amber,#b45309)';
+              cardCls = 'goal-card behind';
             }
           }
         }
-        paceHtml += '<span style="color:var(--muted)"> · צריך ' + fmt(perMonth) + ' לחודש</span>';
       }
     }
 
-    // ── רצף חודשי ──
+    // ── רצף ──
     const streak = goalStreak(g.id);
-    const streakHtml = streak >= 2
-      ? '<span style="background:#fff7ed;color:#c2410c;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px">🔥 ' + streak + ' חודשים ברצף</span>'
-      : '';
+    if (streak >= 2) chips.push('<span class="goal-chip fire">🔥 ' + streak + ' חודשים</span>');
 
-    return '<div style="padding:14px 0;border-bottom:1px solid var(--border)">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">' +
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-          '<span style="font-weight:700;font-size:15px">' + (done ? '✅ ' : '') + esc(g.name) + '</span>' +
-          streakHtml +
-        '</div>' +
-        '<div style="display:flex;align-items:center;gap:8px">' +
-          '<span style="font-size:13px;font-weight:600;color:' + barColor + '">' + fmt(saved) + ' / ' + fmt(target) + '</span>' +
-          '<button class="btn-del" onclick="deleteGoal(\'' + g.id + '\')">&#128465;</button>' +
-        '</div>' +
+    return '<div class="' + cardCls + '">' +
+      '<div class="goal-card-top">' +
+        '<div class="goal-name">' + (done ? '✅ ' : '') + esc(g.name) + '</div>' +
+        '<div class="goal-pct" style="color:' + barColor + '">' + pct + '<small>%</small></div>' +
       '</div>' +
-      (deadlineHtml ? '<div style="font-size:11.5px;color:var(--muted);margin-bottom:6px">' + deadlineHtml + '</div>' : '') +
-      '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap">' +
-        '<div style="font-size:12px;color:var(--muted)">' +
-          (done ? '🎉 הגעת ליעד!' : 'נשאר ' + fmt(remaining) + ' · ' + pct + '%') +
-        '</div>' +
-        '<div style="display:flex;gap:6px">' +
-          '<button class="btn-paid-quick" onclick="updateGoalSaved(\'' + g.id + '\',\'custom\')">➕ עדכן</button>' +
-        '</div>' +
+      '<div class="goal-bar"><span style="width:' + pct + '%;background:' + barColor + '"></span></div>' +
+      '<div class="goal-amounts">' +
+        '<span class="goal-saved" style="color:' + barColor + '">' + fmt(saved) + '</span>' +
+        '<span style="color:var(--muted)">מתוך ' + fmt(target) + '</span>' +
       '</div>' +
-      (paceHtml ? '<div style="font-size:11.5px;margin-top:5px">' + paceHtml + '</div>' : '') +
+      (chips.length ? '<div class="goal-meta">' + chips.join('') + '</div>' : '') +
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">' +
+        (done ? '🎉 הגעת ליעד!' : 'נשאר ' + fmt(remaining)) +
+      '</div>' +
+      '<div class="goal-actions">' +
+        '<button class="btn-paid-quick" onclick="updateGoalSaved(\'' + g.id + '\',\'custom\')">➕ הוסף חיסכון</button>' +
+        '<button class="btn-del" onclick="deleteGoal(\'' + g.id + '\')" title="מחק">&#128465;</button>' +
+      '</div>' +
     '</div>';
-  }).join('');
+  }).join('') + '</div>';
 }
 
 function renderHomeGoals() { calcCompound(); }
