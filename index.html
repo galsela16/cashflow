@@ -2609,6 +2609,7 @@ async function loadAll() {
     cachedTx = txR.data || [];
     // אין אירועים/עובדים/לקוחות במצב בית
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
+    await fetchAccounts();
     await autoImportRecurring(month, uid, cachedTx);
     await loadGoalDeposits();
     await loadGoalItems();
@@ -2638,6 +2639,7 @@ async function loadAll() {
     cachedEventWorkers = [];
   }
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
+  await fetchAccounts();
   await autoImportRecurring(month, uid, cachedTx);
   renderAll();
   // טען השקעות לעסק
@@ -3636,9 +3638,27 @@ function renderEquipment() {
 // ── מצב חשבונות בנק (שיקוף) ──
 let cachedAccounts = [];
 let cachedMovements = [];
-async function loadAccounts() {
+
+// שליפת החשבונות בלבד — נדרשת מוקדם, לפני ייבוא הקבועות
+async function fetchAccounts() {
   const res = await sb.from('bank_accounts').select('*').eq('user_id', currentUser.id).order('sort_order').order('created_at');
   cachedAccounts = res.data || [];
+}
+
+// רשומות ישנות ללא שיוך: כשיש חשבון יחיד למצב אין אי-ודאות, אז משייכים אותן אליו.
+// תנועות שקדמו לעוגן לא נספרות ממילא, כך שאין כפל חישוב.
+async function backfillAccountLinks() {
+  const list = accountsForMode();
+  if (list.length !== 1) return;
+  await sb.from(TX_TABLE())
+    .update({ account_id: list[0].id })
+    .eq('user_id', currentUser.id)
+    .is('account_id', null);
+}
+
+async function loadAccounts() {
+  await fetchAccounts();
+  await backfillAccountLinks();
   await loadMovements();
   populateAccountSelect();
   renderAccounts();
@@ -5458,7 +5478,8 @@ async function autoImportRecurring(month, uid, existingTx) {
         description: r.description + ' (קבועה)',
         amount: r.amount,
         type: 'expense',
-        category: r.category
+        category: r.category,
+        account_id: defaultAccountFor(appMode)
       }))
     );
     // טען מחדש את העסקאות
