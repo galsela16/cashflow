@@ -803,6 +803,7 @@ tr:last-child td{border-bottom:none}
           <input type="number" id="t-amount" placeholder="סכום ₪" min="0" />
           <select id="t-type"><option value="income">הכנסה</option><option value="expense">הוצאה</option></select>
           <select id="t-cat"></select>
+          <select id="t-account" title="לאיזה חשבון בנק שייכת הרשומה"></select>
         </div>
         <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
       </div>
@@ -3633,10 +3634,51 @@ function renderEquipment() {
 
 // ── מצב חשבונות בנק (שיקוף) ──
 let cachedAccounts = [];
+let cachedMovements = [];
 async function loadAccounts() {
   const res = await sb.from('bank_accounts').select('*').eq('user_id', currentUser.id).order('sort_order').order('created_at');
   cachedAccounts = res.data || [];
+  await loadMovements();
+  populateAccountSelect();
   renderAccounts();
+}
+
+// כל התנועות המשויכות לחשבון — הבסיס לחישוב היתרה הנגזרת
+async function loadMovements() {
+  const res = await sb.from(TX_TABLE())
+    .select('account_id,amount,type,created_at')
+    .eq('user_id', currentUser.id)
+    .not('account_id', 'is', null);
+  cachedMovements = res.data || [];
+}
+
+// סכום התנועות בחשבון מאז תאריך העוגן (הכנסה מוסיפה, הוצאה מחסרת)
+function movementsSince(acc) {
+  if (!acc.anchor_date) return 0;
+  const from = new Date(acc.anchor_date).getTime();
+  return cachedMovements.reduce((s, m) => {
+    if (m.account_id !== acc.id) return s;
+    if (new Date(m.created_at).getTime() <= from) return s;
+    return s + (m.type === 'income' ? (m.amount || 0) : -(m.amount || 0));
+  }, 0);
+}
+
+// היתרה שהאפליקציה חושבת שיש בחשבון: עוגן + תנועות מאז
+function derivedBalance(acc) {
+  if (!acc.anchor_date) return acc.balance || 0;
+  return (acc.anchor_balance || 0) + movementsSince(acc);
+}
+
+// ממלא את בורר החשבון בטופס הרשומות
+function populateAccountSelect() {
+  const sel = $('t-account');
+  if (!sel) return;
+  const list = accountsForMode();
+  const prev = sel.value || localStorage.getItem('cf_last_account_' + appMode) || '';
+  sel.innerHTML = '<option value="">— ללא חשבון —</option>' +
+    list.map(a => '<option value="' + a.id + '">' + esc(a.name) + (a.account_hint ? ' ••' + esc(a.account_hint) : '') + '</option>').join('');
+  if (prev && list.some(a => a.id === prev)) sel.value = prev;
+  else if (list.length === 1) sel.value = list[0].id;
 }
 // חשבונות של המצב הפעיל בלבד (עסק / בית)
 function accountsForMode() {
@@ -3652,6 +3694,7 @@ async function addAccount() {
   await sb.from('bank_accounts').insert({
     user_id: currentUser.id, name, account_hint: hint || null,
     balance, updated_on: today, sort_order: cachedAccounts.length,
+    anchor_balance: balance, anchor_date: new Date().toISOString(),
     scope: appMode   // משויך אוטומטית למצב שבו אתה נמצא
   });
   $('acc-name').value = ''; $('acc-hint').value = ''; $('acc-balance').value = '';
@@ -3663,13 +3706,24 @@ async function deleteAccount(id) {
   await sb.from('bank_accounts').delete().eq('id', id);
   await loadAccounts();
 }
-// עדכון יתרה — שומר גם את תאריך העדכון
+// עדכון מהבנק — קובע עוגן חדש ומדווח על הפער מול מה שהאפליקציה חישבה
 async function updateAccountBalance(id, value) {
   const bal = parseFloat(value);
   if (isNaN(bal)) return;
+  const acc = cachedAccounts.find(a => a.id === id);
+  const expected = acc ? derivedBalance(acc) : bal;
+  const gap = bal - expected;
   const today = new Date().toISOString().slice(0, 10);
-  await sb.from('bank_accounts').update({ balance: bal, updated_on: today }).eq('id', id);
+  await sb.from('bank_accounts').update({
+    balance: bal, updated_on: today,
+    anchor_balance: bal, anchor_date: new Date().toISOString()
+  }).eq('id', id);
   await loadAccounts();
+  if (acc && acc.anchor_date && Math.abs(gap) >= 1) {
+    alert(gap < 0
+      ? '⚠️ יצאו ' + fmt(Math.abs(gap)) + ' מהחשבון בלי שתיעדת.\nכדאי לעבור על ההוצאות ולהשלים.'
+      : '⚠️ נכנסו ' + fmt(Math.abs(gap)) + ' לחשבון בלי שתיעדת.\nכדאי להוסיף את ההכנסה החסרה.');
+  }
 }
 function renderAccounts() {
   const el = $('accounts-list');
@@ -3677,7 +3731,7 @@ function renderAccounts() {
   const hint = $('acc-scope-hint');
   if (hint) hint.textContent = appMode === 'home' ? 'בית' : 'עסק';
   const list = accountsForMode();
-  const grand = list.reduce((s, a) => s + (a.balance || 0), 0);
+  const grand = list.reduce((s, a) => s + derivedBalance(a), 0);
   const gt = $('acc-grand-total');
   if (gt) gt.textContent = fmt(grand);
 
@@ -3688,8 +3742,15 @@ function renderAccounts() {
   }
   const today = new Date();
   el.innerHTML = list.map(a => {
-    const neg = (a.balance || 0) < 0;
+    const derived = derivedBalance(a);
+    const moved = movementsSince(a);
+    const neg = derived < 0;
+    const anchorStr = a.anchor_date
+      ? new Date(a.anchor_date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })
+      : (a.updated_on ? a.updated_on.split('-').reverse().join('/') : '—');
     const dateStr = a.updated_on ? a.updated_on.split('-').reverse().join('/') : '—';
+    const movedStr = moved === 0 ? 'אין תנועות מאז'
+      : (moved > 0 ? '+' : '−') + fmt(Math.abs(moved)) + ' מאז';
     // כמה ימים עברו מאז העדכון האחרון
     let staleBadge = '';
     if (a.updated_on) {
@@ -3703,13 +3764,16 @@ function renderAccounts() {
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap">' +
       '<div style="min-width:0">' +
         '<div style="font-weight:700;font-size:15px">' + esc(a.name) + (a.account_hint ? ' <span style="font-size:12px;color:var(--muted);font-weight:400">••' + esc(a.account_hint) + '</span>' : '') + '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">עודכן: ' + dateStr + staleBadge + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">עוגן ' + fmt(a.anchor_balance || 0) + ' מ-' + anchorStr + ' · ' + movedStr + staleBadge + '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:10px">' +
-        '<div style="display:flex;align-items:center;gap:4px">' +
-          '<span style="font-size:13px;color:var(--muted)">₪</span>' +
-          '<input type="number" value="' + (a.balance || 0) + '" onchange="updateAccountBalance(\'' + a.id + '\',this.value)" ' +
-          'style="width:120px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;text-align:left;color:' + (neg ? 'var(--red)' : 'var(--green)') + '">' +
+        '<div style="text-align:left">' +
+          '<div style="font-size:10.5px;color:var(--muted);margin-bottom:2px">לפי התיעוד · הקלד מה שכתוב בבנק</div>' +
+          '<div style="display:flex;align-items:center;gap:4px">' +
+            '<span style="font-size:13px;color:var(--muted)">₪</span>' +
+            '<input type="number" value="' + Math.round(derived) + '" onchange="updateAccountBalance(\'' + a.id + '\',this.value)" ' +
+            'style="width:120px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;text-align:left;color:' + (neg ? 'var(--red)' : 'var(--green)') + '">' +
+          '</div>' +
         '</div>' +
         '<button class="btn-del" onclick="deleteAccount(\'' + a.id + '\')" title="מחק">&#128465;</button>' +
       '</div>' +
@@ -3731,7 +3795,7 @@ function openUpdateAllModal() {
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">' +
       '<div style="font-weight:600;font-size:14px">' + esc(a.name) +
         (a.account_hint ? ' <span style="font-size:11px;color:var(--muted);font-weight:400">••' + esc(a.account_hint) + '</span>' : '') + '</div>' +
-      '<input type="number" id="updall-' + a.id + '" value="' + (a.balance || 0) + '" ' +
+      '<input type="number" id="updall-' + a.id + '" value="' + Math.round(derivedBalance(a)) + '" ' +
       'style="width:130px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;text-align:left">' +
     '</div>'
   ).join('');
@@ -3752,7 +3816,10 @@ async function saveAllBalances() {
     if (!el) continue;
     const val = parseFloat(el.value);
     if (isNaN(val)) continue;
-    updates.push(sb.from('bank_accounts').update({ balance: val, updated_on: today }).eq('id', a.id));
+    updates.push(sb.from('bank_accounts').update({
+      balance: val, updated_on: today,
+      anchor_balance: val, anchor_date: new Date().toISOString()
+    }).eq('id', a.id));
     details[a.name] = val;
   }
   await Promise.all(updates);
@@ -5216,9 +5283,13 @@ async function saveEvent() {
 // ── TRANSACTIONS ──
 async function addTx() {
   const desc = $('t-desc').value.trim(), amount = parseFloat($('t-amount').value), type = $('t-type').value, category = $('t-cat').value;
+  const accSel = $('t-account');
+  const accountId = accSel && accSel.value ? accSel.value : null;
   if (!desc || !amount || amount <= 0) return;
   $('btn-add-tx').disabled = true;
-  await sb.from(TX_TABLE()).insert({ user_id: currentUser.id, month: getMonth(), description: desc, amount, type, category });
+  // זוכר את החשבון האחרון שנבחר — רוב הרשומות נכנסות לאותו חשבון
+  if (accountId) localStorage.setItem('cf_last_account_' + appMode, accountId);
+  await sb.from(TX_TABLE()).insert({ user_id: currentUser.id, month: getMonth(), description: desc, amount, type, category, account_id: accountId });
   $('t-desc').value = ''; $('t-amount').value = '';
   $('btn-add-tx').disabled = false;
   await loadAll();
