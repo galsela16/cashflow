@@ -2443,10 +2443,13 @@ const BASIC_FULL = ['dashboard', 'transactions', 'accounts', 'goals'];
 const BASIC_READONLY = ['ops', 'equipment', 'alerts'];
 const ADMIN_ONLY_PAGES = ['profitfirst'];
 
+// אדמין אמיתי — כלומר אדמין שאינו מדמה מסלול אחר לבדיקה
+function effectiveAdmin() { return isAdmin() && !adminPlanOverride; }
+
 // מחזיר 'full' | 'readonly' | 'blocked'
 function pageAccess(id) {
-  if (ADMIN_ONLY_PAGES.includes(id)) return isAdmin() ? 'full' : 'blocked';
-  if (isAdmin() && !adminPlanOverride) return 'full';
+  if (ADMIN_ONLY_PAGES.includes(id)) return effectiveAdmin() ? 'full' : 'blocked';
+  if (effectiveAdmin()) return 'full';
   if (userPlan === 'expired') return 'blocked';
   if (userPlan === 'basic') {
     if (BASIC_FULL.includes(id)) return 'full';
@@ -2458,9 +2461,13 @@ function pageAccess(id) {
 
 // מסתיר טאבים שאינם רלוונטיים ומסמן טאבים במצב צפייה
 function applyPlanVisibility() {
-  // Profit First — מוסתר לגמרי ממי שאינו אדמין
+  // Profit First — מוסתר מכל מי שאינו אדמין, וגם מאדמין שמדמה מסלול לבדיקה.
+  // כשמחזירים גישה, ההצגה חוזרת לפי מצב עסק/בית ולא סתם ל"גלוי".
+  const admin = effectiveAdmin();
   document.querySelectorAll('[data-adminonly="1"]').forEach(el => {
-    if (!isAdmin()) el.style.display = 'none';
+    const modeAttr = el.getAttribute('data-mode');
+    el.style.display = !admin ? 'none'
+      : (modeAttr && modeAttr !== appMode ? 'none' : '');
   });
   // סמן טאבים שנמצאים במצב צפייה
   BASIC_READONLY.concat(BASIC_FULL).forEach(id => {
@@ -2472,6 +2479,12 @@ function applyPlanVisibility() {
         : '';
     });
   });
+  // אם העמוד הפתוח נחסם בעקבות שינוי מסלול — חזור לדשבורד
+  const active = document.querySelector('.page.active');
+  const activeId = active ? active.id.replace('page-', '') : '';
+  if (activeId && pageAccess(activeId) === 'blocked') {
+    showPage('dashboard', document.querySelector('.tab[onclick*="dashboard"]'));
+  }
 }
 
 // מוסיף באנר "מצב צפייה" ומנטרל כל פעולת כתיבה בעמוד נעול.
