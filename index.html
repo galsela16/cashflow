@@ -2932,7 +2932,7 @@ function goalItemsHtml(g) {
           'style="display:flex;align-items:center;gap:3px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--border);' +
           (col ? 'border-right:3px solid ' + col + ';padding-right:5px;' : 'border-right:3px solid transparent;padding-right:5px;') + '">' +
           '<span class="gi-handle" title="גרור לסידור" style="cursor:grab;color:var(--muted);font-size:12px;padding:0 1px;user-select:none">⋮⋮</span>' +
-          '<span onclick="cycleGoalItemColor(\'' + i.id + '\')" title="קטלוג בצבע" ' +
+          '<span onclick="openColorPicker(event,\'' + i.id + '\')" title="בחר צבע" ' +
             'style="width:11px;height:11px;border-radius:50%;background:' + dot + ';border:1.5px solid ' + (col ? col : 'var(--border)') + ';cursor:pointer;flex:0 0 auto"></span>' +
           '<input value="' + esc(i.name) + '" ' +
             'onchange="updateGoalItemName(\'' + i.id + '\',this.value)" ' +
@@ -3047,16 +3047,58 @@ async function updateGoalItemName(itemId, value) {
 
 // ── קטלוג בצבע ──
 const GI_COLORS = ['#2563eb', '#0d9c6e', '#b45309', '#dc2626', '#7c3aed', '#0891b2'];
-async function cycleGoalItemColor(itemId) {
+async function setGoalItemColor(itemId, color) {
   const item = cachedGoalItems.find(i => i.id === itemId);
   if (!item) return;
-  const cur = item.color || '';
-  const idx = GI_COLORS.indexOf(cur);
-  // מחזוריות: ללא צבע → צבעים לפי הסדר → חזרה לללא צבע
-  const next = (idx === -1) ? GI_COLORS[0] : (idx === GI_COLORS.length - 1 ? null : GI_COLORS[idx + 1]);
-  await sb.from('goal_items').update({ color: next }).eq('id', itemId);
-  item.color = next;
+  await sb.from('goal_items').update({ color: color || null }).eq('id', itemId);
+  item.color = color || null;
+  closeColorPicker();
   renderHomeGoalsList();
+}
+
+function closeColorPicker() {
+  const p = document.getElementById('gi-color-picker');
+  if (p) p.remove();
+}
+
+// בורר צבעים — נפתח ליד העיגול שנלחץ
+function openColorPicker(e, itemId) {
+  e.stopPropagation();
+  closeColorPicker();
+  const item = cachedGoalItems.find(i => i.id === itemId);
+  const cur = item ? (item.color || '') : '';
+  const dot = e.currentTarget.getBoundingClientRect();
+
+  const box = document.createElement('div');
+  box.id = 'gi-color-picker';
+  box.style.cssText =
+    'position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--border);' +
+    'border-radius:10px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.16);display:flex;gap:6px;align-items:center';
+  box.innerHTML =
+    GI_COLORS.map(c =>
+      '<span onclick="setGoalItemColor(\'' + itemId + '\',\'' + c + '\')" ' +
+      'style="width:20px;height:20px;border-radius:50%;background:' + c + ';cursor:pointer;' +
+      'border:2px solid ' + (cur === c ? 'var(--text)' : 'transparent') + '"></span>'
+    ).join('') +
+    '<span onclick="setGoalItemColor(\'' + itemId + '\',\'\')" title="ללא צבע" ' +
+    'style="width:20px;height:20px;border-radius:50%;background:transparent;cursor:pointer;' +
+    'border:2px solid ' + (cur ? 'var(--border)' : 'var(--text)') + ';display:flex;align-items:center;' +
+    'justify-content:center;font-size:12px;color:var(--muted)">✕</span>';
+
+  document.body.appendChild(box);
+  // מיקום מתחת לעיגול, בלי לחרוג מהמסך
+  const w = box.offsetWidth;
+  let left = dot.left + dot.width / 2 - w / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+  box.style.left = left + 'px';
+  box.style.top = (dot.bottom + 6) + 'px';
+
+  // סגירה בלחיצה מחוץ לבורר
+  setTimeout(() => {
+    document.addEventListener('click', function onDoc(ev) {
+      if (!box.contains(ev.target)) { closeColorPicker(); document.removeEventListener('click', onDoc); }
+    });
+  }, 0);
 }
 
 // ── גרירה לסידור מחדש ──
