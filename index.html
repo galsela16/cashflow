@@ -262,18 +262,23 @@ tr:last-child td{border-bottom:none}
 .goal-cards{column-width:280px;column-gap:14px}
 .goal-cards > .goal-card{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;margin-bottom:14px;display:inline-block;width:100%}
 /* שורה עליונה: טופס הוספת יעד + כרטיס הסיכום לצידו */
-.goals-top{display:grid;grid-template-columns:1fr minmax(230px,300px);gap:12px;align-items:start;margin-bottom:18px}
+.goals-top{display:grid;grid-template-columns:1fr minmax(270px,340px);gap:12px;align-items:start;margin-bottom:18px}
 .goals-top .goals-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
-.goals-top .goals-summary{margin-bottom:0}
-.goals-top .gs-stats{grid-template-columns:1fr}
-.goals-top .gs-amount{font-size:24px}
-.goals-top .gs-pct{font-size:26px}
+/* גרסה קומפקטית של כרטיס הסיכום — כדי שלא ימתח את שורת ה-grid */
+.goals-top .goals-summary{margin-bottom:0;padding:12px 14px}
+.goals-top .gs-top{margin-bottom:8px}
+.goals-top .gs-label{font-size:11.5px}
+.goals-top .gs-amount{font-size:21px}
+.goals-top .gs-of{font-size:12px}
+.goals-top .gs-pct{font-size:23px}
+.goals-top .gs-pct small{font-size:12px}
+.goals-top .gs-bar{height:7px;margin-bottom:9px}
+.goals-top .gs-stats{display:flex;gap:6px}
+.goals-top .gs-stat{flex:1;background:transparent;padding:0;text-align:center;min-width:0}
+.goals-top .gs-stat-lbl{font-size:10px;margin-bottom:1px}
+.goals-top .gs-stat-val{font-size:13px;white-space:nowrap}
 .goals-top:has(#goals-summary:empty){grid-template-columns:1fr}
-@media(max-width:700px){
-  .goals-top{grid-template-columns:1fr}
-  .goals-top .gs-stats{grid-template-columns:repeat(3,1fr)}
-}
-@media(max-width:520px){.goals-top .gs-stats{grid-template-columns:1fr}}
+@media(max-width:700px){.goals-top{grid-template-columns:1fr}}
 .goal-card.collapsed{padding:12px 16px}
 .goal-collapse-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:2px 5px;border-radius:6px;transition:transform .2s}
 .goal-collapse-btn:hover{background:var(--bg)}
