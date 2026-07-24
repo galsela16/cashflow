@@ -770,6 +770,28 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <!-- משכורות קבועות (מצב בית) -->
+      <div class="section" data-mode="home">
+        <div class="section-title mv-toggle" onclick="toggleSalaryPanel()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+          <span>💼 משכורות <span id="sal-total-inline" style="font-size:12px;color:var(--muted);font-weight:400"></span></span>
+          <span id="sal-chevron" style="font-size:12px;color:var(--muted);transition:transform .2s">▾</span>
+        </div>
+        <div id="sal-panel-wrap" style="display:none;margin-top:14px">
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">משכורת נטו קבועה שנכנסת כל חודש. היא תיספר אוטומטית בהכנסות — אין צורך להזין אותה מחדש בכל חודש.</p>
+          <div class="form-row">
+            <input type="text" id="s-name" placeholder="שם (למשל: בן/בת זוג)" />
+            <input type="number" id="s-amount" placeholder="נטו לחודש ₪" min="0" />
+          </div>
+          <button class="btn-add" id="btn-add-sal" onclick="addSalary()" style="margin-bottom:16px">+ הוסף משכורת</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-weight:600;font-size:14px">רשימת המשכורות</div>
+            <div style="background:var(--green-soft);border-radius:100px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--green)" id="sal-total">סה"כ: ₪0 / חודש</div>
+          </div>
+          <table><thead><tr><th>שם</th><th>נטו לחודש</th><th>פעיל</th><th></th></tr></thead>
+          <tbody id="sal-table"></tbody></table>
+        </div>
+      </div>
+
       <!-- הוצאות קבועות (מתקפל) -->
       <div class="section">
         <div class="section-title mv-toggle" onclick="toggleRecurringPanel()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
@@ -2562,6 +2584,11 @@ async function enterApp(user) {
     if (wrap) wrap.style.display = 'grid';
     if (chev) chev.style.transform = 'rotate(180deg)';
   }
+  if (localStorage.getItem('cf_sal_open') === '1') {
+    const sw = $('sal-panel-wrap'), sc = $('sal-chevron');
+    if (sw) sw.style.display = 'block';
+    if (sc) sc.style.transform = 'rotate(180deg)';
+  }
   if (localStorage.getItem('cf_rec_open') === '1') {
     const rw = $('rec-panel-wrap'), rc = $('rec-chevron');
     if (rw) rw.style.display = 'block';
@@ -2611,6 +2638,7 @@ async function loadAll() {
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
     await fetchAccounts();
     await autoImportRecurring(month, uid, cachedTx);
+    await loadSalaries();
     await loadGoalDeposits();
     await loadGoalItems();
     await loadChildren();
@@ -2666,7 +2694,9 @@ function renderHome() {
   const incomeRows = cachedTx.filter(t => t.type === 'income');
   const expenseRows = cachedTx.filter(t => t.type === 'expense');
   const manualIncome = incomeRows.reduce((s, t) => s + t.amount, 0);
-  const totalIncome = manualIncome + bizSalary;
+  const salaries = cachedSalaries.filter(s => s.active);
+  const salaryTotal = salaries.reduce((sum, s) => sum + (s.amount || 0), 0);
+  const totalIncome = manualIncome + bizSalary + salaryTotal;
   const totalExpense = expenseRows.reduce((s, t) => s + t.amount, 0);
   const net = totalIncome - totalExpense;
 
@@ -2683,6 +2713,11 @@ function renderHome() {
       '<div><div style="font-weight:500">🏢 משכורת מהעסק</div><div style="font-size:11px;color:var(--muted)">50% מצפי הרווח</div></div>' +
       '<div style="font-weight:600;color:var(--green)">' + fmt(bizSalary) + '</div></div>';
   }
+  salaries.forEach(s => {
+    incHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
+      '<div><div style="font-weight:500">💼 ' + esc(s.person_name) + '</div><div style="font-size:11px;color:var(--muted)">משכורת קבועה</div></div>' +
+      '<div style="font-weight:600;color:var(--green)">' + fmt(s.amount || 0) + '</div></div>';
+  });
   incHtml += incomeRows.map(t =>
     '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
     '<div><div style="font-weight:500">' + esc(t.description) + '</div>' + (t.category ? '<div style="font-size:11px;color:var(--muted)">' + esc(t.category) + '</div>' : '') + '</div>' +
@@ -4553,7 +4588,14 @@ function renderMonthView() {
         '<div class="mv-name">🏢 משכורת מהעסק <span class="mv-sub">· 50% מצפי הרווח</span></div>' +
         '<span class="badge badge-paid mv-badge-sm">' + t('נכנס') + '</span><div class="mv-amount">' + fmt(bizSalary) + '</div></div>';
     }
+    cachedSalaries.filter(s => s.active).forEach(s => {
+      incHtml += '<div class="mv-row mv-paid mv-static" title="' + esc(s.person_name) + '"><div class="mv-date">—</div>' +
+        '<div class="mv-name">💼 ' + esc(s.person_name) + ' <span class="mv-sub">· משכורת קבועה</span></div>' +
+        '<span class="badge badge-paid mv-badge-sm">' + t('נכנס') + '</span><div class="mv-amount">' + fmt(s.amount || 0) + '</div></div>';
+    });
   }
+  const mvSalaries = salariesTotal();
+  const mvSalaryCount = appMode === 'home' ? cachedSalaries.filter(s => s.active).length : 0;
 
   incHtml += txIncomeRows.map(x =>
     '<div class="mv-row mv-paid mv-static" title="' + esc(x.description) + '"><div class="mv-date">—</div>' +
@@ -4562,13 +4604,13 @@ function renderMonthView() {
   ).join('');
 
   incEl.innerHTML = incHtml || '<div class="empty">' + t('אין הכנסות החודש') + '</div>';
-  const incCount = evRows.length + txIncomeRows.length + (bizSalary > 0 ? 1 : 0);
+  const incCount = evRows.length + txIncomeRows.length + (bizSalary > 0 ? 1 : 0) + mvSalaryCount;
   $('mv-income-count').textContent = incCount ? incCount + ' ' + (currentLang === 'en' ? 'items' : 'פריטים') : '';
 
   const paidEv = evRows.filter(d => mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
   const pendEv = evRows.filter(d => !mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
   const txInc = txIncomeRows.reduce((s, x) => s + x.amount, 0);
-  const inTotal = paidEv + txInc + bizSalary;
+  const inTotal = paidEv + txInc + bizSalary + mvSalaries;
   $('mv-income-totals').innerHTML =
     '<div class="mv-tot-row"><span style="color:var(--green)">' + t('נכנס') + '</span><span style="color:var(--green);font-weight:600">' + fmt(inTotal) + '</span></div>' +
     '<div class="mv-tot-row"><span style="color:var(--amber)">' + t('ממתין') + '</span><span style="color:var(--amber);font-weight:600">' + fmt(pendEv) + '</span></div>' +
@@ -5488,6 +5530,106 @@ async function autoImportRecurring(month, uid, existingTx) {
   } finally {
     _importingMonths.delete(lockKey);
   }
+}
+
+// ── משכורות קבועות (מצב בית) ──
+// נשמרות כהגדרה בלבד ומוצגות כשורה וירטואלית בכל חודש,
+// כמו המשכורת מהעסק. כך אין רשומות כפולות בטבלת העסקאות.
+let cachedSalaries = [];
+
+async function loadSalaries() {
+  if (!currentUser) return;
+  const res = await sb.from('home_salaries').select('*').eq('user_id', currentUser.id).order('sort_order').order('created_at');
+  cachedSalaries = res.data || [];
+  renderSalaries();
+}
+
+// סך המשכורות הפעילות — נכנס לכל חישובי ההכנסה במצב בית
+function salariesTotal() {
+  if (appMode !== 'home') return 0;
+  return cachedSalaries.filter(s => s.active).reduce((sum, s) => sum + (s.amount || 0), 0);
+}
+
+async function addSalary() {
+  const name = $('s-name').value.trim(), amount = parseFloat($('s-amount').value);
+  if (!name || !amount || amount <= 0) { alert('נא למלא שם וסכום'); return; }
+  $('btn-add-sal').disabled = true;
+  await sb.from('home_salaries').insert({
+    user_id: currentUser.id, person_name: name, amount,
+    active: true, sort_order: cachedSalaries.length
+  });
+  $('s-name').value = ''; $('s-amount').value = '';
+  $('btn-add-sal').disabled = false;
+  await loadSalaries();
+  renderHome();
+}
+
+async function deleteSalary(id) {
+  const s = cachedSalaries.find(x => x.id === id);
+  if (!confirm('למחוק את המשכורת של "' + (s ? s.person_name : '') + '"?\nאם היא רק הופסקה — עדיף לכבות אותה במקום למחוק.')) return;
+  await sb.from('home_salaries').delete().eq('id', id);
+  await loadSalaries();
+  renderHome();
+}
+
+// כיבוי/הדלקה — משאיר את ההיסטוריה במקום למחוק
+async function toggleSalaryActive(id, active) {
+  await sb.from('home_salaries').update({ active }).eq('id', id);
+  await loadSalaries();
+  renderHome();
+}
+
+function editSalary(id) {
+  const s = cachedSalaries.find(x => x.id === id);
+  const row = $('sal-row-' + id);
+  if (!s || !row) return;
+  row.innerHTML =
+    '<td><input id="sal-e-name-' + id + '" value="' + esc(s.person_name) + '" style="width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:8px;font-size:13px"></td>' +
+    '<td><input id="sal-e-amount-' + id + '" type="number" min="0" value="' + (s.amount || 0) + '" style="width:100px;padding:5px 7px;border:1px solid var(--border);border-radius:8px;font-size:13px"></td>' +
+    '<td></td>' +
+    '<td style="white-space:nowrap"><button class="btn-save-sm" onclick="saveSalary(\'' + id + '\')" title="שמור">&#10003;</button> <button class="btn-cancel-sm" onclick="renderSalaries()" title="בטל">&#10005;</button></td>';
+  $('sal-e-name-' + id).focus();
+}
+
+async function saveSalary(id) {
+  const name = $('sal-e-name-' + id).value.trim();
+  const amount = parseFloat($('sal-e-amount-' + id).value);
+  if (!name || isNaN(amount) || amount < 0) { alert('נא למלא שם וסכום תקין'); return; }
+  await sb.from('home_salaries').update({ person_name: name, amount }).eq('id', id);
+  await loadSalaries();
+  renderHome();
+}
+
+function renderSalaries() {
+  const tb = $('sal-table');
+  const total = salariesTotal();
+  const inline = $('sal-total-inline');
+  if (inline) inline.textContent = cachedSalaries.length ? '· ' + fmt(total) + ' / חודש' : '';
+  const totalEl = $('sal-total');
+  if (totalEl) totalEl.textContent = 'סה"כ: ' + fmt(total) + ' / חודש';
+  if (!tb) return;
+  if (!cachedSalaries.length) {
+    tb.innerHTML = '<tr><td colspan="4" class="empty">עדיין לא נוספו משכורות</td></tr>';
+    return;
+  }
+  tb.innerHTML = cachedSalaries.map(s =>
+    '<tr id="sal-row-' + s.id + '"' + (s.active ? '' : ' style="opacity:.5"') + '>' +
+      '<td style="font-weight:500">' + esc(s.person_name) + '</td>' +
+      '<td style="font-weight:600;color:var(--green)">' + fmt(s.amount || 0) + '</td>' +
+      '<td><input type="checkbox" ' + (s.active ? 'checked' : '') + ' onchange="toggleSalaryActive(\'' + s.id + '\',this.checked)" style="width:16px;height:16px;cursor:pointer" title="פעיל"></td>' +
+      '<td style="white-space:nowrap"><button class="btn-edit-sm" onclick="editSalary(\'' + s.id + '\')" title="ערוך">&#9998;</button> <button class="btn-del" onclick="deleteSalary(\'' + s.id + '\')" title="מחק">&#128465;</button></td>' +
+    '</tr>'
+  ).join('');
+}
+
+function toggleSalaryPanel() {
+  const wrap = $('sal-panel-wrap'), chev = $('sal-chevron');
+  if (!wrap) return;
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+  localStorage.setItem('cf_sal_open', open ? '1' : '0');
+  if (open) renderSalaries();
 }
 
 // ── RECURRING ──
