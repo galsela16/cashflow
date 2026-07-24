@@ -242,7 +242,10 @@ tr:last-child td{border-bottom:none}
 .empty{text-align:center;color:var(--muted);padding:20px;font-size:13px}
 .badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500}
 /* ── כרטיסי יעדי חיסכון ── */
-.goal-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.goal-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-items:start}
+.goal-card.collapsed{padding:12px 16px}
+.goal-collapse-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:2px 5px;border-radius:6px;transition:transform .2s}
+.goal-collapse-btn:hover{background:var(--bg)}
 .goal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 16px 14px;box-shadow:0 1px 3px rgba(0,0,0,.05);transition:box-shadow .2s,transform .2s;position:relative;overflow:hidden}
 .goal-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.09)}
 .goal-card.done{border-color:var(--green);background:linear-gradient(180deg,#f0fdf9 0%,var(--surface) 60%)}
@@ -2894,6 +2897,20 @@ async function saveChildEdit(id) {
 // ── פירוט רכיבים ליעד ──
 let openGoalItems = null; // איזה יעד פתוח כרגע לפירוט
 let expandedGoalItems = null; // איזה יעד מציג את כל הרכיבים
+// כרטיסים מכווצים — נשמר בין טעינות
+let collapsedGoals = new Set(JSON.parse(localStorage.getItem('cf_collapsed_goals') || '[]'));
+
+function toggleGoalCollapse(id) {
+  if (collapsedGoals.has(id)) {
+    collapsedGoals.delete(id);
+  } else {
+    collapsedGoals.add(id);
+    // כשמכווצים — סוגרים גם את הפירוט שלו
+    if (openGoalItems === id) openGoalItems = null;
+  }
+  localStorage.setItem('cf_collapsed_goals', JSON.stringify([...collapsedGoals]));
+  renderHomeGoalsList();
+}
 
 function toggleGoalItemsExpand(id) {
   expandedGoalItems = (expandedGoalItems === id) ? null : id;
@@ -3278,11 +3295,12 @@ function renderHomeGoalsList() {
         chips.push('<span class="goal-chip">🎯 ' + dlStr + ' · ' + daysLeft + ' ימים</span>');
         chips.push('<span class="goal-chip">💰 ' + fmt(perMonth) + ' לחודש</span>');
 
-        // האם בקצב
+        // האם בקצב — מוצג רק אחרי שבוע, כדי שההשוואה תהיה משמעותית
         const created = g.created_at ? new Date(g.created_at) : null;
         if (created) {
           const totalMs = dl - created, elapsedMs = today - created;
-          if (totalMs > 0 && elapsedMs > 0) {
+          const weekMs = 7 * 86400000;
+          if (totalMs > 0 && elapsedMs > weekMs) {
             const expected = target * Math.min(elapsedMs / totalMs, 1);
             const diff = saved - expected;
             if (Math.abs(diff) < target * 0.02) {
@@ -3303,11 +3321,26 @@ function renderHomeGoalsList() {
     const streak = goalStreak(g.id);
     if (streak >= 2) chips.push('<span class="goal-chip fire">🔥 ' + streak + ' חודשים</span>');
 
+    const isCollapsed = collapsedGoals.has(g.id);
+    const topRow =
+      '<div class="goal-card-top" style="margin-bottom:' + (isCollapsed ? '0' : '12px') + '">' +
+        '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">' +
+          '<button class="goal-collapse-btn" onclick="toggleGoalCollapse(\'' + g.id + '\')" title="' + (isCollapsed ? 'הרחב' : 'כווץ') + '" ' +
+            'style="' + (isCollapsed ? '' : 'transform:rotate(180deg)') + '">▾</button>' +
+          '<div class="goal-name">' + (done ? '✅ ' : '') + esc(g.name) + '</div>' +
+        '</div>' +
+        '<div class="goal-pct" style="color:' + barColor + ';font-size:' + (isCollapsed ? '20px' : '30px') + '">' + pct + '<small>%</small></div>' +
+      '</div>';
+
+    if (isCollapsed) {
+      return '<div class="' + cardCls + ' collapsed" id="goal-card-' + g.id + '">' +
+        topRow +
+        '<div class="goal-bar" style="margin:8px 0 0"><span style="width:' + pct + '%;background:' + barColor + '"></span></div>' +
+      '</div>';
+    }
+
     return '<div class="' + cardCls + '" id="goal-card-' + g.id + '">' +
-      '<div class="goal-card-top">' +
-        '<div class="goal-name">' + (done ? '✅ ' : '') + esc(g.name) + '</div>' +
-        '<div class="goal-pct" style="color:' + barColor + '">' + pct + '<small>%</small></div>' +
-      '</div>' +
+      topRow +
       '<div class="goal-bar"><span style="width:' + pct + '%;background:' + barColor + '"></span></div>' +
       '<div class="goal-amounts">' +
         '<span class="goal-saved" style="color:' + barColor + '">' + fmt(saved) + '</span>' +
