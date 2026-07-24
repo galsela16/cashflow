@@ -2002,7 +2002,8 @@ async function importBankRows() {
   const build = r => ({
     user_id: currentUser.id, month,
     description: r.desc, amount: r.amount, type: r.type,
-    category: r.type === 'expense' ? r.category : 'אחר'
+    category: r.type === 'expense' ? r.category : 'אחר',
+    account_id: defaultAccountFor(r.mode)
   });
   // פיצול לפי שיוך: עסק → transactions, בית → home_transactions
   const bizRecords = toImport.filter(r => r.mode !== 'home').map(build);
@@ -3669,16 +3670,26 @@ function derivedBalance(acc) {
   return (acc.anchor_balance || 0) + movementsSince(acc);
 }
 
-// ממלא את בורר החשבון בטופס הרשומות
+// חשבון ברירת המחדל של מצב מסוים (עסק/בית) — לפי הבחירה האחרונה, אחרת הראשון
+function defaultAccountFor(mode) {
+  const list = cachedAccounts.filter(a => (a.scope || 'business') === mode);
+  if (!list.length) return null;
+  const saved = localStorage.getItem('cf_last_account_' + mode);
+  if (saved && list.some(a => a.id === saved)) return saved;
+  return list[0].id;
+}
+
+// בורר החשבון מוצג רק כשיש באמת מה לבחור — אחרת המצב (בית/עסק) מכריע לבד
 function populateAccountSelect() {
   const sel = $('t-account');
   if (!sel) return;
   const list = accountsForMode();
-  const prev = sel.value || localStorage.getItem('cf_last_account_' + appMode) || '';
+  if (list.length < 2) { sel.style.display = 'none'; sel.innerHTML = ''; return; }
+  sel.style.display = '';
   sel.innerHTML = '<option value="">— ללא חשבון —</option>' +
     list.map(a => '<option value="' + a.id + '">' + esc(a.name) + (a.account_hint ? ' ••' + esc(a.account_hint) : '') + '</option>').join('');
-  if (prev && list.some(a => a.id === prev)) sel.value = prev;
-  else if (list.length === 1) sel.value = list[0].id;
+  const def = defaultAccountFor(appMode);
+  if (def) sel.value = def;
 }
 // חשבונות של המצב הפעיל בלבד (עסק / בית)
 function accountsForMode() {
@@ -5284,7 +5295,9 @@ async function saveEvent() {
 async function addTx() {
   const desc = $('t-desc').value.trim(), amount = parseFloat($('t-amount').value), type = $('t-type').value, category = $('t-cat').value;
   const accSel = $('t-account');
-  const accountId = accSel && accSel.value ? accSel.value : null;
+  const picking = accSel && accSel.style.display !== 'none';
+  // כשהבורר מוסתר — משייכים אוטומטית לחשבון של המצב הנוכחי
+  const accountId = picking ? (accSel.value || null) : defaultAccountFor(appMode);
   if (!desc || !amount || amount <= 0) return;
   $('btn-add-tx').disabled = true;
   // זוכר את החשבון האחרון שנבחר — רוב הרשומות נכנסות לאותו חשבון
