@@ -242,6 +242,22 @@ tr:last-child td{border-bottom:none}
 .empty{text-align:center;color:var(--muted);padding:20px;font-size:13px}
 .badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500}
 /* ── כרטיסי יעדי חיסכון ── */
+/* ── סיכום כל היעדים ── */
+.goals-summary{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.gs-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.gs-label{font-size:13px;color:var(--muted);margin-bottom:3px}
+.gs-amount{font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1.1}
+.gs-of{font-size:14px;color:var(--muted);font-weight:400}
+.gs-pct{font-size:32px;font-weight:800;line-height:1;letter-spacing:-1px;white-space:nowrap}
+.gs-pct small{font-size:16px;font-weight:700}
+.gs-bar{height:10px;background:var(--bg);border-radius:100px;overflow:hidden;margin-bottom:14px}
+.gs-bar span{display:block;height:100%;border-radius:100px;transition:width .4s ease}
+.gs-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.gs-stat{background:var(--bg);border-radius:10px;padding:10px 12px}
+.gs-stat-lbl{font-size:11px;color:var(--muted);margin-bottom:2px}
+.gs-stat-val{font-size:16px;font-weight:700}
+@media(max-width:520px){.gs-stats{grid-template-columns:1fr}}
+
 /* עמודות (masonry) — כל כרטיס בגובה הטבעי שלו, בלי תלות בשכן */
 .goal-cards{column-width:280px;column-gap:14px}
 .goal-cards > .goal-card{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;margin-bottom:14px;display:inline-block;width:100%}
@@ -909,6 +925,7 @@ tr:last-child td{border-bottom:none}
           </div>
           <button class="btn btn-primary" id="btn-add-goal" onclick="addGoal()" style="height:38px">הוסף יעד</button>
         </div>
+        <div id="goals-summary"></div>
         <div id="goals-list"></div>
         </div>
       </div>
@@ -3262,7 +3279,70 @@ async function saveGoalEdit(id) {
   await loadGoals();
 }
 
+// ── סיכום כל היעדים ──
+function renderGoalsSummary() {
+  const el = $('goals-summary');
+  if (!el) return;
+  if (!cachedGoals.length) { el.innerHTML = ''; return; }
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let totalTarget = 0, totalSaved = 0, monthlyNeeded = 0, doneCount = 0;
+
+  cachedGoals.forEach(g => {
+    const target = g.target_amount || 0;
+    const saved = g.saved_amount || 0;
+    totalTarget += target;
+    totalSaved += saved;
+    if (target > 0 && saved >= target) doneCount++;
+    // כמה צריך להפריש החודש כדי לעמוד בדדליין
+    if (g.deadline && target > saved) {
+      const dl = new Date(g.deadline + 'T00:00:00');
+      const daysLeft = Math.ceil((dl - today) / 86400000);
+      if (daysLeft > 0) {
+        const monthsLeft = Math.max(daysLeft / 30.44, 0.1);
+        monthlyNeeded += (target - saved) / monthsLeft;
+      }
+    }
+  });
+
+  const pct = totalTarget > 0 ? Math.min(Math.round(totalSaved / totalTarget * 100), 100) : 0;
+  const remaining = Math.max(0, totalTarget - totalSaved);
+  const allDone = doneCount === cachedGoals.length && totalTarget > 0;
+  const color = allDone ? 'var(--green)' : 'var(--blue,#2563eb)';
+
+  el.innerHTML =
+    '<div class="goals-summary">' +
+      '<div class="gs-top">' +
+        '<div>' +
+          '<div class="gs-label">📊 סה"כ בכל היעדים</div>' +
+          '<div style="display:flex;align-items:baseline;gap:7px;flex-wrap:wrap">' +
+            '<span class="gs-amount" style="color:' + color + '">' + fmt(totalSaved) + '</span>' +
+            '<span class="gs-of">מתוך ' + fmt(totalTarget) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="gs-pct" style="color:' + color + '">' + pct + '<small>%</small></div>' +
+      '</div>' +
+      '<div class="gs-bar"><span style="width:' + pct + '%;background:' + color + '"></span></div>' +
+      '<div class="gs-stats">' +
+        '<div class="gs-stat">' +
+          '<div class="gs-stat-lbl">יעדים</div>' +
+          '<div class="gs-stat-val">' + cachedGoals.length + (doneCount ? ' <span style="font-size:12px;color:var(--green);font-weight:600">· ' + doneCount + ' הושלמו</span>' : '') + '</div>' +
+        '</div>' +
+        '<div class="gs-stat">' +
+          '<div class="gs-stat-lbl">נשאר לחסוך</div>' +
+          '<div class="gs-stat-val">' + fmt(remaining) + '</div>' +
+        '</div>' +
+        '<div class="gs-stat">' +
+          '<div class="gs-stat-lbl">נדרש לחודש</div>' +
+          '<div class="gs-stat-val" style="color:' + (monthlyNeeded > 0 ? 'var(--amber,#b45309)' : 'var(--muted)') + '">' +
+            (monthlyNeeded > 0 ? fmt(Math.ceil(monthlyNeeded)) : '—') + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
 function renderHomeGoalsList() {
+  renderGoalsSummary();
   const el = $('goals-list');
   if (!el) return;
   if (!cachedGoals.length) {
