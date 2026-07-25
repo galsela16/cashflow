@@ -507,6 +507,41 @@ tr:last-child td{border-bottom:none}
 .pf-slider-row label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
 .pf-slider-row input[type=range]{width:100%;accent-color:var(--blue)}
 
+/* ── יועץ AI ── */
+.adv-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.adv-avatar{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#1d4ed8,#2563eb);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 6px 18px rgba(37,99,235,.32)}
+.adv-title{font-size:19px;font-weight:800;letter-spacing:-.4px}
+.adv-sub{font-size:12.5px;color:var(--muted);margin-top:1px}
+.seen{background:rgba(255,255,255,.9);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.seen-lbl{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.seen-lbl .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-bg)}
+.seen-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.seen-cell{background:var(--bg);border-radius:10px;padding:8px 10px;text-align:center}
+.seen-cell .v{font-size:16px;font-weight:800;line-height:1.1}
+.seen-cell .k{font-size:10px;color:var(--muted);margin-top:2px}
+.seen-cell.pos .v{color:var(--green)} .seen-cell.neg .v{color:var(--red)}
+@media(max-width:560px){.seen-grid{grid-template-columns:1fr 1fr}}
+.adv-mode-note{font-size:11.5px;color:var(--muted);text-align:center;margin-bottom:12px;line-height:1.6}
+.adv-mode-note strong{color:var(--text)}
+.chat{min-height:300px;background:rgba(255,255,255,.65);border:1px solid var(--border);border-radius:var(--radius);padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.chat .msg{max-width:88%;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.chat .msg.user{align-self:flex-start;background:var(--blue);color:#fff;border-bottom-right-radius:5px}
+.chat .msg.ai{align-self:flex-end;background:#fff;color:var(--text);border-bottom-left-radius:5px;box-shadow:0 2px 10px rgba(80,120,150,.1)}
+.chat .msg.ai strong{color:var(--blue)}
+.typing{align-self:flex-end;background:#fff;border-radius:16px;border-bottom-left-radius:5px;padding:13px 16px;display:flex;gap:4px;box-shadow:0 2px 10px rgba(80,120,150,.1)}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);opacity:.4;animation:advblink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes advblink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+.starters{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.starters .chip{background:#fff;border:1px solid var(--border);border-radius:100px;padding:8px 14px;font-size:12.5px;color:var(--text);cursor:pointer;transition:all .15s;font-family:inherit}
+.starters .chip:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-1px)}
+.composer{display:flex;gap:8px;margin-top:12px;align-items:flex-end}
+.composer textarea{flex:1;padding:12px 14px;border:1.5px solid var(--border);border-radius:14px;font-size:14px;font-family:inherit;resize:none;background:#fff;max-height:120px;line-height:1.5}
+.composer textarea:focus{outline:none;border-color:var(--blue)}
+.composer .send{width:46px;height:46px;border-radius:14px;border:none;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;font-size:19px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 12px rgba(37,99,235,.3);transition:transform .1s}
+.composer .send:hover{transform:translateY(-1px)}.composer .send:disabled{opacity:.5;transform:none;cursor:default}
+.adv-disclaimer{font-size:10.5px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
+
 /* ── באנר מצב צפייה (קריאה בלבד) ── */
 .ro-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;border-radius:var(--radius);padding:14px 18px;margin-bottom:1rem;box-shadow:var(--shadow)}
 .ro-banner-txt{flex:1;min-width:180px}
@@ -667,6 +702,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="business" data-page="ops" onclick="showPage('ops',this)">🎯 תפעול ואירועים</button>
       <button class="tab" data-mode="business" data-adminonly="1" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
+      <button class="tab" data-mode="home" data-page="advisor" onclick="showPage('advisor',this)">💬 יועץ</button>
       <button class="tab" data-mode="business" onclick="showPage('equipment',this)">📈 השקעות לעסק</button>
       <button class="tab" onclick="showPage('accounts',this)">💳 מצב חשבונות</button>
       <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
@@ -1077,6 +1113,31 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
 
+    <!-- AI advisor (home mode) -->
+    <div id="page-advisor" class="page">
+      <div class="adv-head">
+        <div class="adv-avatar">💬</div>
+        <div>
+          <div class="adv-title">היועץ שלך</div>
+          <div class="adv-sub">רואה את התמונה המלאה של הבית ועוזר להחליט</div>
+        </div>
+      </div>
+
+      <div class="seen">
+        <div class="seen-lbl"><span class="dot"></span> <span id="adv-seen-month">מה שאני רואה החודש</span></div>
+        <div class="seen-grid" id="adv-seen-grid"></div>
+      </div>
+      <div class="mode-note" id="adv-mode-note"></div>
+
+      <div class="chat" id="adv-chat"></div>
+
+      <div class="composer">
+        <textarea id="adv-input" rows="1" placeholder="שאלו את היועץ..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();advAsk()}" oninput="advGrow(this)"></textarea>
+        <button class="send" id="adv-send" onclick="advAsk()">↑</button>
+      </div>
+      <div class="adv-disclaimer">🔒 הנתונים נשלחים מוצפנים לצורך מתן התשובה · אינו תחליף לייעוץ פיננסי או מס מקצועי</div>
+    </div>
+
     <!-- equipment planning (business mode) -->
     <div id="page-equipment" class="page">
       <div class="section">
@@ -1153,6 +1214,7 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" data-mode="business" onclick="showPage('ops',this)" data-page="ops"><span class="bnav-icon">🎯</span>תפעול</button>
     <button class="bnav-item" data-mode="business" data-adminonly="1" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
+    <button class="bnav-item" data-mode="home" onclick="showPage('advisor',this)" data-page="advisor"><span class="bnav-icon">💬</span>יועץ</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">📈</span>השקעות</button>
     <button class="bnav-item" onclick="showPage('accounts',this)" data-page="accounts"><span class="bnav-icon">💳</span>חשבונות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
@@ -1448,6 +1510,7 @@ const SB_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cnZsb2dxanpwbm9qZnpiYXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk2MjgsImV4cCI6MjA5NzgwNTYyOH0.2I45YWLkTDLjndmyoNImkPLfqOxJV7TVsff2kAOZHpg';
 // Edge Function לחיבור יומן גוגל פר-משתמש (מחליף את הסנכרון הקבוע הישן)
 const GCAL_FN_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co/functions/v1/google-calendar-auth';
+const ADVISOR_FN_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co/functions/v1/ai-advisor';
 let gcalConnected = false;
 const { createClient } = supabase;
 const sb = createClient(SB_URL, SB_KEY);
@@ -2294,7 +2357,7 @@ function setMode(mode) {
   const activePage = document.querySelector('.page.active');
   const activeId = activePage ? activePage.id.replace('page-', '') : '';
   const businessOnly = ['ops', 'profitfirst', 'alerts', 'equipment'];
-  const homeOnly = ['goals'];
+  const homeOnly = ['goals', 'advisor'];
   const invalid = (mode === 'home' && businessOnly.includes(activeId)) ||
                   (mode === 'business' && homeOnly.includes(activeId)) ||
                   (activeId && pageAccess(activeId) === 'blocked');
@@ -2493,15 +2556,19 @@ function applyPlanVisibility() {
     el.style.display = !admin ? 'none'
       : (modeAttr && modeAttr !== appMode ? 'none' : '');
   });
-  // סמן טאבים שנמצאים במצב צפייה
-  BASIC_READONLY.concat(BASIC_FULL).forEach(id => {
-    document.querySelectorAll('.tab[data-page="' + id + '"], .bnav-item[data-page="' + id + '"]').forEach(t => {
-      const acc = pageAccess(id);
-      t.style.opacity = acc === 'full' ? '1' : '0.6';
-      t.title = acc === 'readonly'
-        ? (currentLang === 'en' ? 'View only — upgrade to Pro to edit' : 'צפייה בלבד — שדרג לפרו כדי לערוך')
-        : '';
-    });
+  // הסתר טאבים של עמודים חסומים לגמרי (כמו היועץ במסלול בסיסי)
+  document.querySelectorAll('.tab[data-page], .bnav-item[data-page]').forEach(t => {
+    const id = t.getAttribute('data-page');
+    if (t.hasAttribute('data-adminonly')) return; // כבר טופל למעלה
+    const acc = pageAccess(id);
+    const modeAttr = t.getAttribute('data-mode');
+    const modeHides = modeAttr && modeAttr !== appMode;
+    if (acc === 'blocked' && !modeHides) { t.style.display = 'none'; return; }
+    if (!modeHides) t.style.display = '';
+    t.style.opacity = acc === 'full' ? '1' : '0.6';
+    t.title = acc === 'readonly'
+      ? (currentLang === 'en' ? 'View only — upgrade to Pro to edit' : 'צפייה בלבד — שדרג לפרו כדי לערוך')
+      : '';
   });
   // אם העמוד הפתוח נחסם בעקבות שינוי מסלול — חזור לדשבורד
   const active = document.querySelector('.page.active');
@@ -5736,6 +5803,164 @@ function updatePFSlider(i, val) { pfSettings.accounts[i].pct = parseInt(val); $(
 function updatePFTotal() { const total = pfSettings.accounts.reduce((s, a) => s + a.pct, 0); const el = $('pf-total-pct'); if (el) { el.textContent = total + '%'; el.style.color = total === 100 ? 'var(--green)' : 'var(--red)'; } }
 function togglePFEdit() { const el = $('pf-edit'), btn = $('pf-edit-btn'); if (!el) return; const isOpen = el.style.display !== 'none'; el.style.display = isOpen ? 'none' : 'block'; btn.textContent = isOpen ? '\u270f\ufe0f \u05e2\u05e8\u05d5\u05da \u05d0\u05d7\u05d5\u05d6\u05d9\u05dd' : '\u2715 \u05e1\u05d2\u05d5\u05e8'; if (!isOpen) renderPFSliders(); }
 
+// ── יועץ AI ──
+let advHistory = [];
+let advStarted = false;
+
+// בונה תמונת מצב מזוקקת מהנתונים שכבר ב-cache (בלי לשלוף מחדש)
+function buildAdvisorContext() {
+  const month = getMonth();
+  if (appMode === 'home') {
+    const income = cachedTx.filter(t => t.type === 'income');
+    const expense = cachedTx.filter(t => t.type === 'expense');
+    let bizSalary = 0;
+    try { bizSalary = (JSON.parse(localStorage.getItem('cf_biz_salary') || '{}'))[month] || 0; } catch (e) {}
+    const salaries = cachedSalaries.filter(s => s.active).map(s => ({ שם: s.person_name, נטו: s.amount || 0 }));
+    const cats = {};
+    expense.forEach(t => { cats[t.category || 'אחר'] = (cats[t.category || 'אחר'] || 0) + t.amount; });
+    const recTotal = cachedRecurring.reduce((s, r) => s + r.amount, 0);
+    const totalIncome = income.reduce((s, t) => s + t.amount, 0) + bizSalary + salaries.reduce((s, x) => s + x.נטו, 0);
+    const totalExpense = expense.reduce((s, t) => s + t.amount, 0);
+    return {
+      מצב: 'בית', חודש: month,
+      הכנסות: { משכורות: salaries, משכורת_מהעסק: bizSalary, אחר: income.map(t => ({ תיאור: t.description, סכום: t.amount })), סהכ: totalIncome },
+      הוצאות: { לפי_קטגוריה: cats, קבועות_חודשי: recTotal, סהכ: totalExpense },
+      נשאר_החודש: totalIncome - totalExpense,
+      יעדי_חיסכון: cachedGoals.map(g => ({ שם: g.name, יעד: g.target_amount || 0, נחסך: g.saved_amount || 0, תאריך_יעד: g.deadline || null })),
+      חיסכון_ילדים: cachedChildren.map(c => ({ שם: c.child_name, שווי_נוכחי: c.current_value || 0, הפקדה_חודשית: c.monthly_deposit || 0, גיל_יעד: c.target_age }))
+    };
+  }
+  // מצב עסק
+  const d = profitBreakdownData || {};
+  const cats = {};
+  cachedTx.filter(t => t.type === 'expense').forEach(t => { cats[t.category || 'אחר'] = (cats[t.category || 'אחר'] || 0) + t.amount; });
+  const debtors = cachedClients.map(c => {
+    const evs = cachedEventDetails.filter(x => x.client_id === c.id);
+    const total = evs.reduce((s, x) => s + (x.price || 0), 0);
+    const paid = evs.filter(x => x.status === 'בוצע תשלום' || x.status === 'בוצע תשלום + חשבונית מס').reduce((s, x) => s + (x.price || 0), 0);
+    return { לקוח: c.name, חוב: total - paid };
+  }).filter(x => x.חוב > 0);
+  return {
+    מצב: 'עסק', חודש: month,
+    הכנסות: { נכנס_מלקוחות: d.income || 0, צפוי_מלקוחות: d.pendingIncome || 0 },
+    הוצאות: { לפי_קטגוריה: cats, קבועות_חודשי: cachedRecurring.reduce((s, r) => s + r.amount, 0) },
+    צפי_רווח: d.pendingNet || 0,
+    לקוחות_בחוב: debtors
+  };
+}
+
+function advSystemPrompt() {
+  const ctx = buildAdvisorContext();
+  const modeWord = appMode === 'home' ? 'משפחות ישראליות' : 'עצמאים ובעלי עסקים קטנים';
+  return 'אתה יועץ פיננסי אישי בתוך אפליקציית CashflowHQ, ואתה עוזר ל' + modeWord + ' לקבל החלטות כספיות טובות יותר.\n\n' +
+    'הנתונים האמיתיים (כל הסכומים בשקלים):\n' + JSON.stringify(ctx, null, 2) + '\n\n' +
+    'כללי התנהגות מחייבים:\n' +
+    '- ענה בעברית, בגוף שני, בחום ובאופן ישיר וקצר. אתה מדבר עם אדם עסוק, לא כותב דוח.\n' +
+    '- הסתמך אך ורק על הנתונים שלמעלה. אל תמציא מספרים. אם חסר מידע — אמור זאת וציין מה היית צריך.\n' +
+    '- תן פרספקטיבה ואפשרויות, לא הבטחות. אל תבטיח תשואות או תוצאות.\n' +
+    '- גבה כל טענה במספר קונקרטי מהנתונים.\n' +
+    '- בהחלטות מהותיות של מס, השקעות או משפט — ציין שכדאי להתייעץ עם איש מקצוע. אל תיתן ייעוץ מס ספציפי.\n' +
+    '- אל תשפוט ואל תטיף. אתה בצד של המשתמש.\n' +
+    '- שמור על תשובות קצרות: 2-4 משפטים לרוב.';
+}
+
+function advGrow(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+
+function advAddMsg(text, who) {
+  const chat = $('adv-chat');
+  const d = document.createElement('div');
+  d.className = 'msg ' + who;
+  d.textContent = text;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+function advTyping(on) {
+  const chat = $('adv-chat');
+  if (on) {
+    const t = document.createElement('div');
+    t.className = 'typing'; t.id = 'adv-typing';
+    t.innerHTML = '<span></span><span></span><span></span>';
+    chat.appendChild(t); chat.scrollTop = chat.scrollHeight;
+  } else { const t = $('adv-typing'); if (t) t.remove(); }
+}
+
+// מרנדר את פאנל "מה שאני רואה" + הודעת פתיחה
+function renderAdvisor() {
+  const ctx = buildAdvisorContext();
+  const monthName = (() => { const [y, m] = getMonth().split('-'); return MON(Number(m) - 1) + ' ' + y; })();
+  $('adv-seen-month').textContent = 'מה שאני רואה החודש (' + monthName + ')';
+
+  const grid = $('adv-seen-grid');
+  if (appMode === 'home') {
+    const inc = ctx.הכנסות.סהכ, exp = ctx.הוצאות.סהכ, left = ctx.נשאר_החודש, fixed = ctx.הוצאות.קבועות_חודשי;
+    grid.innerHTML =
+      cell(fmt(inc), 'נכנס', 'pos') + cell(fmt(exp), 'יצא', 'neg') +
+      cell(fmt(left), 'נשאר', left >= 0 ? 'pos' : 'neg') + cell(fmt(fixed), 'קבועות', '');
+    const salCount = ctx.הכנסות.משכורות.length + (ctx.הכנסות.משכורת_מהעסק > 0 ? 1 : 0);
+    const catCount = Object.keys(ctx.הוצאות.לפי_קטגוריה).length;
+    $('adv-mode-note').innerHTML = '📍 מצב <strong>בית</strong> · ' + salCount + ' משכורות · ' +
+      ctx.יעדי_חיסכון.length + ' יעדי חיסכון · הוצאות ב-' + catCount + ' קטגוריות';
+  } else {
+    grid.innerHTML =
+      cell(fmt(ctx.הכנסות.נכנס_מלקוחות), 'נכנס', 'pos') +
+      cell(fmt(ctx.הכנסות.צפוי_מלקוחות), 'צפוי', '') +
+      cell(fmt(ctx.צפי_רווח), 'צפי רווח', ctx.צפי_רווח >= 0 ? 'pos' : 'neg') +
+      cell(fmt(ctx.הוצאות.קבועות_חודשי), 'קבועות', '');
+    $('adv-mode-note').innerHTML = '📍 מצב <strong>עסק</strong> · ' +
+      ctx.לקוחות_בחוב.length + ' לקוחות בחוב · ' + Object.keys(ctx.הוצאות.לפי_קטגוריה).length + ' קטגוריות הוצאה';
+  }
+
+  // הודעת פתיחה + צ'יפים — פעם אחת
+  if (!advStarted) {
+    const chat = $('adv-chat');
+    chat.innerHTML = '';
+    advAddMsg('שלום! אני רואה את כל המספרים של ' + (appMode === 'home' ? 'הבית' : 'העסק') +
+      ' שלכם. שאלו אותי כל דבר, ואעזור לכם להחליט על סמך המצב האמיתי.\n\nמה בא לכם לבדוק?', 'ai');
+    const starters = appMode === 'home'
+      ? ['כמה אני יכול להוציא החודש?', 'איפה אני מבזבז יותר מדי?', 'אני בקצב לעמוד ביעדים?', 'איך אחסוך עוד ₪1,000 בחודש?']
+      : ['איך נראה צפי הרווח שלי?', 'אילו לקוחות חייבים לי כסף?', 'איפה אני מוציא הכי הרבה?', 'מה כדאי לשפר החודש?'];
+    const box = document.createElement('div');
+    box.className = 'starters';
+    box.innerHTML = starters.map(s => '<button class="chip" onclick="advAsk(this.textContent)">' + esc(s) + '</button>').join('');
+    chat.appendChild(box);
+  }
+
+  function cell(v, k, cls) { return '<div class="seen-cell ' + cls + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>'; }
+}
+
+async function advAsk(preset) {
+  const input = $('adv-input');
+  const text = (preset || input.value).trim();
+  if (!text) return;
+  const starters = $('adv-chat').querySelector('.starters');
+  if (starters) starters.remove();
+  advStarted = true;
+  input.value = ''; advGrow(input);
+  $('adv-send').disabled = true;
+  advAddMsg(text, 'user');
+  advHistory.push({ role: 'user', content: text });
+  advTyping(true);
+
+  try {
+    const res = await fetch(ADVISOR_FN_URL, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: advSystemPrompt(), messages: advHistory })
+    });
+    const data = await res.json();
+    advTyping(false);
+    const reply = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('').trim()
+      || 'מצטער, לא קיבלתי תשובה. נסו שוב.';
+    advAddMsg(reply, 'ai');
+    advHistory.push({ role: 'assistant', content: reply });
+  } catch (err) {
+    advTyping(false);
+    advAddMsg('משהו השתבש בחיבור ליועץ. נסו שוב עוד רגע.', 'ai');
+  }
+  $('adv-send').disabled = false;
+  input.focus();
+}
+
 // ── NAV ──
 function showPage(id, el) {
   // חסום עמודים שאינם זמינים במסלול הנוכחי
@@ -5756,6 +5981,7 @@ function showPage(id, el) {
   if (id === 'goals') { calcCompound(); renderHomeGoalsList(); renderChildren(); }
   if (id === 'equipment') renderEquipment();
   if (id === 'accounts') { renderAccounts(); loadSnapshots().then(renderReconcile); }
+  if (id === 'advisor') renderAdvisor();
   applyReadOnly();
 }
 
