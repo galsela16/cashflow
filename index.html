@@ -2836,33 +2836,51 @@ function shiftMonthLabel() {
   return (SH_HEB_MONTHS[mm - 1] || m[1]) + ' ' + m[0];
 }
 
-// בונה טקסט סיכום חודשי למעסיק ופותח שיתוף (וואטסאפ) + מעתיק ללוח
+// מפיק דף PDF של סיכום המשמרות החודשי למעסיק
 function sendEmployerSummary(emp) {
   const rows = cachedShifts.filter(s => (s.employer || '') === emp)
     .slice().sort((a, b) => (a.shift_date || '').localeCompare(b.shift_date || ''));
   if (!rows.length) { alert('אין משמרות למעסיק זה החודש'); return; }
+  if (typeof window.jspdf === 'undefined') { alert('ספריית ה-PDF עדיין נטענת, נסה שוב בעוד רגע'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const hasHeb = ensureHebFont(doc);
+  const F = hasHeb ? 'DejaVuHeb' : 'helvetica';
+  const R = s => hasHeb ? pdfRTL(s) : String(s == null ? '' : s);
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // כותרת
+  doc.setFont(F); doc.setFontSize(18);
+  doc.text(R('סיכום שעות — ' + emp), pageW - 14, 20, { align: 'right' });
+  doc.setFontSize(12); doc.setTextColor(120, 120, 130);
+  doc.text(R(shiftMonthLabel()), pageW - 14, 28, { align: 'right' });
+  doc.setTextColor(20, 20, 30);
+
   let totalH = 0, totalP = 0;
-  const lines = rows.map(s => {
-    const h = Number(s.hours) || 0, p = h * (Number(s.rate) || 0);
-    totalH += h; totalP += p;
-    const range = (s.start_time && s.end_time) ? (s.start_time + '–' + s.end_time) : '';
-    return '• ' + (s.shift_date || '') + (range ? '  ' + range : '') + '  ·  ' + h + ' שע׳  ·  ' + fmt(p);
+  const body = rows.map(s => {
+    const h = Number(s.hours) || 0, rate = Number(s.rate) || 0, pay = h * rate;
+    totalH += h; totalP += pay;
+    const range = (s.start_time && s.end_time) ? (s.start_time + '-' + s.end_time) : '';
+    return [s.shift_date || '', range, String(Math.round(h * 100) / 100), fmtNum(rate), fmtNum(pay)];
   });
-  const text =
-    'סיכום שעות — ' + emp + '\n' +
-    shiftMonthLabel() + '\n' +
-    '——————————————\n' +
-    lines.join('\n') + '\n' +
-    '——————————————\n' +
-    'סה"כ: ' + (Math.round(totalH * 100) / 100) + ' שעות · ' + fmt(totalP);
-  // העתקה ללוח (best-effort)
-  if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
-  // שיתוף מקורי במובייל, אחרת וואטסאפ
-  if (navigator.share) {
-    navigator.share({ text }).catch(() => window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'));
-  } else {
-    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
-  }
+
+  doc.autoTable({
+    startY: 34,
+    head: [['תאריך', 'שעות', 'משך', 'תעריף ₪', 'סה"כ ₪'].map(R)],
+    body: body.map(row => row.map(R)),
+    foot: [['סה"כ', '', String(Math.round(totalH * 100) / 100), '', fmtNum(totalP)].map(R)],
+    theme: 'grid',
+    styles: { font: F, halign: 'right', fontSize: 10 },
+    headStyles: { font: F, fillColor: [27, 127, 94], halign: 'right', textColor: [255, 255, 255] },
+    footStyles: { font: F, fillColor: [232, 250, 243], textColor: [20, 20, 30], halign: 'right', fontStyle: 'bold' }
+  });
+
+  const y = doc.lastAutoTable.finalY + 12;
+  doc.setFontSize(11);
+  doc.text(R('הופק ב-' + new Date().toLocaleDateString('he-IL') + ' · CashflowHQ'), pageW - 14, y, { align: 'right' });
+
+  doc.save('סיכום-' + emp + '-' + getMonth() + '.pdf');
 }
 
 // חישוב משך משמרת מ"משעה" עד "עד שעה" (תומך בחציית חצות)
@@ -3012,7 +3030,7 @@ function renderShifts() {
         '<div class="sh-avatar">' + initial + '</div>' +
         '<div><div class="sh-emp-name">' + esc(e) + '</div><div class="sh-emp-hours">' + byEmp[e].hours.toLocaleString('he-IL') + ' שעות</div></div>' +
         '<div class="sh-emp-pay">' + fmt(byEmp[e].salary) + '</div>' +
-        '<button class="btn sh-mini" style="margin-inline-start:10px" onclick="sendEmployerSummary(\'' + esc(e).replace(/'/g, "\\'") + '\')" title="שלח סיכום חודשי">📤 סיכום</button>' +
+        '<button class="btn sh-mini" style="margin-inline-start:10px" onclick="sendEmployerSummary(\'' + esc(e).replace(/'/g, "\\'") + '\')" title="הפק סיכום חודשי כ-PDF">📄 PDF</button>' +
       '</div>';
     }).join('') + '</div>' : '';
   }
