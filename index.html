@@ -582,6 +582,42 @@ tr:last-child td{border-bottom:none}
   .client-info{grid-template-columns:1fr}
 }
 @media(min-width:601px){.bottom-nav{display:none}}
+/* ══ מודול משמרות — נראות ══ */
+#page-shifts .sh-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin-bottom:20px}
+#page-shifts .sh-stat{position:relative;background:var(--surface);border-radius:var(--radius);padding:16px 18px 15px;box-shadow:var(--shadow);overflow:hidden;transition:transform .2s cubic-bezier(.22,.61,.36,1)}
+#page-shifts .sh-stat:hover{transform:translateY(-2px)}
+#page-shifts .sh-stat::before{content:'';position:absolute;top:0;bottom:0;right:0;width:4px;background:linear-gradient(180deg,#c98a52,#e0b896)}
+#page-shifts .sh-stat.is-money::before{background:linear-gradient(180deg,#1b7f5e,#3fbf92)}
+#page-shifts .sh-ic{font-size:20px;line-height:1;margin-bottom:8px;display:block}
+#page-shifts .sh-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+#page-shifts .sh-num{font-size:27px;font-weight:700;line-height:1.15;margin-top:3px;color:var(--text)}
+#page-shifts .sh-stat.is-money .sh-num{color:var(--green)}
+#page-shifts .sh-sub{font-size:11px;color:var(--muted);margin-top:2px}
+#page-shifts .sh-emp-list{display:flex;flex-direction:column;gap:8px}
+#page-shifts .sh-emp{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);transition:background .15s}
+#page-shifts .sh-emp:hover{background:rgba(224,184,150,.10)}
+#page-shifts .sh-avatar{width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#fff;background:linear-gradient(135deg,#c98a52,#e0b896)}
+#page-shifts .sh-emp-name{font-weight:600;font-size:14px}
+#page-shifts .sh-emp-hours{font-size:12px;color:var(--muted)}
+#page-shifts .sh-emp-pay{margin-inline-start:auto;font-weight:700;color:var(--green);font-size:15px}
+#page-shifts .sh-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:14px;align-items:end;margin-top:14px}
+#page-shifts .sh-form label{font-size:11.5px;color:var(--muted);display:block;margin-bottom:5px;font-weight:600}
+#page-shifts .sh-form input,#page-shifts .sh-form select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:#fff;color:var(--text);transition:border-color .15s,box-shadow .15s;box-sizing:border-box}
+#page-shifts .sh-form input:focus,#page-shifts .sh-form select:focus{outline:none;border-color:#c98a52;box-shadow:0 0 0 3px rgba(201,138,82,.15)}
+#page-shifts .sh-preview{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted)}
+#page-shifts .sh-preview b{color:var(--green);font-size:16px}
+#page-shifts .sh-tablewrap{overflow-x:auto;margin-top:14px;border:1px solid var(--border);border-radius:var(--radius-sm)}
+#page-shifts table.sh-table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+#page-shifts .sh-table thead th{text-align:right;padding:11px 12px;font-weight:600;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;background:rgba(224,184,150,.10);border-bottom:1px solid var(--border);white-space:nowrap}
+#page-shifts .sh-table tbody td{padding:11px 12px;border-bottom:1px solid var(--border)}
+#page-shifts .sh-table tbody tr:last-child td{border-bottom:none}
+#page-shifts .sh-table tbody tr{transition:background .12s}
+#page-shifts .sh-table tbody tr:hover{background:rgba(224,184,150,.07)}
+#page-shifts .sh-chip{display:inline-block;background:var(--green-soft);color:var(--green);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+#page-shifts .sh-total{font-weight:700;color:var(--green)}
+#page-shifts .sh-mini{padding:5px 11px;font-size:12px;border-radius:8px}
+#page-shifts .sh-empty{padding:36px 20px;text-align:center;color:var(--muted)}
+#page-shifts .sh-empty .sh-empty-ic{font-size:34px;display:block;margin-bottom:8px;opacity:.65}
 </style>
 </head>
 <body>
@@ -1161,51 +1197,50 @@ tr:last-child td{border-bottom:none}
     <div id="page-shifts" class="page">
       <div class="section" style="margin-bottom:1rem">
         <div class="section-title">🕐 מעקב שכר ממעסיקים</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">רשום משמרות שעתיות אצל מעסיקים שונים — המערכת מחשבת את השכר ברוטו לפי שעות × תעריף.</p>
-        <div id="shifts-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px"></div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:18px">רשום משמרות שעתיות אצל מעסיקים שונים — המערכת מחשבת את השכר ברוטו לפי שעות × תעריף.</p>
+        <div id="shifts-summary" class="sh-summary"></div>
         <div id="shifts-breakdown"></div>
       </div>
 
       <div class="section" style="margin-bottom:1rem">
         <div class="section-title">➕ הוספת משמרת</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;align-items:end;margin-top:12px">
+        <div class="sh-form">
           <div>
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">מעסיק</label>
-            <input id="sh-employer" list="sh-employer-list" placeholder="שם מעסיק" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
-            <datalist id="sh-employer-list"></datalist>
+            <label>מעסיק</label>
+            <select id="sh-employer-select" onchange="onEmployerSelect()"></select>
+            <input id="sh-employer" placeholder="שם מעסיק חדש" style="margin-top:8px;display:none">
           </div>
           <div>
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">תאריך</label>
-            <input id="sh-date" type="date" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <label>תאריך</label>
+            <input id="sh-date" type="date">
           </div>
           <div>
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שעות</label>
-            <input id="sh-hours" type="number" step="0.1" placeholder="8" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <label>משעה</label>
+            <input id="sh-start" type="time" oninput="shiftPreview()">
           </div>
           <div>
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">תעריף לשעה (₪)</label>
-            <input id="sh-rate" type="number" value="50" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <label>עד שעה</label>
+            <input id="sh-end" type="time" oninput="shiftPreview()">
           </div>
           <div>
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">הערה (לא חובה)</label>
-            <input id="sh-notes" placeholder="סופ״ש / שעות נוספות" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <label>תעריף לשעה (₪)</label>
+            <input id="sh-rate" type="number" value="50" oninput="shiftPreview()">
           </div>
-          <button class="btn btn-primary" id="btn-add-shift" onclick="addShift()" style="height:38px">הוסף משמרת</button>
+          <div>
+            <label>הערה (לא חובה)</label>
+            <input id="sh-notes" placeholder="סופ״ש / שעות נוספות">
+          </div>
+          <button class="btn btn-primary" id="btn-add-shift" onclick="addShift()" style="height:42px">הוסף משמרת</button>
         </div>
+        <div class="sh-preview">משך: <b id="sh-preview-hours">0 שע׳</b> · שכר המשמרת: <b id="sh-preview-val">₪0</b></div>
       </div>
 
       <div class="section">
         <div class="section-title">📋 היסטוריית משמרות (החודש)</div>
-        <div style="overflow-x:auto;margin-top:12px">
-          <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead><tr style="text-align:right;border-bottom:1px solid var(--border);color:var(--muted)">
-              <th style="padding:8px;font-weight:600">מעסיק</th>
-              <th style="padding:8px;font-weight:600">תאריך</th>
-              <th style="padding:8px;font-weight:600">שעות</th>
-              <th style="padding:8px;font-weight:600">תעריף</th>
-              <th style="padding:8px;font-weight:600">הערות</th>
-              <th style="padding:8px;font-weight:600">סה&quot;כ</th>
-              <th style="padding:8px;font-weight:600">פעולות</th>
+        <div class="sh-tablewrap">
+          <table class="sh-table">
+            <thead><tr>
+              <th>מעסיק</th><th>תאריך</th><th>שעות</th><th>תעריף</th><th>הערות</th><th>סה&quot;כ</th><th>פעולות</th>
             </tr></thead>
             <tbody id="shifts-tbody"></tbody>
           </table>
@@ -2803,6 +2838,33 @@ function updateMonth() { loadAll(); }
 // ════════════ משמרות שכר ממעסיקים (מצב בית) ════════════
 let cachedShifts = [];
 let editingShiftId = null;
+let lastEmployer = null;
+
+// חישוב משך משמרת מ"משעה" עד "עד שעה" (תומך בחציית חצות)
+function computeShiftHours(start, end) {
+  if (!start || !end) return 0;
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  if ([sh, sm, eh, em].some(n => isNaN(n))) return 0;
+  let mins = (eh * 60 + em) - (sh * 60 + sm);
+  if (mins <= 0) mins += 1440; // המשמרת חוצה חצות
+  return Math.round((mins / 60) * 100) / 100;
+}
+function fmtHours(h) { return (Math.round(h * 100) / 100).toLocaleString('he-IL') + ' שע׳'; }
+
+// החלפה בין בחירת מעסיק קיים לבין הזנת מעסיק חדש
+function onEmployerSelect() {
+  const sel = $('sh-employer-select'), inp = $('sh-employer');
+  if (!sel || !inp) return;
+  const isNew = sel.value === '__new__';
+  inp.style.display = isNew ? 'block' : 'none';
+  if (isNew) { inp.value = ''; inp.focus(); }
+}
+function currentEmployerValue() {
+  const sel = $('sh-employer-select');
+  if (sel && sel.value && sel.value !== '__new__') return sel.value;
+  return $('sh-employer') ? $('sh-employer').value.trim() : '';
+}
 
 async function loadShifts() {
   if (appMode !== 'home' || !currentUser) { cachedShifts = []; return; }
@@ -2820,20 +2882,23 @@ function shiftEmployers() {
 }
 
 async function addShift() {
-  const employer = $('sh-employer').value.trim();
+  const employer = currentEmployerValue();
   const date = $('sh-date').value;
-  const hours = parseFloat($('sh-hours').value);
+  const start = $('sh-start').value, end = $('sh-end').value;
   const rate = parseFloat($('sh-rate').value);
   const notes = $('sh-notes').value.trim();
-  if (!employer) { alert('נא למלא שם מעסיק'); return; }
-  if (isNaN(hours) || hours <= 0) { alert('נא למלא מספר שעות תקין'); return; }
+  if (!employer) { alert('נא לבחור או להזין מעסיק'); return; }
+  if (!start || !end) { alert('נא למלא שעת התחלה וסיום'); return; }
+  const hours = computeShiftHours(start, end);
+  if (hours <= 0) { alert('טווח השעות אינו תקין'); return; }
   if (isNaN(rate) || rate < 0) { alert('נא למלא תעריף תקין'); return; }
   $('btn-add-shift').disabled = true;
   await sb.from('home_shifts').insert({
     user_id: currentUser.id, month: getMonth(), employer,
-    shift_date: date || null, hours, rate, notes: notes || null
+    shift_date: date || null, start_time: start, end_time: end, hours, rate, notes: notes || null
   });
-  $('sh-employer').value = ''; $('sh-hours').value = ''; $('sh-notes').value = '';
+  lastEmployer = employer; // שמור את המעסיק שנבחר להזנה הבאה
+  $('sh-notes').value = ''; $('sh-start').value = ''; $('sh-end').value = '';
   $('btn-add-shift').disabled = false;
   await loadShifts();
   renderShifts();
@@ -2845,12 +2910,14 @@ function cancelEditShift() { editingShiftId = null; renderShifts(); }
 async function saveShift(id) {
   const employer = $('she-employer-' + id).value.trim();
   const date = $('she-date-' + id).value;
-  const hours = parseFloat($('she-hours-' + id).value);
+  const start = $('she-start-' + id).value, end = $('she-end-' + id).value;
   const rate = parseFloat($('she-rate-' + id).value);
   const notes = $('she-notes-' + id).value.trim();
-  if (!employer || isNaN(hours) || hours <= 0 || isNaN(rate) || rate < 0) { alert('נתונים לא תקינים'); return; }
+  if (!employer || !start || !end || isNaN(rate) || rate < 0) { alert('נתונים לא תקינים'); return; }
+  const hours = computeShiftHours(start, end);
+  if (hours <= 0) { alert('טווח השעות אינו תקין'); return; }
   await sb.from('home_shifts').update({
-    employer, shift_date: date || null, hours, rate, notes: notes || null
+    employer, shift_date: date || null, start_time: start, end_time: end, hours, rate, notes: notes || null
   }).eq('id', id).eq('user_id', currentUser.id);
   editingShiftId = null;
   await loadShifts();
@@ -2865,12 +2932,20 @@ async function deleteShift(id) {
   renderShifts();
 }
 
+function shiftPreview() {
+  const h = computeShiftHours($('sh-start') ? $('sh-start').value : '', $('sh-end') ? $('sh-end').value : '');
+  const r = parseFloat($('sh-rate') ? $('sh-rate').value : '') || 0;
+  if ($('sh-preview-hours')) $('sh-preview-hours').textContent = fmtHours(h);
+  if ($('sh-preview-val')) $('sh-preview-val').textContent = fmt(h * r);
+}
+
 function renderShifts() {
   // ברירת מחדל לתאריך = היום (מקומי)
   if ($('sh-date') && !$('sh-date').value) {
     const d = new Date();
     $('sh-date').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
+  shiftPreview();
 
   const totalHours = cachedShifts.reduce((a, s) => a + (Number(s.hours) || 0), 0);
   const totalSalary = cachedShifts.reduce((a, s) => a + (Number(s.hours) || 0) * (Number(s.rate) || 0), 0);
@@ -2878,9 +2953,9 @@ function renderShifts() {
 
   const sum = $('shifts-summary');
   if (sum) sum.innerHTML =
-    '<div class="card card-soft-green"><div class="card-label">🕐 סה"כ שעות</div><div class="card-value">' + totalHours.toLocaleString('he-IL') + '</div><div class="card-sub">החודש</div></div>' +
-    '<div class="card card-soft-green"><div class="card-label">💵 שכר ברוטו</div><div class="card-value c-green">' + fmt(totalSalary) + '</div><div class="card-sub">שעות × תעריף</div></div>' +
-    '<div class="card"><div class="card-label">📊 תעריף ממוצע</div><div class="card-value">' + fmt(avgRate) + '</div><div class="card-sub">לשעה</div></div>';
+    '<div class="sh-stat"><span class="sh-ic">🕐</span><div class="sh-label">סה"כ שעות</div><div class="sh-num">' + totalHours.toLocaleString('he-IL') + '</div><div class="sh-sub">החודש</div></div>' +
+    '<div class="sh-stat is-money"><span class="sh-ic">💵</span><div class="sh-label">שכר ברוטו</div><div class="sh-num">' + fmt(totalSalary) + '</div><div class="sh-sub">שעות × תעריף</div></div>' +
+    '<div class="sh-stat"><span class="sh-ic">📊</span><div class="sh-label">תעריף ממוצע</div><div class="sh-num">' + fmt(avgRate) + '</div><div class="sh-sub">לשעה</div></div>';
 
   // פירוט לפי מעסיק
   const byEmp = {};
@@ -2893,51 +2968,62 @@ function renderShifts() {
   const bd = $('shifts-breakdown');
   if (bd) {
     const keys = Object.keys(byEmp);
-    bd.innerHTML = keys.length ? '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">פירוט לפי מעסיק</div>' + keys.map(e =>
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px">' +
-        '<div><div style="font-weight:600">' + esc(e) + '</div><div style="font-size:12px;color:var(--muted)">' + byEmp[e].hours.toLocaleString('he-IL') + ' שעות</div></div>' +
-        '<div style="font-weight:700;color:var(--green)">' + fmt(byEmp[e].salary) + '</div>' +
-      '</div>'
-    ).join('') : '';
+    bd.innerHTML = keys.length ? '<div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">פירוט לפי מעסיק</div><div class="sh-emp-list">' + keys.map(e => {
+      const initial = esc((e || '—').trim().charAt(0) || '—');
+      return '<div class="sh-emp">' +
+        '<div class="sh-avatar">' + initial + '</div>' +
+        '<div><div class="sh-emp-name">' + esc(e) + '</div><div class="sh-emp-hours">' + byEmp[e].hours.toLocaleString('he-IL') + ' שעות</div></div>' +
+        '<div class="sh-emp-pay">' + fmt(byEmp[e].salary) + '</div>' +
+      '</div>';
+    }).join('') + '</div>' : '';
   }
 
-  // datalist מעסיקים
-  const dl = $('sh-employer-list');
-  if (dl) dl.innerHTML = shiftEmployers().map(e => '<option value="' + esc(e) + '"></option>').join('');
+  // תיבת בחירת מעסיק — מאוכלסת מהמעסיקים הקיימים + אפשרות "מעסיק חדש"
+  const selEl = $('sh-employer-select');
+  if (selEl) {
+    const emps = shiftEmployers();
+    const prev = lastEmployer || selEl.value;
+    selEl.innerHTML = emps.map(e => '<option value="' + esc(e) + '">' + esc(e) + '</option>').join('') +
+      '<option value="__new__">➕ מעסיק חדש…</option>';
+    if (prev && prev !== '__new__' && emps.includes(prev)) selEl.value = prev;
+    else if (!emps.length) selEl.value = '__new__';
+    onEmployerSelect();
+  }
+  lastEmployer = null;
 
   // טבלה
   const tb = $('shifts-tbody');
   if (!tb) return;
   if (!cachedShifts.length) {
-    tb.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--muted)">עדיין לא הוספת משמרות החודש.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7"><div class="sh-empty"><span class="sh-empty-ic">🗓️</span>עדיין לא הוספת משמרות החודש.<br>הוסף את המשמרת הראשונה למעלה.</div></td></tr>';
     return;
   }
-  const inp = 'padding:6px;border:1px solid var(--border);border-radius:6px;width:100%;font-size:13px;box-sizing:border-box';
+  const inp = 'padding:7px 9px;border:1.5px solid var(--border);border-radius:8px;width:100%;font-size:13px;box-sizing:border-box';
   tb.innerHTML = cachedShifts.map(s => {
     if (editingShiftId === s.id) {
-      return '<tr style="border-bottom:1px solid var(--border)">' +
-        '<td style="padding:6px"><input id="she-employer-' + s.id + '" value="' + esc(s.employer || '') + '" style="' + inp + '"></td>' +
-        '<td style="padding:6px"><input id="she-date-' + s.id + '" type="date" value="' + esc(s.shift_date || '') + '" style="' + inp + '"></td>' +
-        '<td style="padding:6px"><input id="she-hours-' + s.id + '" type="number" step="0.1" value="' + (Number(s.hours) || 0) + '" style="' + inp + '"></td>' +
-        '<td style="padding:6px"><input id="she-rate-' + s.id + '" type="number" value="' + (Number(s.rate) || 0) + '" style="' + inp + '"></td>' +
-        '<td style="padding:6px"><input id="she-notes-' + s.id + '" value="' + esc(s.notes || '') + '" style="' + inp + '"></td>' +
-        '<td style="padding:6px;color:var(--muted)">—</td>' +
-        '<td style="padding:6px;white-space:nowrap">' +
-          '<button class="btn btn-primary" style="padding:5px 10px;font-size:12px" onclick="saveShift(\'' + s.id + '\')">שמור</button> ' +
-          '<button class="btn" style="padding:5px 10px;font-size:12px" onclick="cancelEditShift()">ביטול</button>' +
+      return '<tr>' +
+        '<td><input id="she-employer-' + s.id + '" value="' + esc(s.employer || '') + '" style="' + inp + '"></td>' +
+        '<td><input id="she-date-' + s.id + '" type="date" value="' + esc(s.shift_date || '') + '" style="' + inp + '"></td>' +
+        '<td><div style="display:flex;gap:4px"><input id="she-start-' + s.id + '" type="time" value="' + esc(s.start_time || '') + '" style="' + inp + '"><input id="she-end-' + s.id + '" type="time" value="' + esc(s.end_time || '') + '" style="' + inp + '"></div></td>' +
+        '<td><input id="she-rate-' + s.id + '" type="number" value="' + (Number(s.rate) || 0) + '" style="' + inp + '"></td>' +
+        '<td><input id="she-notes-' + s.id + '" value="' + esc(s.notes || '') + '" style="' + inp + '"></td>' +
+        '<td style="color:var(--muted)">—</td>' +
+        '<td style="white-space:nowrap">' +
+          '<button class="btn btn-primary sh-mini" onclick="saveShift(\'' + s.id + '\')">שמור</button> ' +
+          '<button class="btn sh-mini" onclick="cancelEditShift()">ביטול</button>' +
         '</td></tr>';
     }
     const total = (Number(s.hours) || 0) * (Number(s.rate) || 0);
-    return '<tr style="border-bottom:1px solid var(--border)">' +
-      '<td style="padding:8px"><span style="background:var(--green-soft,#e8faf3);padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600">' + esc(s.employer || '—') + '</span></td>' +
-      '<td style="padding:8px">' + esc(s.shift_date || '—') + '</td>' +
-      '<td style="padding:8px">' + (Number(s.hours) || 0) + ' שעות</td>' +
-      '<td style="padding:8px">' + fmt(Number(s.rate) || 0) + '</td>' +
-      '<td style="padding:8px;color:var(--muted)">' + esc(s.notes || '—') + '</td>' +
-      '<td style="padding:8px;font-weight:700;color:var(--green)">' + fmt(total) + '</td>' +
-      '<td style="padding:8px;white-space:nowrap">' +
-        '<button class="btn" style="padding:4px 8px;font-size:12px" onclick="startEditShift(\'' + s.id + '\')">ערוך</button> ' +
-        '<button class="btn" style="padding:4px 8px;font-size:12px" onclick="deleteShift(\'' + s.id + '\')">מחק</button>' +
+    return '<tr>' +
+      '<td><span class="sh-chip">' + esc(s.employer || '—') + '</span></td>' +
+      '<td>' + esc(s.shift_date || '—') + '</td>' +
+      '<td>' + ((s.start_time && s.end_time) ? '<span dir="ltr">' + esc(s.start_time) + '–' + esc(s.end_time) + '</span> · ' + (Number(s.hours) || 0) + ' שע׳' : (Number(s.hours) || 0) + ' שעות') + '</td>' +
+      '<td>' + fmt(Number(s.rate) || 0) + '</td>' +
+      '<td style="color:var(--muted)">' + esc(s.notes || '—') + '</td>' +
+      '<td class="sh-total">' + fmt(total) + '</td>' +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn sh-mini" onclick="startEditShift(\'' + s.id + '\')">ערוך</button> ' +
+        '<button class="btn sh-mini" onclick="deleteShift(\'' + s.id + '\')">מחק</button>' +
       '</td></tr>';
   }).join('');
 }
