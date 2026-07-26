@@ -583,7 +583,6 @@ tr:last-child td{border-bottom:none}
 }
 @media(min-width:601px){.bottom-nav{display:none}}
 /* ══ מודול משמרות — נראות ══ */
-#page-shifts .section{padding:0.9rem 1.1rem;margin-bottom:0.7rem}
 #page-shifts .section-title{margin-bottom:0.7rem}
 #page-shifts .sh-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:14px}
 #page-shifts .sh-stat{position:relative;background:var(--surface);border-radius:var(--radius);padding:11px 14px 10px;box-shadow:0 16px 44px rgba(70,110,140,.2),0 4px 12px rgba(70,110,140,.1);overflow:hidden;transition:transform .2s cubic-bezier(.22,.61,.36,1)}
@@ -758,7 +757,6 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="business" data-adminonly="1" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" data-mode="home" data-page="advisor" onclick="showPage('advisor',this)">💬 יועץ</button>
-      <button class="tab" data-mode="home" data-page="shifts" onclick="showPage('shifts',this)">🕐 משמרות</button>
       <button class="tab" data-mode="business" onclick="showPage('equipment',this)">📈 השקעות לעסק</button>
       <button class="tab" data-mode="business" data-page="forecast" onclick="showPage('forecast',this)">🔮 תכנון עתידי</button>
       <button class="tab" data-page="accounts" onclick="showPage('accounts',this)">💳 מצב חשבונות</button>
@@ -882,6 +880,45 @@ tr:last-child td{border-bottom:none}
           </div>
           <table><thead><tr><th>שם</th><th>נטו לחודש</th><th>פעיל</th><th></th></tr></thead>
           <tbody id="sal-table"></tbody></table>
+        </div>
+      </div>
+
+      <!-- מעקב שכר ממשמרות (מצב בית, מתקפל) -->
+      <div class="section" data-mode="home">
+        <div class="section-title mv-toggle" onclick="toggleShiftsPanel()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+          <span>🕐 שכר ממשמרות <span id="sh-total-inline" style="font-size:12px;color:var(--muted);font-weight:400"></span></span>
+          <span id="sh-chevron" style="font-size:12px;color:var(--muted);transition:transform .2s">▾</span>
+        </div>
+        <div id="sh-panel-wrap" style="display:none;margin-top:14px">
+          <div id="page-shifts">
+            <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">רשום משמרות שעתיות אצל מעסיקים שונים — השכר ברוטו נכנס אוטומטית להכנסות החודש <span id="sh-month-label" style="color:var(--muted)"></span>.</p>
+            <div id="shifts-summary" class="sh-summary"></div>
+            <div id="shifts-breakdown" style="margin-bottom:16px"></div>
+            <div style="font-weight:600;font-size:14px;margin-bottom:2px">➕ הוספת משמרת</div>
+            <div class="sh-form">
+              <div>
+                <label>מעסיק</label>
+                <select id="sh-employer-select" onchange="onEmployerSelect()"></select>
+                <input id="sh-employer" placeholder="שם מעסיק חדש" style="margin-top:8px;display:none">
+              </div>
+              <div><label>תאריך</label><input id="sh-date" type="date"></div>
+              <div><label>משעה</label><input id="sh-start" type="time" oninput="shiftPreview()"></div>
+              <div><label>עד שעה</label><input id="sh-end" type="time" oninput="shiftPreview()"></div>
+              <div><label>תעריף לשעה (₪)</label><input id="sh-rate" type="number" value="50" oninput="shiftPreview()"></div>
+              <div><label>הערה (לא חובה)</label><input id="sh-notes" placeholder="סופ״ש / שעות נוספות"></div>
+              <button class="btn btn-primary" id="btn-add-shift" onclick="addShift()" style="height:42px">הוסף משמרת</button>
+            </div>
+            <div class="sh-preview">משך: <b id="sh-preview-hours">0 שע׳</b> · שכר המשמרת: <b id="sh-preview-val">₪0</b></div>
+            <div style="font-weight:600;font-size:14px;margin:18px 0 2px">📋 היסטוריית משמרות (החודש)</div>
+            <div class="sh-tablewrap">
+              <table class="sh-table">
+                <thead><tr>
+                  <th>מעסיק</th><th>תאריך</th><th>שעות</th><th>תעריף</th><th>הערות</th><th>סה&quot;כ</th><th>פעולות</th>
+                </tr></thead>
+                <tbody id="shifts-tbody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1196,60 +1233,6 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <!-- future planning / forecast (business mode) -->
-    <div id="page-shifts" class="page">
-      <div class="section" style="margin-bottom:1rem">
-        <div class="section-title">🕐 מעקב שכר ממעסיקים <span id="sh-month-label" style="font-weight:500;color:var(--muted)"></span></div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:18px">רשום משמרות שעתיות אצל מעסיקים שונים — המערכת מחשבת את השכר ברוטו לפי שעות × תעריף.</p>
-        <div id="shifts-summary" class="sh-summary"></div>
-        <div id="shifts-breakdown"></div>
-      </div>
-
-      <div class="section" style="margin-bottom:1rem">
-        <div class="section-title">➕ הוספת משמרת</div>
-        <div class="sh-form">
-          <div>
-            <label>מעסיק</label>
-            <select id="sh-employer-select" onchange="onEmployerSelect()"></select>
-            <input id="sh-employer" placeholder="שם מעסיק חדש" style="margin-top:8px;display:none">
-          </div>
-          <div>
-            <label>תאריך</label>
-            <input id="sh-date" type="date">
-          </div>
-          <div>
-            <label>משעה</label>
-            <input id="sh-start" type="time" oninput="shiftPreview()">
-          </div>
-          <div>
-            <label>עד שעה</label>
-            <input id="sh-end" type="time" oninput="shiftPreview()">
-          </div>
-          <div>
-            <label>תעריף לשעה (₪)</label>
-            <input id="sh-rate" type="number" value="50" oninput="shiftPreview()">
-          </div>
-          <div>
-            <label>הערה (לא חובה)</label>
-            <input id="sh-notes" placeholder="סופ״ש / שעות נוספות">
-          </div>
-          <button class="btn btn-primary" id="btn-add-shift" onclick="addShift()" style="height:42px">הוסף משמרת</button>
-        </div>
-        <div class="sh-preview">משך: <b id="sh-preview-hours">0 שע׳</b> · שכר המשמרת: <b id="sh-preview-val">₪0</b></div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">📋 היסטוריית משמרות (החודש)</div>
-        <div class="sh-tablewrap">
-          <table class="sh-table">
-            <thead><tr>
-              <th>מעסיק</th><th>תאריך</th><th>שעות</th><th>תעריף</th><th>הערות</th><th>סה&quot;כ</th><th>פעולות</th>
-            </tr></thead>
-            <tbody id="shifts-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
     <div id="page-forecast" class="page">
       <div class="section">
         <div class="section-title" style="margin-bottom:4px">🔮 תכנון עתידי</div>
@@ -1349,7 +1332,6 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" data-mode="business" data-adminonly="1" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('advisor',this)" data-page="advisor"><span class="bnav-icon">💬</span>יועץ</button>
-    <button class="bnav-item" data-mode="home" onclick="showPage('shifts',this)" data-page="shifts"><span class="bnav-icon">🕐</span>משמרות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">📈</span>השקעות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('forecast',this)" data-page="forecast"><span class="bnav-icon">🔮</span>תכנון</button>
     <button class="bnav-item" onclick="showPage('accounts',this)" data-page="accounts"><span class="bnav-icon">💳</span>חשבונות</button>
@@ -2803,6 +2785,11 @@ async function enterApp(user) {
     if (rw) rw.style.display = 'block';
     if (rc) rc.style.transform = 'rotate(180deg)';
   }
+  if (localStorage.getItem('cf_sh_open') === '1') {
+    const shw = $('sh-panel-wrap'), shc = $('sh-chevron');
+    if (shw) shw.style.display = 'block';
+    if (shc) shc.style.transform = 'rotate(180deg)';
+  }
   restorePanels();
   renderAbundanceBg();
   // שחזר את תת-הלשונית האחרונה בטאב תפעול
@@ -2942,8 +2929,7 @@ async function addShift() {
   renderShifts();
 }
 
-function startEditShift(id) { editingShiftId = id; renderShifts(); }
-function cancelEditShift() { editingShiftId = null; renderShifts(); }
+function startEditShift(id) { editingShiftId = id; renderShifts(); }function cancelEditShift() { editingShiftId = null; renderShifts(); }
 
 async function saveShift(id) {
   const employer = $('she-employer-' + id).value.trim();
@@ -2970,6 +2956,16 @@ async function deleteShift(id) {
   renderShifts();
 }
 
+function toggleShiftsPanel() {
+  const wrap = $('sh-panel-wrap'), chev = $('sh-chevron');
+  if (!wrap) return;
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+  localStorage.setItem('cf_sh_open', open ? '1' : '0');
+  if (open) renderShifts();
+}
+
 function shiftPreview() {
   const h = computeShiftHours($('sh-start') ? $('sh-start').value : '', $('sh-end') ? $('sh-end').value : '');
   const r = parseFloat($('sh-rate') ? $('sh-rate').value : '') || 0;
@@ -2986,6 +2982,8 @@ function renderShifts() {
   shiftPreview();
   const ml = $('sh-month-label');
   if (ml) ml.textContent = '· ' + shiftMonthLabel();
+  const inl = $('sh-total-inline');
+  if (inl) { const tot = cachedShifts.reduce((a, s) => a + (Number(s.hours) || 0) * (Number(s.rate) || 0), 0); inl.textContent = tot > 0 ? '· ' + fmt(tot) : ''; }
 
   const totalHours = cachedShifts.reduce((a, s) => a + (Number(s.hours) || 0), 0);
   const totalSalary = cachedShifts.reduce((a, s) => a + (Number(s.hours) || 0) * (Number(s.rate) || 0), 0);
@@ -6528,11 +6526,10 @@ function showPage(id, el) {
   // גלול את תוכן העמוד לראש בעת מעבר סקשן
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // renderRecurring מספיק — הנתונים כבר ב-cache מ-loadAll, אין צורך לטעון מחדש מה-DB
-  if (id === 'transactions') renderRecurring();
+  if (id === 'transactions') { renderRecurring(); renderShifts(); }
   if (id === 'goals') { calcCompound(); renderHomeGoalsList(); renderChildren(); }
   if (id === 'equipment') renderEquipment();
   if (id === 'forecast') renderForecast();
-  if (id === 'shifts') renderShifts();
   if (id === 'accounts') { renderAccounts(); loadSnapshots().then(renderReconcile); }
   if (id === 'advisor') renderAdvisor();
   applyReadOnly();
