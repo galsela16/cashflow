@@ -542,6 +542,23 @@ tr:last-child td{border-bottom:none}
 .composer .send:hover{transform:translateY(-1px)}.composer .send:disabled{opacity:.5;transform:none;cursor:default}
 .adv-disclaimer{font-size:10.5px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
 
+/* ── תכנון עתידי / תחזית ── */
+.fc-scen{display:flex;gap:8px;margin-bottom:10px}
+.fc-scen button{flex:1;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;color:var(--muted);transition:all .15s}
+.fc-scen button.on{background:var(--blue-bg,#dbeafe);border-color:var(--blue,#2563eb);color:var(--blue,#2563eb)}
+.fc-scen-note{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+.fc-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.fc-card{background:var(--bg);border-radius:12px;padding:12px 14px}
+.fc-card .lbl{font-size:12px;color:var(--muted);margin-bottom:3px}
+.fc-card .val{font-size:22px;font-weight:800;line-height:1.1}
+@media(max-width:560px){.fc-cards{grid-template-columns:1fr}.fc-card .val{font-size:20px}}
+.fc-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 12px 8px;margin-bottom:18px;overflow-x:auto}
+.fc-table-row{display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);font-size:13px}
+.fc-table-row:last-child{border-bottom:none}
+.fc-table-row .m{font-weight:600;min-width:70px}
+.fc-table-row .src{font-size:11px;color:var(--muted);flex:1;text-align:center}
+.fc-table-row .amt{font-weight:700;min-width:80px;text-align:left}
+
 /* ── באנר מצב צפייה (קריאה בלבד) ── */
 .ro-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;border-radius:var(--radius);padding:14px 18px;margin-bottom:1rem;box-shadow:var(--shadow)}
 .ro-banner-txt{flex:1;min-width:180px}
@@ -704,6 +721,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" data-mode="home" data-page="advisor" onclick="showPage('advisor',this)">💬 יועץ</button>
       <button class="tab" data-mode="business" onclick="showPage('equipment',this)">📈 השקעות לעסק</button>
+      <button class="tab" data-mode="business" data-page="forecast" onclick="showPage('forecast',this)">🔮 תכנון עתידי</button>
       <button class="tab" data-page="accounts" onclick="showPage('accounts',this)">💳 מצב חשבונות</button>
       <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
@@ -1138,6 +1156,29 @@ tr:last-child td{border-bottom:none}
       <div class="adv-disclaimer">🔒 הנתונים נשלחים מוצפנים לצורך מתן התשובה · אינו תחליף לייעוץ פיננסי או מס מקצועי</div>
     </div>
 
+    <!-- future planning / forecast (business mode) -->
+    <div id="page-forecast" class="page">
+      <div class="section">
+        <div class="section-title" style="margin-bottom:4px">🔮 תכנון עתידי</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">תחזית תזרים ל-6 החודשים הקרובים, לפי האירועים שכבר ביומן והממוצע ההיסטורי שלך.</p>
+
+        <div class="fc-scen" id="fc-scen">
+          <button data-s="pess" onclick="fcSetScenario('pess',this)">פסימי</button>
+          <button data-s="real" class="on" onclick="fcSetScenario('real',this)">סביר</button>
+          <button data-s="opt" onclick="fcSetScenario('opt',this)">מיטבי</button>
+        </div>
+        <p class="fc-scen-note" id="fc-scen-note"></p>
+
+        <div class="fc-cards" id="fc-cards"></div>
+
+        <div class="fc-chart-wrap">
+          <div id="fc-chart"></div>
+        </div>
+
+        <div id="fc-table"></div>
+      </div>
+    </div>
+
     <!-- equipment planning (business mode) -->
     <div id="page-equipment" class="page">
       <div class="section">
@@ -1216,6 +1257,7 @@ tr:last-child td{border-bottom:none}
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('advisor',this)" data-page="advisor"><span class="bnav-icon">💬</span>יועץ</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('equipment',this)" data-page="equipment"><span class="bnav-icon">📈</span>השקעות</button>
+    <button class="bnav-item" data-mode="business" onclick="showPage('forecast',this)" data-page="forecast"><span class="bnav-icon">🔮</span>תכנון</button>
     <button class="bnav-item" onclick="showPage('accounts',this)" data-page="accounts"><span class="bnav-icon">💳</span>חשבונות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('alerts',this)" data-page="alerts"><span class="bnav-icon">🔔</span>התראות</button>
   </div>
@@ -3702,6 +3744,166 @@ async function updateEquipment(id, field, value) {
   await sb.from('equipment_plans').update(patch).eq('id', id);
   await loadEquipment();
 }
+
+// ════════════ תכנון עתידי / תחזית תזרים ════════════
+// היגיון: לכל חודש עתידי לוקחים את הממוצע בין (א) מה שכבר ביומן — אירועים
+// מתוזמנים לפי סטטוס, ו-(ב) הממוצע ההיסטורי של החודשים האחרונים.
+// תרחישים נשענים על סטטוס אמיתי, לא אחוז שרירותי.
+let fcScenario = 'real';
+
+// כל האירועים בחודש נתון (YYYY-MM) לפי event_date
+function fcEventsInMonth(ym) {
+  return cachedEventDetails.filter(d => d.event_date && d.event_date.slice(0, 7) === ym && d.price > 0);
+}
+
+const FC_PAID = ['בוצע תשלום', 'בוצע תשלום + חשבונית מס'];
+const FC_PENDING = ['לא יצאה דרישת תשלום', 'יצאה דרישת תשלום'];
+
+// הכנסה מהיומן לחודש, לפי התרחיש:
+// פסימי — רק אירועים ששולמו/אושרו · סביר — משוקלל (בהמתנה ×0.7) · מיטבי — הכל
+function fcCalendarIncome(ym, scen) {
+  const evs = fcEventsInMonth(ym);
+  let sum = 0;
+  evs.forEach(d => {
+    const paid = FC_PAID.includes(d.status);
+    const pending = FC_PENDING.includes(d.status);
+    if (scen === 'pess') { if (paid) sum += d.price; }
+    else if (scen === 'opt') { if (paid || pending) sum += d.price; }
+    else { if (paid) sum += d.price; else if (pending) sum += d.price * 0.7; }
+  });
+  return sum;
+}
+
+// ממוצע הכנסות חודשי היסטורי — לפי אירועים ששולמו ב-6 החודשים האחרונים
+function fcHistoricalAvgIncome() {
+  const now = new Date();
+  const buckets = {};
+  cachedEventDetails.forEach(d => {
+    if (!d.event_date || !d.price) return;
+    if (!FC_PAID.includes(d.status)) return;
+    const ym = d.event_date.slice(0, 7);
+    buckets[ym] = (buckets[ym] || 0) + d.price;
+  });
+  const keys = [];
+  for (let i = 1; i <= 6; i++) {
+    const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    keys.push(dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0'));
+  }
+  const vals = keys.map(k => buckets[k]).filter(v => v != null);
+  if (!vals.length) return 0;
+  return vals.reduce((s, v) => s + v, 0) / vals.length;
+}
+
+// הוצאות חודשיות צפויות: קבועות + ממוצע ההוצאות המשתנות מהחודש הנוכחי
+function fcMonthlyExpense() {
+  const recurring = cachedRecurring.reduce((s, r) => s + (r.amount || 0), 0);
+  const variable = cachedTx.filter(t => t.type === 'expense')
+    .reduce((s, t) => s + (t.amount || 0), 0);
+  // הקבועות כבר מיובאות לתוך cachedTx, אז לוקחים את הגבוה מביניהם כדי לא לספור כפול
+  return Math.max(recurring, variable);
+}
+
+// בונה את התחזית ל-6 חודשים קדימה
+function fcBuild(scen) {
+  const now = new Date();
+  const histAvg = fcHistoricalAvgIncome();
+  const expense = fcMonthlyExpense();
+  const heb = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יונ', 'יול', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ'];
+  const rows = [];
+  for (let i = 1; i <= 6; i++) {
+    const dt = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const ym = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0');
+    const cal = fcCalendarIncome(ym, scen);
+    const hasEvents = fcEventsInMonth(ym).length > 0;
+    // ממוצע בין היומן להיסטוריה. אם אין אירועים בכלל — נשען על ההיסטוריה בלבד.
+    let income;
+    let src;
+    if (hasEvents && histAvg > 0) { income = (cal + histAvg) / 2; src = 'יומן + היסטוריה'; }
+    else if (hasEvents) { income = cal; src = 'לפי היומן'; }
+    else { income = histAvg; src = 'ממוצע היסטורי'; }
+    rows.push({ label: heb[dt.getMonth()], ym: ym, income: income, expense: expense, net: income - expense, src: src });
+  }
+  return rows;
+}
+
+const FC_SCEN_NOTES = {
+  pess: 'פסימי — רק אירועים ששולמו או אושרו נספרים כהכנסה. תמונה זהירה.',
+  real: 'סביר — אירועים ששולמו במלואם, אירועים בהמתנה משוקללים ב-70%. הערכה מאוזנת.',
+  opt: 'מיטבי — כל האירועים ביומן נספרים במלואם, בהנחה שכולם ייסגרו.'
+};
+
+function fcSetScenario(scen, btn) {
+  fcScenario = scen;
+  document.querySelectorAll('#fc-scen button').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  renderForecast();
+}
+
+function renderForecast() {
+  const scen = fcScenario;
+  const rows = fcBuild(scen);
+  const note = $('fc-scen-note');
+  if (note) note.textContent = FC_SCEN_NOTES[scen];
+
+  // כרטיסי סיכום — ממוצע חודשי על פני התחזית
+  const avgInc = rows.reduce((s, r) => s + r.income, 0) / rows.length;
+  const avgExp = rows.reduce((s, r) => s + r.expense, 0) / rows.length;
+  const avgNet = avgInc - avgExp;
+  const cards = $('fc-cards');
+  if (cards) {
+    cards.innerHTML =
+      '<div class="fc-card"><div class="lbl">צפי הכנסות · ממוצע חודשי</div><div class="val" style="color:var(--green)">' + fmt(Math.round(avgInc)) + '</div></div>' +
+      '<div class="fc-card"><div class="lbl">הוצאות צפויות</div><div class="val">' + fmt(Math.round(avgExp)) + '</div></div>' +
+      '<div class="fc-card"><div class="lbl">צפוי להישאר</div><div class="val" style="color:' + (avgNet >= 0 ? 'var(--blue,#2563eb)' : 'var(--red)') + '">' + fmt(Math.round(avgNet)) + '</div></div>';
+  }
+
+  // גרף SVG של ה"צפוי להישאר" לאורך 6 חודשים
+  const chart = $('fc-chart');
+  if (chart) chart.innerHTML = fcChartSVG(rows);
+
+  // טבלה חודשית
+  const tbl = $('fc-table');
+  if (tbl) {
+    tbl.innerHTML = rows.map(r =>
+      '<div class="fc-table-row">' +
+        '<span class="m">' + r.label + '</span>' +
+        '<span class="src">' + r.src + '</span>' +
+        '<span class="amt" style="color:' + (r.net >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmt(Math.round(r.net)) + '</span>' +
+      '</div>').join('');
+  }
+}
+
+// גרף קו פשוט ב-SVG (בלי ספריות חיצוניות)
+function fcChartSVG(rows) {
+  const W = 620, H = 220, padL = 52, padR = 16, padT = 16, padB = 30;
+  const nets = rows.map(r => r.net);
+  let min = Math.min(0, ...nets), max = Math.max(0, ...nets);
+  if (min === max) max = min + 1000;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const x = i => padL + (innerW * i) / (rows.length - 1);
+  const y = v => padT + innerH - ((v - min) / (max - min)) * innerH;
+  const zeroY = y(0);
+
+  let pts = rows.map((r, i) => x(i) + ',' + y(r.net));
+  const line = '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+  const area = '<polygon points="' + x(0) + ',' + zeroY + ' ' + pts.join(' ') + ' ' + x(rows.length - 1) + ',' + zeroY + '" fill="#2563eb" opacity="0.08"/>';
+  const dots = rows.map((r, i) =>
+    '<circle cx="' + x(i) + '" cy="' + y(r.net) + '" r="4" fill="#2563eb" stroke="#fff" stroke-width="2"/>' +
+    '<text x="' + x(i) + '" y="' + (y(r.net) - 10) + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--text)">' + fmt(Math.round(r.net)) + '</text>'
+  ).join('');
+  const xlabels = rows.map((r, i) =>
+    '<text x="' + x(i) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11" fill="var(--muted)">' + r.label + '</text>'
+  ).join('');
+  const zeroLine = (min < 0)
+    ? '<line x1="' + padL + '" y1="' + zeroY + '" x2="' + (W - padR) + '" y2="' + zeroY + '" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,3"/>'
+    : '';
+  const ymin = '<text x="' + (padL - 8) + '" y="' + (y(min) + 4) + '" text-anchor="end" font-size="10" fill="var(--muted)">' + fmt(Math.round(min)) + '</text>';
+  const ymax = '<text x="' + (padL - 8) + '" y="' + (y(max) + 4) + '" text-anchor="end" font-size="10" fill="var(--muted)">' + fmt(Math.round(max)) + '</text>';
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;min-width:520px;height:auto" xmlns="http://www.w3.org/2000/svg">' +
+    zeroLine + area + line + dots + xlabels + ymin + ymax + '</svg>';
+}
+
 function renderEquipment() {
   const el = $('equipment-table');
   if (!el) return;
@@ -5986,6 +6188,7 @@ function showPage(id, el) {
   if (id === 'transactions') renderRecurring();
   if (id === 'goals') { calcCompound(); renderHomeGoalsList(); renderChildren(); }
   if (id === 'equipment') renderEquipment();
+  if (id === 'forecast') renderForecast();
   if (id === 'accounts') { renderAccounts(); loadSnapshots().then(renderReconcile); }
   if (id === 'advisor') renderAdvisor();
   applyReadOnly();
