@@ -704,7 +704,7 @@ tr:last-child td{border-bottom:none}
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" data-mode="home" data-page="advisor" onclick="showPage('advisor',this)">💬 יועץ</button>
       <button class="tab" data-mode="business" onclick="showPage('equipment',this)">📈 השקעות לעסק</button>
-      <button class="tab" onclick="showPage('accounts',this)">💳 מצב חשבונות</button>
+      <button class="tab" data-page="accounts" onclick="showPage('accounts',this)">💳 מצב חשבונות</button>
       <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
@@ -2530,11 +2530,17 @@ const BASIC_FULL = ['dashboard', 'transactions', 'accounts', 'goals'];
 const BASIC_READONLY = ['ops', 'equipment', 'alerts'];
 const ADMIN_ONLY_PAGES = ['profitfirst'];
 
+// ── עמודים מוסתרים זמנית ──
+// עמודים שעדיין לא מוכנים לעבודה — מוסתרים לגמרי מכולם (כולל אדמין), אבל הקוד נשאר.
+// כדי להחזיר עמוד לעבודה: פשוט מוחקים את שמו מהרשימה הזו. זה הכל.
+const HIDDEN_PAGES = ['advisor', 'accounts'];
+
 // אדמין אמיתי — כלומר אדמין שאינו מדמה מסלול אחר לבדיקה
 function effectiveAdmin() { return isAdmin() && !adminPlanOverride; }
 
 // מחזיר 'full' | 'readonly' | 'blocked'
 function pageAccess(id) {
+  if (HIDDEN_PAGES.includes(id)) return 'blocked';  // מוסתר זמנית — לא זמין לאף אחד
   if (ADMIN_ONLY_PAGES.includes(id)) return effectiveAdmin() ? 'full' : 'blocked';
   if (effectiveAdmin()) return 'full';
   if (userPlan === 'expired') return 'blocked';
