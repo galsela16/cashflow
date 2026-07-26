@@ -586,7 +586,7 @@ tr:last-child td{border-bottom:none}
 #page-shifts .section{padding:0.9rem 1.1rem;margin-bottom:0.7rem}
 #page-shifts .section-title{margin-bottom:0.7rem}
 #page-shifts .sh-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:14px}
-#page-shifts .sh-stat{position:relative;background:var(--surface);border-radius:var(--radius-sm);padding:11px 14px 10px;box-shadow:var(--shadow);overflow:hidden;transition:transform .2s cubic-bezier(.22,.61,.36,1)}
+#page-shifts .sh-stat{position:relative;background:var(--surface);border-radius:var(--radius);padding:11px 14px 10px;box-shadow:0 16px 44px rgba(70,110,140,.2),0 4px 12px rgba(70,110,140,.1);overflow:hidden;transition:transform .2s cubic-bezier(.22,.61,.36,1)}
 #page-shifts .sh-stat:hover{transform:translateY(-2px)}
 #page-shifts .sh-stat::before{content:'';position:absolute;top:0;bottom:0;right:0;width:4px;background:linear-gradient(180deg,#c98a52,#e0b896)}
 #page-shifts .sh-stat.is-money::before{background:linear-gradient(180deg,#1b7f5e,#3fbf92)}
@@ -2993,9 +2993,9 @@ function renderShifts() {
 
   const sum = $('shifts-summary');
   if (sum) sum.innerHTML =
-    '<div class="sh-stat"><span class="sh-ic">🕐</span><div class="sh-label">סה"כ שעות</div><div class="sh-num">' + totalHours.toLocaleString('he-IL') + '</div><div class="sh-sub">החודש</div></div>' +
-    '<div class="sh-stat is-money"><span class="sh-ic">💵</span><div class="sh-label">שכר ברוטו</div><div class="sh-num">' + fmt(totalSalary) + '</div><div class="sh-sub">שעות × תעריף</div></div>' +
-    '<div class="sh-stat"><span class="sh-ic">📊</span><div class="sh-label">תעריף ממוצע</div><div class="sh-num">' + fmt(avgRate) + '</div><div class="sh-sub">לשעה</div></div>';
+    '<div class="card"><div class="card-label">🕐 סה"כ שעות</div><div class="card-value">' + totalHours.toLocaleString('he-IL') + '</div><div class="card-sub">החודש</div></div>' +
+    '<div class="card card-soft-green"><div class="card-label">💵 שכר ברוטו</div><div class="card-value c-green">' + fmt(totalSalary) + '</div><div class="card-sub">שעות × תעריף</div></div>' +
+    '<div class="card"><div class="card-label">📊 תעריף ממוצע</div><div class="card-value">' + fmt(avgRate) + '</div><div class="card-sub">לשעה</div></div>';
 
   // פירוט לפי מעסיק
   const byEmp = {};
@@ -3139,7 +3139,9 @@ function renderHome() {
   const manualIncome = incomeRows.reduce((s, t) => s + t.amount, 0);
   const salaries = cachedSalaries.filter(s => s.active);
   const salaryTotal = salaries.reduce((sum, s) => sum + (s.amount || 0), 0);
-  const totalIncome = manualIncome + bizSalary + salaryTotal;
+  // שכר מהמשמרות (מעסיקים) — נכנס אוטומטית להכנסות הבית
+  const shiftIncome = cachedShifts.reduce((s, x) => s + (Number(x.hours) || 0) * (Number(x.rate) || 0), 0);
+  const totalIncome = manualIncome + bizSalary + salaryTotal + shiftIncome;
   const totalExpense = expenseRows.reduce((s, t) => s + t.amount, 0);
   const net = totalIncome - totalExpense;
 
@@ -3160,6 +3162,19 @@ function renderHome() {
     incHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
       '<div><div style="font-weight:500">💼 ' + esc(s.person_name) + '</div><div style="font-size:11px;color:var(--muted)">משכורת קבועה</div></div>' +
       '<div style="font-weight:600;color:var(--green)">' + fmt(s.amount || 0) + '</div></div>';
+  });
+  // הכנסות משמרות — שורה לכל מעסיק
+  const shiftByEmp = {};
+  cachedShifts.forEach(x => {
+    const e = x.employer || 'משמרות';
+    if (!shiftByEmp[e]) shiftByEmp[e] = { hours: 0, pay: 0 };
+    shiftByEmp[e].hours += (Number(x.hours) || 0);
+    shiftByEmp[e].pay += (Number(x.hours) || 0) * (Number(x.rate) || 0);
+  });
+  Object.keys(shiftByEmp).forEach(e => {
+    incHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
+      '<div><div style="font-weight:500">🕐 ' + esc(e) + '</div><div style="font-size:11px;color:var(--muted)">משמרות · ' + (Math.round(shiftByEmp[e].hours * 100) / 100) + ' שע׳</div></div>' +
+      '<div style="font-weight:600;color:var(--green)">' + fmt(shiftByEmp[e].pay) + '</div></div>';
   });
   incHtml += incomeRows.map(t =>
     '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
