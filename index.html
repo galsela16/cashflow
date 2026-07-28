@@ -26,13 +26,25 @@
   --radius:16px; --radius-sm:10px;
   --shadow:0 2px 12px rgba(37,99,235,.07);
   --shadow-md:0 4px 24px rgba(37,99,235,.10);
+  /* צבעי ערכת נושא הניתנים להחלפה (ברירת מחדל = קלאסי) */
+  --biz-grad:linear-gradient(145deg,#3a6b8c 0%,#3a8a9a 30%,#3aaa98 60%,#42b08a 100%);
+  --home-grad:linear-gradient(145deg,#e0b896 0%,#e6c4a4 30%,#ebd0b4 60%,#e5bd9c 100%);
+  --btn-grad:linear-gradient(135deg,#1d4ed8,#2563eb);
+}
+/* ערכת "טורקיז חם" — פלטת #249D8F / #E9C46A / #E76F51 / #FDF0D5 */
+html[data-theme="warm"]{
+  --blue:#1f8f80; --blue-bg:#d3efe9; --blue-soft:#e9f7f4;
+  --biz-grad:linear-gradient(145deg,#249D8F 0%,#2aa596 40%,#39b6a2 70%,#46b892 100%);
+  --home-grad:linear-gradient(145deg,#f6e2c0 0%,#f9ebd2 35%,#FDF0D5 65%,#f2dcae 100%);
+  --btn-grad:linear-gradient(135deg,#1f8f80,#249D8F);
+  --amber:#b8791a; --amber-bg:#faedcf;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
-#app-screen{background:linear-gradient(145deg,#3a6b8c 0%,#3a8a9a 30%,#3aaa98 60%,#42b08a 100%);min-height:100vh;position:relative}
+#app-screen{background:var(--biz-grad);min-height:100vh;position:relative}
 #app-screen::before{content:'';position:fixed;inset:0;background:linear-gradient(145deg,rgba(220,235,245,.62) 0%,rgba(215,240,242,.58) 35%,rgba(218,245,238,.55) 65%,rgba(225,245,235,.6) 100%);pointer-events:none;z-index:0}
 /* מצב בית — גוון חמים יותר */
-#app-screen.home-mode{background:linear-gradient(145deg,#e0b896 0%,#e6c4a4 30%,#ebd0b4 60%,#e5bd9c 100%)}
+#app-screen.home-mode{background:var(--home-grad)}
 #app-screen.home-mode::before{background:linear-gradient(145deg,rgba(255,250,244,.78) 0%,rgba(254,247,239,.74) 35%,rgba(253,245,235,.72) 65%,rgba(255,249,242,.76) 100%)}
 /* ── רקע קוד השפע (ניסוי אדמין) ── */
 #abundance-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;user-select:none;display:none}
@@ -102,7 +114,7 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 .field label{display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;letter-spacing:.3px}
 .field input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:#fff;color:var(--text);transition:border-color .15s,box-shadow .15s}
 .field input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:100px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,.3);transition:opacity .15s,transform .1s}
+.btn-primary{width:100%;padding:13px;background:var(--btn-grad);color:#fff;border:none;border-radius:100px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,.3);transition:opacity .15s,transform .1s}
 .btn-primary:hover{opacity:.93;transform:translateY(-1px)}
 .btn-primary:active{transform:translateY(0)}
 .btn-primary:disabled{opacity:.5;transform:none}
@@ -622,6 +634,7 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
+<script>(function(){try{var t=localStorage.getItem('cf_theme');if(t&&t!=='classic')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 
 <div id="auth-screen">
   <!-- Left panel — branding & features (desktop only) -->
@@ -1456,6 +1469,16 @@ tr:last-child td{border-bottom:none}
           </div>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:6px">תרגום מלא של הממשק יתווסף בקרוב</div>
+      </div>
+
+      <!-- ערכת צבעים -->
+      <div class="settings-section">
+        <div class="settings-section-title">🎨 ערכת צבעים</div>
+        <div class="view-toggle" style="width:100%">
+          <button class="view-toggle-btn active" id="theme-classic" onclick="setTheme('classic')">קלאסי</button>
+          <button class="view-toggle-btn" id="theme-warm" onclick="setTheme('warm')">🌅 טורקיז חם</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">משנה את גווני הרקע והכפתורים. ירוק/אדום למספרים נשמרים לבהירות.</div>
       </div>
 
       <!-- אחוז מס -->
@@ -2366,7 +2389,21 @@ function openSettings() {
     }
   }
   $('settings-msg').className = 'msg';
+  const curTheme = localStorage.getItem('cf_theme') || 'classic';
+  const tc = $('theme-classic'), tw = $('theme-warm');
+  if (tc) tc.classList.toggle('active', curTheme === 'classic');
+  if (tw) tw.classList.toggle('active', curTheme === 'warm');
   $('settings-modal').style.display = 'flex';
+}
+
+// החלפת ערכת צבעים
+function setTheme(t) {
+  if (t === 'classic') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('cf_theme', t);
+  const tc = $('theme-classic'), tw = $('theme-warm');
+  if (tc) tc.classList.toggle('active', t === 'classic');
+  if (tw) tw.classList.toggle('active', t === 'warm');
 }
 function closeSettings() { $('settings-modal').style.display = 'none'; }
 
