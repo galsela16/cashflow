@@ -29,7 +29,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
-#app-screen{background:linear-gradient(145deg,#3a6b8c 0%,#3a8a9a 30%,#3aaa98 60%,#42b08a 100%);min-height:100vh;position:relative;overflow-x:hidden}
+#app-screen{background:linear-gradient(145deg,#3a6b8c 0%,#3a8a9a 30%,#3aaa98 60%,#42b08a 100%);min-height:100vh;position:relative}
 #app-screen::before{content:'';position:fixed;inset:0;background:linear-gradient(145deg,rgba(220,235,245,.62) 0%,rgba(215,240,242,.58) 35%,rgba(218,245,238,.55) 65%,rgba(225,245,235,.6) 100%);pointer-events:none;z-index:0}
 /* מצב בית — גוון חמים יותר */
 #app-screen.home-mode{background:linear-gradient(145deg,#e0b896 0%,#e6c4a4 30%,#ebd0b4 60%,#e5bd9c 100%)}
@@ -166,7 +166,7 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
   .eq-row{grid-template-columns:1.6fr .7fr 1fr 1fr 38px;gap:6px;padding:9px 8px;font-size:12px}
   .eq-input{padding:4px 5px;font-size:12px}
 }
-.month-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.month-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap}
 .export-wrap{position:relative;margin-right:auto}
 .export-btn{padding:8px 16px;border:1.5px solid var(--border);border-radius:100px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);transition:all .15s;white-space:nowrap}
 .export-btn:hover{border-color:var(--blue);color:var(--blue)}
