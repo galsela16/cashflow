@@ -1479,6 +1479,19 @@ tr:last-child td{border-bottom:none}
         <div style="font-size:11px;color:var(--muted);margin-top:6px">תרגום מלא של הממשק יתווסף בקרוב</div>
       </div>
 
+      <!-- חודש התחלת השימוש -->
+      <div class="settings-section">
+        <div class="settings-section-title">📅 חודש התחלת השימוש</div>
+        <div class="settings-row">
+          <span>הספירה תתחיל מ־</span>
+          <div style="display:flex;gap:6px">
+            <select id="settings-start-month" onchange="setStartMonth()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px"></select>
+            <select id="settings-start-year" onchange="setStartMonth()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px"></select>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">חודשים שלפני תאריך זה לא יהיו זמינים לבחירה ולא ייספרו בסיכום השנתי.</div>
+      </div>
+
       <!-- ערכת צבעים -->
       <div class="settings-section">
         <div class="settings-section-title">🎨 ערכת צבעים</div>
@@ -2398,6 +2411,13 @@ function openSettings() {
     }
   }
   $('settings-msg').className = 'msg';
+  // אכלוס בורר חודש התחלת השימוש
+  const smSel = $('settings-start-month'), sySel = $('settings-start-year');
+  if (smSel) smSel.innerHTML = '<option value="">— ללא הגבלה —</option>' + HEB_MON.map((n, i) => '<option value="' + String(i + 1).padStart(2, '0') + '">' + n + '</option>').join('');
+  if (sySel) { const cy = new Date().getFullYear(); sySel.innerHTML = ''; for (let y = cy - 3; y <= cy + 1; y++) sySel.innerHTML += '<option value="' + y + '">' + y + '</option>'; }
+  const smVal = getStartMonth();
+  if (smVal) { if (smSel) smSel.value = smVal.slice(5, 7); if (sySel) sySel.value = smVal.slice(0, 4); }
+  else { if (smSel) smSel.value = ''; if (sySel) sySel.value = String(new Date().getFullYear()); }
   const curTheme = localStorage.getItem('cf_theme') || 'classic';
   ['classic', 'warm', 'purple'].forEach(name => { const b = $('theme-' + name); if (b) b.classList.toggle('active', name === curTheme); });
   $('settings-modal').style.display = 'flex';
@@ -2854,6 +2874,16 @@ async function enterApp(user) {
 }
 
 // ── MONTHS ──
+// חודש התחלת השימוש (מגביל ניווט וספירה). ריק = ללא הגבלה.
+function getStartMonth() { return localStorage.getItem('cf_start_month') || ''; }
+function syncMonthOptions() {
+  const sm = getStartMonth(), mSel = $('monthSel'), ySel = $('yearSel');
+  if (!mSel || !ySel) return;
+  const sy = sm ? sm.slice(0, 4) : null, smo = sm ? parseInt(sm.slice(5, 7), 10) : null;
+  [...mSel.options].forEach(opt => {
+    opt.disabled = !!(sm && ySel.value === sy && parseInt(opt.value, 10) < smo);
+  });
+}
 function initMonths() {
   const now = new Date();
   const mSel = $('monthSel');
@@ -2867,15 +2897,41 @@ function initMonths() {
     mSel.appendChild(opt);
   });
   if (prevMonth) mSel.value = prevMonth; // שחזר בחירה
-  const ySel = $('yearSel'); ySel.innerHTML = '';
-  for (let y = now.getFullYear(); y <= 2099; y++) {
+  const ySel = $('yearSel');
+  const prevYear = ySel.value; // שמור בחירת שנה
+  ySel.innerHTML = '';
+  // רצפת השנים = שנת התחלת השימוש (אם מוקדמת מהנוכחית), אחרת השנה הנוכחית
+  const sm = getStartMonth();
+  let floorYear = now.getFullYear();
+  if (sm) { const sy = parseInt(sm.slice(0, 4), 10); if (!isNaN(sy) && sy < floorYear) floorYear = sy; }
+  for (let y = floorYear; y <= 2099; y++) {
     const opt = document.createElement('option');
     opt.value = y; opt.textContent = y;
     if (y === now.getFullYear()) opt.selected = true;
     ySel.appendChild(opt);
   }
+  if (prevYear && [...ySel.options].some(o => o.value === prevYear)) ySel.value = prevYear;
+  syncMonthOptions();
 }
-function updateMonth() { loadAll(); }
+function updateMonth() {
+  const sm = getStartMonth();
+  if (sm && getMonth() < sm) {
+    // נבחר חודש שלפני תחילת השימוש — הצמד לחודש ההתחלה
+    $('yearSel').value = sm.slice(0, 4);
+    $('monthSel').value = sm.slice(5, 7);
+  }
+  syncMonthOptions();
+  loadAll();
+}
+// שמירת חודש התחלת השימוש מתוך ההגדרות
+function setStartMonth() {
+  const mo = $('settings-start-month') ? $('settings-start-month').value : '';
+  const yr = $('settings-start-year') ? $('settings-start-year').value : String(new Date().getFullYear());
+  if (!mo) localStorage.removeItem('cf_start_month');
+  else localStorage.setItem('cf_start_month', yr + '-' + mo);
+  initMonths();
+  updateMonth();
+}
 
 // ── LOAD ──
 // ════════════ משמרות שכר ממעסיקים (מצב בית) ════════════
@@ -4766,6 +4822,13 @@ async function renderAnnualSummary() {
       if (mi >= 0 && mi <= 11) inc[mi] += d.price;
     }
   });
+
+  // כבד את חודש התחלת השימוש — אפס חודשים שלפניו באותה שנה
+  const _sm = getStartMonth();
+  if (_sm && _sm.slice(0, 4) === year) {
+    const smo = parseInt(_sm.slice(5, 7), 10);
+    for (let i = 0; i < smo - 1; i++) { inc[i] = 0; exp[i] = 0; }
+  }
 
   const totalInc = inc.reduce((a, b) => a + b, 0);
   const totalExp = exp.reduce((a, b) => a + b, 0);
