@@ -1891,16 +1891,15 @@ function pdfRTL(s) {
   return out.join('');
 }
 
-// טוען את הפונט העברי המוטמע ל-jsPDF (פעם אחת)
+// טוען את הפונט העברי המוטמע ל-jsPDF (normal + bold — autoTable מצייר כותרות/סיכום ב-bold)
 let _hebFontLoaded = false;
 function ensureHebFont(doc) {
   if (!window.CF_HEB_FONT) return false;
   try {
-    if (!_hebFontLoaded) {
-      doc.addFileToVFS('DejaVuHeb.ttf', window.CF_HEB_FONT);
-      doc.addFont('DejaVuHeb.ttf', 'DejaVuHeb', 'normal');
-      _hebFontLoaded = true;
-    }
+    doc.addFileToVFS('DejaVuHeb.ttf', window.CF_HEB_FONT);
+    doc.addFont('DejaVuHeb.ttf', 'DejaVuHeb', 'normal');
+    doc.addFont('DejaVuHeb.ttf', 'DejaVuHeb', 'bold');
+    _hebFontLoaded = true;
     return true;
   } catch (e) { return false; }
 }
