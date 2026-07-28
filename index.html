@@ -945,31 +945,38 @@ tr:last-child td{border-bottom:none}
       </div>
 
       <div class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div class="section-title" style="margin-bottom:0">הוסף רשומה</div>
-          <button class="btn-outline" onclick="document.getElementById('bank-file').click()">🏦 טען דף בנק</button>
-          <input type="file" id="bank-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleBankFile(this)" />
+        <div class="section-title mv-toggle" onclick="toggleRecordsPanel()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+          <span>📝 רשומות החודש</span>
+          <span id="rec2-chevron" style="font-size:12px;color:var(--muted);transition:transform .2s;transform:rotate(180deg)">▾</span>
         </div>
-        <div class="form-row">
-          <input type="text" id="t-desc" placeholder="תיאור" />
-          <input type="number" id="t-amount" placeholder="סכום ₪" min="0" />
-          <select id="t-type"><option value="income">הכנסה</option><option value="expense">הוצאה</option></select>
-          <select id="t-cat"></select>
-          <select id="t-account" title="לאיזה חשבון בנק שייכת הרשומה"></select>
-        </div>
-        <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
-      </div>
-      <div class="section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div class="section-title" style="margin-bottom:0">רשומות החודש</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button class="btn-outline" onclick="cleanDuplicates()" title="מסיר רשומות כפולות בחודש זה">🧹 נקה כפילויות</button>
-            <button class="btn-outline" onclick="resetMonthExpenses()" title="מוחק את הוצאות החודש למעט הקבועות">♻️ אפס הוצאות החודש</button>
-            <button class="btn-del-multi" id="tx-del-multi" onclick="deleteSelectedTx()" style="display:none">🗑 מחק מסומנות (<span id="tx-sel-count">0</span>)</button>
+        <div id="records-panel-wrap" style="display:block;margin-top:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div class="section-title" style="margin-bottom:0;font-size:13px">➕ הוסף רשומה</div>
+            <button class="btn-outline" onclick="document.getElementById('bank-file').click()">🏦 טען דף בנק</button>
+            <input type="file" id="bank-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleBankFile(this)" />
           </div>
+          <div class="form-row">
+            <input type="text" id="t-desc" placeholder="תיאור" />
+            <input type="number" id="t-amount" placeholder="סכום ₪" min="0" />
+            <select id="t-type"><option value="income">הכנסה</option><option value="expense">הוצאה</option></select>
+            <select id="t-cat"></select>
+            <select id="t-account" title="לאיזה חשבון בנק שייכת הרשומה"></select>
+          </div>
+          <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
+
+          <div style="height:1px;background:var(--border);margin:18px 0"></div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div class="section-title" style="margin-bottom:0;font-size:13px">📋 הרשומות</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <button class="btn-outline" onclick="cleanDuplicates()" title="מסיר רשומות כפולות בחודש זה">🧹 נקה כפילויות</button>
+              <button class="btn-outline" onclick="resetMonthExpenses()" title="מוחק את הוצאות החודש למעט הקבועות">♻️ אפס הוצאות החודש</button>
+              <button class="btn-del-multi" id="tx-del-multi" onclick="deleteSelectedTx()" style="display:none">🗑 מחק מסומנות (<span id="tx-sel-count">0</span>)</button>
+            </div>
+          </div>
+          <table><thead><tr><th style="width:30px"><input type="checkbox" id="tx-check-all" onchange="toggleAllTx(this)"></th><th>תיאור</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th></th></tr></thead>
+          <tbody id="tx-table"></tbody></table>
         </div>
-        <table><thead><tr><th style="width:30px"><input type="checkbox" id="tx-check-all" onchange="toggleAllTx(this)"></th><th>תיאור</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th></th></tr></thead>
-        <tbody id="tx-table"></tbody></table>
       </div>
     </div>
 
@@ -2788,6 +2795,11 @@ async function enterApp(user) {
     const shw = $('sh-panel-wrap'), shc = $('sh-chevron');
     if (shw) shw.style.display = 'block';
     if (shc) shc.style.transform = 'rotate(180deg)';
+  }
+  if (localStorage.getItem('cf_records_open') === '0') {
+    const rvw = $('records-panel-wrap'), rvc = $('rec2-chevron');
+    if (rvw) rvw.style.display = 'none';
+    if (rvc) rvc.style.transform = '';
   }
   restorePanels();
   renderAbundanceBg();
@@ -5178,6 +5190,15 @@ function restorePanels() {
 
 
 // פתיחה/סגירה של פאנל ההוצאות הקבועות (בתוך טאב הכנסות/הוצאות)
+function toggleRecordsPanel() {
+  const wrap = $('records-panel-wrap'), chev = $('rec2-chevron');
+  if (!wrap) return;
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+  localStorage.setItem('cf_records_open', open ? '1' : '0');
+}
+
 function toggleRecurringPanel() {
   const wrap = $('rec-panel-wrap'), chev = $('rec-chevron');
   if (!wrap) return;
