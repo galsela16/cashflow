@@ -3256,7 +3256,12 @@ function renderHome() {
 
   // הוצאות לפי קטגוריה
   const cats = {};
-  expenseRows.forEach(t => { cats[t.category || 'אחר'] = (cats[t.category || 'אחר'] || 0) + t.amount; });
+  const catRows = {};
+  expenseRows.forEach(t => {
+    const c = t.category || 'אחר';
+    cats[c] = (cats[c] || 0) + t.amount;
+    (catRows[c] = catRows[c] || []).push(t);
+  });
   const catEl = $('h-cat-bars');
   if (catEl) {
     if (!Object.keys(cats).length) { catEl.innerHTML = '<div class="empty">אין הוצאות החודש</div>'; }
@@ -3266,7 +3271,19 @@ function renderHome() {
       catEl.innerHTML = Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
         const pct = totalExpense > 0 ? Math.round(amt / totalExpense * 100) : 0;
         const color = colors[i++ % colors.length];
-        return '<div class="bar-wrap"><div class="bar-label"><span>' + esc(cat) + '</span><span>' + fmt(amt) + ' (' + pct + '%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div></div>';
+        const rows = (catRows[cat] || []).slice().sort((a, b) => b.amount - a.amount);
+        const detail = rows.map(r =>
+          '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 8px;font-size:12.5px;border-bottom:1px solid var(--border)">' +
+            '<span>' + esc(r.description || '—') + '</span>' +
+            '<span style="color:var(--muted);white-space:nowrap">' + fmt(r.amount) + '</span>' +
+          '</div>').join('');
+        return '<div class="cat-item">' +
+          '<div class="bar-wrap" style="cursor:pointer" onclick="toggleCatDetail(this)" title="לחץ לפירוט">' +
+            '<div class="bar-label"><span><span class="cat-chev" style="display:inline-block;transition:transform .2s;font-size:10px;color:var(--muted)">▸</span> ' + esc(cat) + '</span><span>' + fmt(amt) + ' (' + pct + '%)</span></div>' +
+            '<div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+          '</div>' +
+          '<div class="cat-detail" style="display:none;margin:6px 0 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden">' + (detail || '<div style="padding:8px;font-size:12px;color:var(--muted)">אין רשומות</div>') + '</div>' +
+        '</div>';
       }).join('');
     }
   }
@@ -5155,8 +5172,17 @@ function renderEmpStatus(monthDetailIds) {
   }).join('');
 }
 
-function renderTxTable() {
-  const tb = $('tx-table');
+// פתיחה/סגירה של פירוט קטגוריית הוצאה בדשבורד הבית
+function toggleCatDetail(el) {
+  const d = el.nextElementSibling;
+  if (!d) return;
+  const open = d.style.display === 'none';
+  d.style.display = open ? 'block' : 'none';
+  const chev = el.querySelector('.cat-chev');
+  if (chev) chev.style.transform = open ? 'rotate(90deg)' : '';
+}
+
+function renderTxTable() {  const tb = $('tx-table');
   if (!cachedTx.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">\u05d0\u05d9\u05df \u05e8\u05e9\u05d5\u05de\u05d5\u05ea</td></tr>'; return; }
   tb.innerHTML = cachedTx.map(t => '<tr><td><input type="checkbox" class="tx-check" value="' + t.id + '" onchange="updateTxSelCount()"></td><td>' + esc(t.description) + '</td><td style="color:var(--muted);font-size:12px">' + esc(t.category) + '</td><td><span class="badge badge-' + t.type + '">' + (t.type === 'income' ? '\u05d4\u05db\u05e0\u05e1\u05d4' : '\u05d4\u05d5\u05e6\u05d0\u05d4') + '</span></td><td style="font-weight:600">' + fmt(t.amount) + '</td><td><button class="btn-del" onclick="deleteTx(\'' + t.id + '\')">&#128465;</button></td></tr>').join('');
   updateTxSelCount();
