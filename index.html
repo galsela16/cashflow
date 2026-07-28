@@ -39,6 +39,14 @@ html[data-theme="warm"]{
   --btn-grad:linear-gradient(135deg,#1f8f80,#249D8F);
   --amber:#b8791a; --amber-bg:#faedcf;
 }
+/* ערכת "לילך" — פלטת #F8B2B2 / #AF719D / #8B639B / #403D88 */
+html[data-theme="purple"]{
+  --blue:#5b3f8c; --blue-bg:#e7ddf3; --blue-soft:#f3eefb;
+  --biz-grad:linear-gradient(145deg,#403D88 0%,#6a4f96 40%,#8B639B 70%,#AF719D 100%);
+  --home-grad:linear-gradient(145deg,#f9d3d3 0%,#f6d5df 35%,#efcdde 65%,#e7bcd3 100%);
+  --btn-grad:linear-gradient(135deg,#403D88,#6b4f9e);
+  --amber:#8B639B; --amber-bg:#efe2f0;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
 #app-screen{background:var(--biz-grad);min-height:100vh;position:relative}
@@ -1474,9 +1482,10 @@ tr:last-child td{border-bottom:none}
       <!-- ערכת צבעים -->
       <div class="settings-section">
         <div class="settings-section-title">🎨 ערכת צבעים</div>
-        <div class="view-toggle" style="width:100%">
+        <div class="view-toggle" style="width:100%;flex-wrap:wrap">
           <button class="view-toggle-btn active" id="theme-classic" onclick="setTheme('classic')">קלאסי</button>
           <button class="view-toggle-btn" id="theme-warm" onclick="setTheme('warm')">🌅 טורקיז חם</button>
+          <button class="view-toggle-btn" id="theme-purple" onclick="setTheme('purple')">🌸 לילך</button>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:6px">משנה את גווני הרקע והכפתורים. ירוק/אדום למספרים נשמרים לבהירות.</div>
       </div>
@@ -2390,20 +2399,17 @@ function openSettings() {
   }
   $('settings-msg').className = 'msg';
   const curTheme = localStorage.getItem('cf_theme') || 'classic';
-  const tc = $('theme-classic'), tw = $('theme-warm');
-  if (tc) tc.classList.toggle('active', curTheme === 'classic');
-  if (tw) tw.classList.toggle('active', curTheme === 'warm');
+  ['classic', 'warm', 'purple'].forEach(name => { const b = $('theme-' + name); if (b) b.classList.toggle('active', name === curTheme); });
   $('settings-modal').style.display = 'flex';
 }
 
 // החלפת ערכת צבעים
+const CF_THEMES = ['classic', 'warm', 'purple'];
 function setTheme(t) {
   if (t === 'classic') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem('cf_theme', t);
-  const tc = $('theme-classic'), tw = $('theme-warm');
-  if (tc) tc.classList.toggle('active', t === 'classic');
-  if (tw) tw.classList.toggle('active', t === 'warm');
+  CF_THEMES.forEach(name => { const b = $('theme-' + name); if (b) b.classList.toggle('active', name === t); });
 }
 function closeSettings() { $('settings-modal').style.display = 'none'; }
 
