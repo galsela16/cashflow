@@ -930,8 +930,11 @@ tr:last-child td{border-bottom:none}
               <button class="btn btn-primary" id="btn-add-shift" onclick="addShift()" style="height:42px">הוסף משמרת</button>
             </div>
             <div class="sh-preview">משך: <b id="sh-preview-hours">0 שע׳</b> · שכר המשמרת: <b id="sh-preview-val">₪0</b></div>
-            <div style="font-weight:600;font-size:14px;margin:18px 0 2px">📋 היסטוריית משמרות (החודש)</div>
-            <div class="sh-tablewrap">
+            <div onclick="toggleShiftHistory()" style="cursor:pointer;font-weight:600;font-size:14px;margin:18px 0 2px;display:flex;align-items:center;gap:6px" title="הצג/הסתר היסטוריה">
+              <span id="sh-hist-chev" style="display:inline-block;transition:transform .2s;font-size:11px;color:var(--muted)">▸</span>
+              📋 היסטוריית משמרות (החודש)
+            </div>
+            <div class="sh-tablewrap" id="sh-hist-wrap" style="display:none">
               <table class="sh-table">
                 <thead><tr>
                   <th>מעסיק</th><th>תאריך</th><th>שעות</th><th>תעריף</th><th>הערות</th><th>סה&quot;כ</th><th>פעולות</th>
@@ -3084,8 +3087,17 @@ async function deleteShift(id) {
   renderShifts();
 }
 
-function toggleShiftsPanel() {
-  const wrap = $('sh-panel-wrap'), chev = $('sh-chevron');
+// הצג/הסתר היסטוריית משמרות (מוסתר כברירת מחדל)
+function toggleShiftHistory() {
+  const wrap = $('sh-hist-wrap'), chev = $('sh-hist-chev');
+  if (!wrap) return;
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(90deg)' : '';
+  localStorage.setItem('cf_sh_hist_open', open ? '1' : '0');
+}
+
+function toggleShiftsPanel() {  const wrap = $('sh-panel-wrap'), chev = $('sh-chevron');
   if (!wrap) return;
   const open = wrap.style.display === 'none';
   wrap.style.display = open ? 'block' : 'none';
@@ -3112,6 +3124,9 @@ function renderShifts() {
   if (ml) ml.textContent = '· ' + shiftMonthLabel();
   const inl = $('sh-total-inline');
   if (inl) { const tot = cachedShifts.reduce((a, s) => a + (Number(s.hours) || 0) * (Number(s.rate) || 0), 0); inl.textContent = tot > 0 ? '· ' + fmt(tot) : ''; }
+  // שחזר מצב היסטוריה (מוסתר כברירת מחדל)
+  const _hw = $('sh-hist-wrap'), _hc = $('sh-hist-chev');
+  if (_hw) { const op = localStorage.getItem('cf_sh_hist_open') === '1'; _hw.style.display = op ? 'block' : 'none'; if (_hc) _hc.style.transform = op ? 'rotate(90deg)' : ''; }
 
   const totalHours = cachedShifts.reduce((a, s) => a + (Number(s.hours) || 0), 0);
   const totalSalary = cachedShifts.reduce((a, s) => a + (Number(s.hours) || 0) * (Number(s.rate) || 0), 0);
