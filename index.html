@@ -29,7 +29,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh}
-#app-screen{background:linear-gradient(145deg,#3a6b8c 0%,#3a8a9a 30%,#3aaa98 60%,#42b08a 100%);min-height:100vh;position:relative}
+#app-screen{background:linear-gradient(145deg,#3a6b8c 0%,#3a8a9a 30%,#3aaa98 60%,#42b08a 100%);min-height:100vh;position:relative;overflow-x:hidden}
 #app-screen::before{content:'';position:fixed;inset:0;background:linear-gradient(145deg,rgba(220,235,245,.62) 0%,rgba(215,240,242,.58) 35%,rgba(218,245,238,.55) 65%,rgba(225,245,235,.6) 100%);pointer-events:none;z-index:0}
 /* מצב בית — גוון חמים יותר */
 #app-screen.home-mode{background:linear-gradient(145deg,#e0b896 0%,#e6c4a4 30%,#ebd0b4 60%,#e5bd9c 100%)}
