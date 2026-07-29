@@ -6252,26 +6252,37 @@ async function resetMonthExpenses() {
 // ניקוי כפילויות בחודש הנוכחי — משאיר עותק אחד מכל רשומה זהה (תיאור+סכום+סוג)
 async function cleanDuplicates() {
   const month = getMonth();
-  const seen = new Map();      // key -> id שנשמר
-  const dupIds = [];
-  // עבור לפי created_at (cachedTx כבר ממוין) — שומר את הראשון, מסמן את השאר
-  for (const t of [...cachedTx].reverse()) { // reverse כדי לשמור את המוקדם ביותר
-    const key = (t.description || '') + '|' + (t.amount || 0) + '|' + (t.type || '');
-    if (seen.has(key)) {
-      dupIds.push(t.id);
-    } else {
-      seen.set(key, t.id);
+  // 1) הגדרות "קבועות" כפולות (אותו תיאור+סכום+קטגוריה) — השורש של כפילויות חוזרות
+  const dupRecIds = [];
+  if (cachedRecurring && cachedRecurring.length) {
+    const seenRec = new Map();
+    for (const r of cachedRecurring) {
+      const k = (r.description || '').trim() + '|' + (r.amount || 0) + '|' + (r.category || '');
+      if (seenRec.has(k)) dupRecIds.push(r.id); else seenRec.set(k, r.id);
     }
   }
-  if (!dupIds.length) {
-    alert('לא נמצאו כפילויות בחודש זה. 👍');
-    return;
+  // 2) עסקאות כפולות בחודש (אותו תיאור+סכום+סוג) — שמור את המוקדם ביותר
+  const seen = new Map();
+  const dupIds = [];
+  for (const t of [...cachedTx].reverse()) {
+    const key = (t.description || '') + '|' + (t.amount || 0) + '|' + (t.type || '');
+    if (seen.has(key)) dupIds.push(t.id); else seen.set(key, t.id);
   }
-  if (!confirm('נמצאו ' + dupIds.length + ' רשומות כפולות החודש.\nלמחוק את הכפילויות ולהשאיר עותק אחד מכל אחת?\n\nהפעולה אינה ניתנת לביטול.')) return;
-  const { error } = await sb.from(TX_TABLE()).delete().in('id', dupIds);
-  if (error) { alert('שגיאה: ' + error.message); return; }
+  if (!dupIds.length && !dupRecIds.length) { alert('לא נמצאו כפילויות. 👍'); return; }
+  const parts = [];
+  if (dupIds.length) parts.push(dupIds.length + ' רשומות בחודש');
+  if (dupRecIds.length) parts.push(dupRecIds.length + ' הגדרות קבועות כפולות');
+  if (!confirm('נמצאו: ' + parts.join(' + ') + '.\nלמחוק ולהשאיר עותק אחד מכל אחת?\nהפעולה אינה ניתנת לביטול.')) return;
+  if (dupRecIds.length) {
+    const e1 = (await sb.from(REC_TABLE()).delete().in('id', dupRecIds)).error;
+    if (e1) { alert('שגיאה בניקוי הגדרות קבועות: ' + e1.message); return; }
+  }
+  if (dupIds.length) {
+    const e2 = (await sb.from(TX_TABLE()).delete().in('id', dupIds)).error;
+    if (e2) { alert('שגיאה: ' + e2.message); return; }
+  }
   await loadAll();
-  alert('✅ נמחקו ' + dupIds.length + ' כפילויות.');
+  alert('✅ נוקו כפילויות: ' + parts.join(' + ') + '.');
 }
 
 
