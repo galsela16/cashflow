@@ -4901,7 +4901,7 @@ function renderAll() {
   const monthDetailIds = monthDetails.map(d => d.id);
 
   const txIncome = cachedTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const eventIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1')).reduce((s, d) => s + (d.price || 0), 0);
+  const eventIncome = monthDetails.filter(d => d.price > 0).reduce((s, d) => { const st = d.status; if (st === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || st === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1') return s + (d.price || 0); if (st === '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' || st === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd') return s + Math.min(Number(d.paid_amount) || 0, d.price || 0); return s; }, 0);
   const income = txIncome + eventIncome;
   const txExpense = cachedTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const paidEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, e) => s + e.amount, 0);
@@ -4911,7 +4911,7 @@ function renderAll() {
   const expense = txExpense + salary;
   const net = income - expense;
 
-  const pendingIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd')).reduce((s, d) => s + (d.price || 0), 0);
+  const pendingIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd')).reduce((s, d) => s + Math.max(0, (d.price || 0) - (Number(d.paid_amount) || 0)), 0);
   const pendingEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05de\u05de\u05ea\u05d9\u05df').reduce((s, e) => s + e.amount, 0);
   const pendingWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === '\u05de\u05de\u05ea\u05d9\u05df').reduce((s, w) => s + w.amount, 0);
   const totalClientIncome = income + pendingIncome;
@@ -5034,7 +5034,7 @@ function toggleTxPanel(type) {
     titleText = '🕐 צפוי מלקוחות — פירוט';
     const monthDetails = getMonthDetails();
     const pendingEvents = monthDetails.filter(d => d.price > 0 && (d.status === 'לא יצאה דרישת תשלום' || d.status === 'יצאה דרישת תשלום'));
-    rows = pendingEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: (c ? c.name + ' · ' : '') + d.status, isEvent: true, eventTitle: d.event_title, eventDate: d.event_date, detailId: d.id, paid: false }; });
+    rows = pendingEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: (c ? c.name + ' · ' : '') + d.status, isEvent: true, eventTitle: d.event_title, eventDate: d.event_date, detailId: d.id, paid: false, paidAmount: Number(d.paid_amount) || 0, price: d.price || 0 }; });
   } else if (type === 'expense') {
     titleText = '💸 הוצאות — פירוט';
     const monthDetailIds = getMonthDetails().map(d => d.id);
@@ -5063,10 +5063,13 @@ function toggleTxPanel(type) {
     content_el.innerHTML = rows.map((r, i) => {
       if (r.isEvent) {
         // שורת אירוע — לחיצה פותחת עריכה, עם כפתורי פעולה
-        const paidBtn = !r.paid ? '<button class="btn-paid-quick" onclick="event.stopPropagation();markEventPaid(\'' + r.detailId + '\')" title="סמן כשולם">סמן כשולם</button>' : '';
+        const paidBtn = !r.paid ? '<button class="btn-paid-quick" onclick="event.stopPropagation();markEventPaid(\'' + r.detailId + '\')" title="סמן כשולם במלואו">שולם ✓</button>' : '';
+        const partialBtn = !r.paid ? '<button class="btn-paid-quick" style="background:var(--amber-bg);color:var(--amber)" onclick="event.stopPropagation();markEventPartial(\'' + r.detailId + '\')" title="הזן תשלום חלקי">חלקי</button>' : '';
+        const rem = Math.max(0, (r.price || r.amount || 0) - (r.paidAmount || 0));
+        const partialInfo = (r.paidAmount > 0) ? '<div style="font-size:11px;color:var(--green)">שולם ' + fmt(r.paidAmount) + ' · נותר ' + fmt(rem) + '</div>' : '';
         return '<div class="income-row" onclick="editIncomeEvent(\'' + esc(r.eventTitle).replace(/'/g, "\\'") + '\',\'' + r.eventDate + '\',\'' + r.detailId + '\')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 8px;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer;border-radius:8px">' +
-          '<div style="flex:1"><div style="font-weight:500">' + esc(r.name) + ' <span style="font-size:11px;color:var(--blue)">✎</span></div>' + (r.sub ? '<div style="font-size:11px;color:var(--muted)">' + esc(r.sub) + '</div>' : '') + '</div>' +
-          '<div style="display:flex;align-items:center;gap:8px">' + paidBtn + '<div style="font-weight:600">' + fmt(r.amount) + '</div></div></div>';
+          '<div style="flex:1"><div style="font-weight:500">' + esc(r.name) + ' <span style="font-size:11px;color:var(--blue)">✎</span></div>' + (r.sub ? '<div style="font-size:11px;color:var(--muted)">' + esc(r.sub) + '</div>' : '') + partialInfo + '</div>' +
+          '<div style="display:flex;align-items:center;gap:6px">' + partialBtn + paidBtn + '<div style="font-weight:600">' + fmt(r.amount) + '</div></div></div>';
       }
       // שורה רגילה (עסקה)
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
@@ -5113,7 +5116,9 @@ async function editIncomeEvent(title, date, detailId) {
 // סימון מהיר של אירוע כשולם
 async function markEventPaid(detailId) {
   if (!detailId) return;
-  await sb.from('event_details').update({ status: 'בוצע תשלום' }).eq('id', detailId);
+  const det = cachedEventDetails.find(d => d.id === detailId);
+  const price = det ? (det.price || 0) : 0;
+  await sb.from('event_details').update({ status: 'בוצע תשלום', paid_amount: price }).eq('id', detailId);
   await loadAll();
   // רענן את הפאנל אם פתוח
   const panel = $('tx-panel');
@@ -5121,6 +5126,32 @@ async function markEventPaid(detailId) {
     const t = panel.dataset.type;
     panel.style.display = 'none';
     toggleTxPanel(t);
+  }
+}
+
+// תשלום חלקי — מזין כמה התקבל, מצטבר, ומסמן שולם כשמגיע לסכום המלא
+async function markEventPartial(detailId) {
+  if (!detailId) return;
+  const det = cachedEventDetails.find(d => d.id === detailId);
+  if (!det) return;
+  const price = det.price || 0;
+  const cur = Number(det.paid_amount) || 0;
+  const remaining = Math.max(0, price - cur);
+  const inp = prompt('כמה התקבל עכשיו?\n(סה"כ ' + fmt(price) + ' · שולם עד כה ' + fmt(cur) + ' · נותר ' + fmt(remaining) + ')', '');
+  if (inp === null) return;
+  const add = parseFloat(inp);
+  if (isNaN(add) || add <= 0) { alert('סכום לא תקין'); return; }
+  let newPaid = cur + add;
+  let update;
+  if (newPaid >= price) { update = { paid_amount: price, status: 'בוצע תשלום' }; }
+  else { update = { paid_amount: newPaid }; }
+  await sb.from('event_details').update(update).eq('id', detailId);
+  await loadAll();
+  const panel = $('tx-panel');
+  if (panel && panel.style.display !== 'none') {
+    const tp = panel.dataset.type;
+    panel.style.display = 'none';
+    toggleTxPanel(tp);
   }
 }
 
