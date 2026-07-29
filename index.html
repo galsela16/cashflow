@@ -5633,15 +5633,11 @@ function eventActionsHtml(ev, info) {
   let statusHtml = '';
   if (info.detail) {
     const isPaid = info.detail.status === 'בוצע תשלום' || info.detail.status === 'בוצע תשלום + חשבונית מס';
-    const sel = '<select class="ev-status-sel badge badge-' + info.statusCls + '" onclick="event.stopPropagation()" ' +
-      'onchange="event.stopPropagation();updateEventStatus(\'' + info.detail.id + '\',this.value)">' +
-      MV_STATUSES.map(s => '<option value="' + s + '"' + (info.detail.status === s ? ' selected' : '') + '>' + esc(s) + '</option>').join('') +
-      '</select>';
-    // כפתור מהיר לסימון כשולם — מוצג רק אם עוד לא שולם
+    // הסטטוס נערך כעת ממסך העריכה (✎) כדי לא לדחוס את השורה במובייל; צבע הפס מציין את הסטטוס.
     const quickPaid = !isPaid
       ? '<button class="btn-paid-quick" onclick="event.stopPropagation();updateEventStatus(\'' + info.detail.id + '\',\'בוצע תשלום\');return false;" title="סמן כשולם">✓ שולם</button>'
       : '';
-    statusHtml = sel + quickPaid;
+    statusHtml = quickPaid;
   }
   return statusHtml + editBtn + delBtn;
 }
