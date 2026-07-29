@@ -798,8 +798,9 @@ tr:last-child td{border-bottom:none}
         </div>
         <div class="cards-row" style="margin-bottom:1.25rem">
           <div class="card card-soft-green"><div class="card-label">💵 נכנס החודש</div><div class="card-value c-green" id="h-income">—</div><div class="card-sub" id="h-income-sub">משכורות והכנסות</div></div>
-          <div class="card"><div class="card-label">💸 יצא החודש</div><div class="card-value c-red" id="h-expense">—</div><div class="card-sub">כל ההוצאות</div></div>
+          <div class="card" style="cursor:pointer" onclick="toggleExpenseDetail()" title="לחץ לפירוט"><div class="card-label">💸 יצא החודש <span id="h-exp-chev" style="display:inline-block;transition:transform .2s;font-size:10px">▸</span></div><div class="card-value c-red" id="h-expense">—</div><div class="card-sub">כל ההוצאות</div></div>
         </div>
+        <div id="h-expense-detail" style="display:none;margin:-0.5rem 0 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden"></div>
         <div class="section" style="margin-bottom:1rem">
           <div class="section-title">💵 הכנסות החודש</div>
           <div id="h-income-list"></div>
@@ -3334,6 +3335,15 @@ function renderHome() {
     (catRows[c] = catRows[c] || []).push(t);
   });
   const catEl = $('h-cat-bars');
+  // פירוט "יצא החודש" לפי קטגוריה (נפתח בלחיצה על הכרטיס)
+  const edEl = $('h-expense-detail');
+  if (edEl) {
+    const entries = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+    edEl.innerHTML = entries.length
+      ? entries.map(([c, a]) => '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px"><span>' + esc(c) + '</span><span style="color:var(--red);font-weight:600;white-space:nowrap">' + fmt(a) + '</span></div>').join('') +
+        '<div style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;font-weight:700"><span>סה"כ</span><span style="color:var(--red)">' + fmt(totalExpense) + '</span></div>'
+      : '<div style="padding:10px 12px;color:var(--muted);font-size:12px">אין הוצאות החודש</div>';
+  }
   if (catEl) {
     if (!Object.keys(cats).length) { catEl.innerHTML = '<div class="empty">אין הוצאות החודש</div>'; }
     else {
@@ -5248,6 +5258,15 @@ function renderEmpStatus(monthDetailIds) {
       (expandable ? '<div id="empst-' + emp.id + '" style="display:none;padding:4px 12px 10px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:6px">' + detailRows + '</div>' : '') +
       '</div>';
   }).join('');
+}
+
+// פתיחה/סגירה של פירוט "יצא החודש"
+function toggleExpenseDetail() {
+  const d = $('h-expense-detail'), chev = $('h-exp-chev');
+  if (!d) return;
+  const open = d.style.display === 'none';
+  d.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(90deg)' : '';
 }
 
 // פתיחה/סגירה של פירוט קטגוריית הוצאה בדשבורד הבית
