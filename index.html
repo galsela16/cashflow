@@ -797,14 +797,14 @@ tr:last-child td{border-bottom:none}
           </div>
         </div>
         <div class="cards-row" style="margin-bottom:1.25rem">
-          <div class="card card-soft-green"><div class="card-label">💵 נכנס החודש</div><div class="card-value c-green" id="h-income">—</div><div class="card-sub" id="h-income-sub">משכורות והכנסות</div></div>
+          <div class="card card-soft-green" style="cursor:pointer" onclick="toggleIncomeDetail()" title="לחץ לפירוט"><div class="card-label">💵 נכנס החודש <span id="h-inc-chev" style="display:inline-block;transition:transform .2s;font-size:10px">▸</span></div><div class="card-value c-green" id="h-income">—</div><div class="card-sub" id="h-income-sub">משכורות והכנסות</div></div>
           <div class="card" style="cursor:pointer" onclick="toggleExpenseDetail()" title="לחץ לפירוט"><div class="card-label">💸 יצא החודש <span id="h-exp-chev" style="display:inline-block;transition:transform .2s;font-size:10px">▸</span></div><div class="card-value c-red" id="h-expense">—</div><div class="card-sub">כל ההוצאות</div></div>
         </div>
-        <div id="h-expense-detail" style="display:none;margin:-0.5rem 0 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden"></div>
-        <div class="section" style="margin-bottom:1rem">
+        <div id="h-income-detail" class="section" style="display:none;margin-bottom:1rem">
           <div class="section-title">💵 הכנסות החודש</div>
           <div id="h-income-list"></div>
         </div>
+        <div id="h-expense-detail" style="display:none;margin:-0.5rem 0 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden"></div>
         <div class="section" style="margin-bottom:0">
           <div class="section-title">💸 הוצאות לפי קטגוריה</div>
           <div id="h-cat-bars"><div class="empty">אין הוצאות החודש</div></div>
@@ -5260,6 +5260,15 @@ function renderEmpStatus(monthDetailIds) {
   }).join('');
 }
 
+// פתיחה/סגירה של פירוט "נכנס החודש"
+function toggleIncomeDetail() {
+  const d = $('h-income-detail'), chev = $('h-inc-chev');
+  if (!d) return;
+  const open = d.style.display === 'none';
+  d.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(90deg)' : '';
+}
+
 // פתיחה/סגירה של פירוט "יצא החודש"
 function toggleExpenseDetail() {
   const d = $('h-expense-detail'), chev = $('h-exp-chev');
@@ -6335,16 +6344,21 @@ async function autoImportRecurring(month, uid, existingTx) {
   // נעילה — מנע ייבוא כפול (מפתח כולל מצב כדי לא להתנגש בין עסק/בית)
   const lockKey = appMode + ':' + month;
   if (_importingMonths.has(lockKey)) return;
-  // אילו קבועות כבר יובאו החודש? (לפי התיאור עם הסיומת "(קבועה)")
-  const importedDescs = new Set(
-    existingTx.filter(t => t.description && t.description.includes('(קבועה)'))
-              .map(t => t.description.replace(' (קבועה)', '').trim())
-  );
-  // ייבא רק קבועות שעוד לא יובאו החודש
-  const toImport = cachedRecurring.filter(r => !importedDescs.has(r.description.trim()));
-  if (!toImport.length) return;
-  _importingMonths.add(lockKey);
+  _importingMonths.add(lockKey); // נעל מיד (אטומי — אין await לפני כן)
   try {
+    // שלוף מצב עדכני מה-DB במקום להסתמך על נתונים שהועברו (מונע כפילות בטעינה כפולה)
+    const freshR = await sb.from(TX_TABLE()).select('description').eq('user_id', uid).eq('month', month);
+    const fresh = freshR.data || existingTx || [];
+    const importedDescs = new Set(
+      fresh.filter(t => t.description && t.description.includes('(קבועה)'))
+        .map(t => t.description.replace(' (קבועה)', '').trim())
+    );
+    // רשימת קבועות ייחודית לפי תיאור (מונע כפילות גם אם ההגדרות עצמן כפולות)
+    const uniqRec = [], seenDesc = new Set();
+    cachedRecurring.forEach(r => { const d = (r.description || '').trim(); if (d && !seenDesc.has(d)) { seenDesc.add(d); uniqRec.push(r); } });
+    // ייבא רק קבועות שעוד לא יובאו החודש
+    const toImport = uniqRec.filter(r => !importedDescs.has((r.description || '').trim()));
+    if (!toImport.length) return;
     await sb.from(TX_TABLE()).insert(
       toImport.map(r => ({
         user_id: uid,
