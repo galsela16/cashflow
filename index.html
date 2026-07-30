@@ -279,8 +279,8 @@ tr:last-child td{border-bottom:none}
 @media(max-width:520px){.gs-stats{grid-template-columns:1fr}}
 
 /* עמודות (masonry) — כל כרטיס בגובה הטבעי שלו, בלי תלות בשכן */
-.goal-cards{column-width:280px;column-gap:14px}
-.goal-cards > .goal-card{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;margin-bottom:16px;display:inline-block;width:100%}
+.goal-cards{display:flex;flex-direction:column;gap:12px}
+.goal-cards > .goal-card{margin-bottom:0;display:block;width:100%}
 /* שורה עליונה: טופס הוספת יעד + כרטיס הסיכום לצידו */
 .goals-top{display:grid;grid-template-columns:1fr minmax(270px,340px);gap:12px;align-items:start;margin-bottom:18px}
 .goals-top .goals-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
@@ -302,7 +302,7 @@ tr:last-child td{border-bottom:none}
 .goal-card.collapsed{padding:12px 16px}
 .goal-collapse-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:2px 5px;border-radius:6px;transition:transform .2s}
 .goal-collapse-btn:hover{background:var(--bg)}
-.goal-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 20px 17px;box-shadow:0 2px 10px rgba(70,110,140,.06);transition:box-shadow .2s,transform .2s;position:relative;overflow:hidden}
+.goal-card{background:var(--surface);border:1px solid var(--border);border-inline-start:4px solid var(--blue);border-radius:16px;padding:18px 20px 16px;box-shadow:0 2px 10px rgba(70,110,140,.06);transition:box-shadow .2s,transform .2s;position:relative;overflow:hidden}
 .goal-card:hover{box-shadow:0 8px 24px rgba(70,110,140,.12);transform:translateY(-1px)}
 .goal-card.done{border-color:var(--green);background:linear-gradient(180deg,#f0fdf9 0%,var(--surface) 60%)}
 .goal-card.behind{border-color:#fcd9a5}
@@ -310,7 +310,7 @@ tr:last-child td{border-bottom:none}
 .goal-name{font-weight:700;font-size:16.5px;line-height:1.35;min-width:0;word-break:break-word}
 .goal-pct{font-size:21px;font-weight:700;line-height:1;letter-spacing:-.3px;white-space:nowrap;opacity:.85}
 .goal-pct small{font-size:12px;font-weight:600;margin-inline-start:1px;opacity:.8}
-.goal-bar{height:10px;background:var(--bg);border-radius:100px;overflow:hidden;margin-bottom:11px}
+.goal-bar{height:14px;background:var(--bg);border-radius:100px;overflow:hidden;margin-bottom:11px}
 .goal-bar span{display:block;height:100%;border-radius:100px;transition:width .4s ease}
 .goal-amounts{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:13px}
 .goal-saved{font-weight:700}
@@ -3696,6 +3696,9 @@ let openGoalItems = null; // איזה יעד פתוח כרגע לפירוט
 let expandedGoalItems = null; // איזה יעד מציג את כל הרכיבים
 // כרטיסים מכווצים — נשמר בין טעינות
 let collapsedGoals = new Set(JSON.parse(localStorage.getItem('cf_collapsed_goals') || '[]'));
+let focusedGoal = null; // יעד במיקוד — תצוגת מסך מלא
+function focusGoal(id) { focusedGoal = id; openGoalItems = id; renderHomeGoalsList(); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {} }
+function closeFocusGoal() { focusedGoal = null; renderHomeGoalsList(); }
 
 function toggleGoalCollapse(id) {
   if (collapsedGoals.has(id)) {
@@ -4119,16 +4122,21 @@ function renderGoalsSummary() {
 }
 
 function renderHomeGoalsList() {
-  renderGoalsSummary();
   const el = $('goals-list');
   if (!el) return;
+  const topWrap = document.querySelector('.goals-top');
+  const focusMode = !!(focusedGoal && cachedGoals.some(g => g.id === focusedGoal));
+  if (topWrap) topWrap.style.display = focusMode ? 'none' : '';   // הסתר סיכום+טופס במיקוד
+  if (!focusMode) renderGoalsSummary();
   if (!cachedGoals.length) {
     el.innerHTML = '<div class="empty">עדיין אין יעדים. הוסף יעד ראשון למעלה 🎯</div>';
     return;
   }
   const today = new Date(); today.setHours(0, 0, 0, 0);
+  const goalsToRender = focusMode ? cachedGoals.filter(g => g.id === focusedGoal) : cachedGoals;
+  const backBtn = focusMode ? '<button class="btn-paid-quick" onclick="closeFocusGoal()" style="width:auto;padding:9px 18px;margin-bottom:16px">← חזרה לרשימת היעדים</button>' : '';
 
-  el.innerHTML = '<div class="goal-cards">' + cachedGoals.map(g => {
+  el.innerHTML = backBtn + '<div class="goal-cards' + (focusMode ? ' goal-focus' : '') + '">' + goalsToRender.map(g => {
     const saved = g.saved_amount || 0;
     const target = g.target_amount || 0;
     const pct = target > 0 ? Math.min(Math.round(saved / target * 100), 100) : 0;
@@ -4181,19 +4189,18 @@ function renderHomeGoalsList() {
     const streak = goalStreak(g.id);
     if (streak >= 2) chips.push('<span class="goal-chip fire">🔥 ' + streak + ' חודשים</span>');
 
-    const isCollapsed = collapsedGoals.has(g.id);
+    const isCollapsed = !focusMode;
     const topRow =
       '<div class="goal-card-top" style="margin-bottom:' + (isCollapsed ? '0' : '12px') + '">' +
         '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">' +
-          '<button class="goal-collapse-btn" onclick="toggleGoalCollapse(\'' + g.id + '\')" title="' + (isCollapsed ? 'הרחב' : 'כווץ') + '" ' +
-            'style="' + (isCollapsed ? '' : 'transform:rotate(180deg)') + '">▾</button>' +
+          '<button class="goal-collapse-btn" onclick="event.stopPropagation();' + (focusMode ? 'closeFocusGoal()' : 'focusGoal(\'' + g.id + '\')') + '" title="' + (focusMode ? 'חזרה' : 'פתח') + '">' + (focusMode ? '▾' : '‹') + '</button>' +
           '<div class="goal-name">' + (done ? '✅ ' : '') + esc(g.name) + '</div>' +
         '</div>' +
         '<div class="goal-pct" style="color:' + barColor + ';font-size:' + (isCollapsed ? '20px' : '30px') + '">' + pct + '<small>%</small></div>' +
       '</div>';
 
     if (isCollapsed) {
-      return '<div class="' + cardCls + ' collapsed" id="goal-card-' + g.id + '">' +
+      return '<div class="' + cardCls + ' collapsed" id="goal-card-' + g.id + '" onclick="focusGoal(\'' + g.id + '\')" style="cursor:pointer">' +
         topRow +
         '<div class="goal-bar" style="margin:8px 0 0"><span style="width:' + pct + '%;background:' + barColor + '"></span></div>' +
       '</div>';
