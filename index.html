@@ -4242,6 +4242,8 @@ function renderHomeGoalsList() {
     const streak = goalStreak(g.id);
     if (streak >= 2) chips.push('<span class="goal-chip fire">🔥 ' + streak + ' חודשים</span>');
 
+    // הצבע שבחר המשתמש תמיד מנצח (הסטטוס עדיין מוצג בצ׳יפים)
+    if (g.color) barColor = g.color;
     const isCollapsed = !focusMode;
     const topRow =
       '<div class="goal-card-top" style="margin-bottom:' + (isCollapsed ? '0' : '12px') + '">' +
