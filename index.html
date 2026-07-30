@@ -282,17 +282,17 @@ tr:last-child td{border-bottom:none}
 .goal-cards{display:flex;flex-direction:column;gap:12px}
 .goal-cards > .goal-card{margin-bottom:0;display:block;width:100%}
 /* שורה עליונה: טופס הוספת יעד + כרטיס הסיכום לצידו */
-.goals-top{display:grid;grid-template-columns:1fr minmax(270px,340px);gap:12px;align-items:start;margin-bottom:18px}
+.goals-top{display:grid;grid-template-columns:1fr minmax(260px,320px);gap:10px;align-items:start;margin-bottom:12px}
 .goals-top .goals-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
 /* גרסה קומפקטית של כרטיס הסיכום — כדי שלא ימתח את שורת ה-grid */
-.goals-top .goals-summary{margin-bottom:0;padding:12px 14px}
-.goals-top .gs-top{margin-bottom:8px}
+.goals-top .goals-summary{margin-bottom:0;padding:9px 12px}
+.goals-top .gs-top{margin-bottom:5px}
 .goals-top .gs-label{font-size:11.5px}
-.goals-top .gs-amount{font-size:21px}
+.goals-top .gs-amount{font-size:18px}
 .goals-top .gs-of{font-size:12px}
-.goals-top .gs-pct{font-size:23px}
+.goals-top .gs-pct{font-size:18px}
 .goals-top .gs-pct small{font-size:12px}
-.goals-top .gs-bar{height:7px;margin-bottom:9px}
+.goals-top .gs-bar{height:6px;margin-bottom:7px}
 .goals-top .gs-stats{display:flex;gap:6px}
 .goals-top .gs-stat{flex:1;background:transparent;padding:0;text-align:center;min-width:0}
 .goals-top .gs-stat-lbl{font-size:10px;margin-bottom:1px}
@@ -1125,18 +1125,18 @@ tr:last-child td{border-bottom:none}
         <div class="goals-top">
         <div class="goals-form">
           <div style="flex:2;min-width:130px">
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">שם היעד</label>
-            <input id="goal-name" placeholder="לדוגמה: טיול ליפן" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:2px">שם היעד</label>
+            <input id="goal-name" placeholder="לדוגמה: טיול ליפן" style="width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
           </div>
           <div style="flex:1;min-width:100px">
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">סכום יעד (₪) · או פרק לרכיבים</label>
-            <input id="goal-target" type="number" placeholder="15000" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:2px">סכום יעד (₪) · או פרק לרכיבים</label>
+            <input id="goal-target" type="number" placeholder="15000" style="width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
           </div>
           <div style="flex:1;min-width:130px">
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">תאריך יעד (לא חובה)</label>
-            <input id="goal-deadline" type="date" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:2px">תאריך יעד (לא חובה)</label>
+            <input id="goal-deadline" type="date" style="width:100%;padding:6px 9px;border:1px solid var(--border);border-radius:var(--radius-sm)">
           </div>
-          <button class="btn btn-primary" id="btn-add-goal" onclick="addGoal()" style="height:38px">הוסף יעד</button>
+          <button class="btn btn-primary" id="btn-add-goal" onclick="addGoal()" style="height:32px">הוסף יעד</button>
         </div>
         <div id="goals-summary"></div>
         </div>
@@ -3697,6 +3697,12 @@ let expandedGoalItems = null; // איזה יעד מציג את כל הרכיבי
 // כרטיסים מכווצים — נשמר בין טעינות
 let collapsedGoals = new Set(JSON.parse(localStorage.getItem('cf_collapsed_goals') || '[]'));
 let focusedGoal = null; // יעד במיקוד — תצוגת מסך מלא
+const GOAL_COLORS = ['#2563eb', '#0d9c6e', '#e76f51', '#8b5cf6', '#f59e0b', '#ec4899', '#14b8a6', '#64748b'];
+function goalDateStr(d) { if (!d) return ''; const p = String(d).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : d; }
+function pickGoalColor(id, c) {
+  const inp = $('goal-e-color-' + id); if (inp) inp.value = c;
+  document.querySelectorAll('#goal-card-' + id + ' [data-c]').forEach(b => { b.style.borderColor = b.getAttribute('data-c') === c ? 'var(--text)' : 'transparent'; });
+}
 function focusGoal(id) { focusedGoal = id; openGoalItems = id; renderHomeGoalsList(); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {} }
 function closeFocusGoal() { focusedGoal = null; renderHomeGoalsList(); }
 
@@ -4033,6 +4039,13 @@ function editGoal(id) {
         '<label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:3px">תאריך יעד</label>' +
         '<input id="goal-e-deadline-' + id + '" type="date" value="' + (g.deadline || '') + '" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:8px;font-size:13.5px">' +
       '</div>' +
+      '<div>' +
+        '<label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:5px">צבע הכרטיס</label>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+          GOAL_COLORS.map(c => '<button type="button" data-c="' + c + '" onclick="pickGoalColor(\'' + id + '\',\'' + c + '\')" style="width:26px;height:26px;border-radius:50%;background:' + c + ';border:2px solid ' + ((g.color || '') === c ? 'var(--text)' : 'transparent') + ';cursor:pointer;padding:0"></button>').join('') +
+        '</div>' +
+        '<input type="hidden" id="goal-e-color-' + id + '" value="' + (g.color || '') + '">' +
+      '</div>' +
       '<div style="display:flex;gap:7px;margin-top:3px">' +
         '<button class="btn-save-sm" style="flex:1" onclick="saveGoalEdit(\'' + id + '\')">✓ שמור</button>' +
         '<button class="btn-cancel-sm" style="flex:1" onclick="renderHomeGoalsList()">✕ ביטול</button>' +
@@ -4052,7 +4065,8 @@ async function saveGoalEdit(id) {
   const patch = {
     name,
     saved_amount: isNaN(saved) ? 0 : Math.max(0, saved),
-    deadline: deadline || null
+    deadline: deadline || null,
+    color: ($('goal-e-color-' + id) ? $('goal-e-color-' + id).value : '') || null
   };
   if (!hasItems) patch.target_amount = (isNaN(target) || target < 0) ? 0 : target;
   await sb.from('home_goals').update(patch).eq('id', id);
@@ -4119,6 +4133,44 @@ function renderGoalsSummary() {
         '</div>' +
       '</div>' +
     '</div>';
+
+  // חלוקה חודשית לפי יעד (מתקפל)
+  const bd = cachedGoals.map(g => {
+    const target = g.target_amount || 0, saved = g.saved_amount || 0;
+    const remaining = Math.max(0, target - saved);
+    const dot = g.color || 'var(--blue,#2563eb)';
+    let perM = 0, info = 'ללא תאריך יעד';
+    if (g.deadline && remaining > 0) {
+      const dl = new Date(g.deadline + 'T00:00:00');
+      const daysLeft = Math.ceil((dl - today) / 86400000);
+      if (daysLeft > 0) { perM = Math.ceil(remaining / Math.max(daysLeft / 30.44, 0.1)); info = 'עד ' + goalDateStr(g.deadline); }
+      else info = 'עבר התאריך';
+    } else if (remaining <= 0 && target > 0) { info = '🎉 הושלם'; }
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--border);font-size:12.5px">' +
+      '<div style="display:flex;align-items:center;gap:7px;min-width:0"><span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';flex:none"></span><span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(g.name) + '</span><span style="color:var(--muted);font-size:11px">· ' + info + '</span></div>' +
+      '<span style="font-weight:700;white-space:nowrap;color:' + (perM > 0 ? 'var(--amber,#b45309)' : 'var(--muted)') + '">' + (perM > 0 ? fmt(perM) + '/חו׳' : '—') + '</span>' +
+    '</div>';
+  }).join('');
+  el.innerHTML +=
+    '<div style="margin-top:10px">' +
+      '<div onclick="toggleGoalsMonthly()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);font-weight:600">' +
+        '<span>📅 חלוקה חודשית לפי יעד</span>' +
+        '<span id="goals-monthly-chev" style="transition:transform .2s;display:inline-block">▾</span>' +
+      '</div>' +
+      '<div id="goals-monthly-list" style="display:none;margin-top:4px">' + bd + '</div>' +
+    '</div>';
+  if (localStorage.getItem('cf_goals_monthly_open') === '1') {
+    const l = $('goals-monthly-list'), c = $('goals-monthly-chev');
+    if (l) l.style.display = 'block'; if (c) c.style.transform = 'rotate(180deg)';
+  }
+}
+function toggleGoalsMonthly() {
+  const l = $('goals-monthly-list'), c = $('goals-monthly-chev');
+  if (!l) return;
+  const open = l.style.display === 'none';
+  l.style.display = open ? 'block' : 'none';
+  if (c) c.style.transform = open ? 'rotate(180deg)' : '';
+  localStorage.setItem('cf_goals_monthly_open', open ? '1' : '0');
 }
 
 function renderHomeGoalsList() {
@@ -4143,7 +4195,8 @@ function renderHomeGoalsList() {
     const done = saved >= target && target > 0;
     const remaining = Math.max(0, target - saved);
 
-    let barColor = done ? 'var(--green)' : 'var(--blue,#2563eb)';
+    let barColor = g.color || (done ? 'var(--green)' : 'var(--blue,#2563eb)');
+    const dotColor = g.color || (done ? 'var(--green)' : 'var(--blue,#2563eb)');
     let cardCls = done ? 'goal-card done' : 'goal-card';
     const chips = [];
 
@@ -4194,7 +4247,7 @@ function renderHomeGoalsList() {
       '<div class="goal-card-top" style="margin-bottom:' + (isCollapsed ? '0' : '12px') + '">' +
         '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">' +
           '<button class="goal-collapse-btn" onclick="event.stopPropagation();' + (focusMode ? 'closeFocusGoal()' : 'focusGoal(\'' + g.id + '\')') + '" title="' + (focusMode ? 'חזרה' : 'פתח') + '">' + (focusMode ? '▾' : '‹') + '</button>' +
-          '<div class="goal-name">' + (done ? '✅ ' : '') + esc(g.name) + '</div>' +
+          '<div class="goal-name"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + dotColor + ';margin-inline-end:7px;flex:none"></span>' + (done ? '✅ ' : '') + esc(g.name) + '</div>' +
         '</div>' +
         '<div class="goal-pct" style="color:' + barColor + ';font-size:' + (isCollapsed ? '15px' : '18px') + '">' + pct + '<small>%</small></div>' +
       '</div>';
@@ -4203,6 +4256,7 @@ function renderHomeGoalsList() {
       return '<div class="' + cardCls + ' collapsed" id="goal-card-' + g.id + '" onclick="focusGoal(\'' + g.id + '\')" style="cursor:pointer">' +
         topRow +
         '<div class="goal-bar" style="margin:8px 0 0"><span style="width:' + pct + '%;background:' + barColor + '"></span></div>' +
+        (g.deadline ? '<div style="font-size:11px;color:var(--muted);margin-top:8px">🎯 עד ' + goalDateStr(g.deadline) + '</div>' : '') +
       '</div>';
     }
 
