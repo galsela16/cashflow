@@ -4126,8 +4126,8 @@ function renderHomeGoalsList() {
   if (!el) return;
   const topWrap = document.querySelector('.goals-top');
   const focusMode = !!(focusedGoal && cachedGoals.some(g => g.id === focusedGoal));
-  if (topWrap) topWrap.style.display = focusMode ? 'none' : '';   // הסתר סיכום+טופס במיקוד
-  if (!focusMode) renderGoalsSummary();
+  if (topWrap) topWrap.style.display = '';   // הטופס והסיכום נשארים תמיד
+  renderGoalsSummary();
   if (!cachedGoals.length) {
     el.innerHTML = '<div class="empty">עדיין אין יעדים. הוסף יעד ראשון למעלה 🎯</div>';
     return;
