@@ -118,11 +118,12 @@ body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);
 /* APP */
 #app-screen{display:none}
 .topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(37,99,235,.06)}
-.topbar-title{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.topbar-title{font-size:22px;font-weight:800;letter-spacing:-0.5px;display:inline-flex;align-items:center}
+#app-screen .topbar-title .version-badge{margin-inline-start:7px;padding:2px 7px;border:1px solid rgba(37,99,235,.16);border-radius:100px;background:rgba(37,99,235,.08);color:var(--blue);font-size:9px;font-weight:700;letter-spacing:.15px;line-height:1.5;direction:ltr}
 .mode-switch{display:inline-flex;background:var(--bg);border-radius:100px;padding:3px;gap:2px}
 .mode-btn{padding:6px 14px;border:none;background:transparent;border-radius:100px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
 .mode-btn.active{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.1)}
-@media(max-width:600px){.mode-btn{padding:5px 10px;font-size:12px}.topbar-title{font-size:18px}}
+@media(max-width:600px){.mode-btn{padding:5px 10px;font-size:12px}.topbar-title{font-size:18px}#app-screen .topbar-title .version-badge{margin-inline-start:5px;padding:1px 5px;font-size:8px}}
 .topbar-user{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:10px}
 .btn-logout{padding:6px 14px;border:1.5px solid var(--border);border-radius:100px;background:transparent;cursor:pointer;font-size:13px;color:var(--muted)}
 

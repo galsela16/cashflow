@@ -1,3 +1,10 @@
+const APP_VERSION = '2.1.0';
+const versionBadge = document.getElementById('app-version');
+if (versionBadge) {
+  versionBadge.textContent = 'v' + APP_VERSION;
+  versionBadge.title = 'CashflowHQ גרסה ' + APP_VERSION;
+}
+
 const SB_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cnZsb2dxanpwbm9qZnpiYXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk2MjgsImV4cCI6MjA5NzgwNTYyOH0.2I45YWLkTDLjndmyoNImkPLfqOxJV7TVsff2kAOZHpg';
 // Edge Function לחיבור יומן גוגל פר-משתמש (מחליף את הסנכרון הקבוע הישן)
