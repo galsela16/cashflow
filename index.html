@@ -12,10 +12,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="CashflowHQ" />
+<meta name="description" content="ניהול תזרים מזומנים, לקוחות, עובדים ואירועים — לעסק ולבית." />
+<meta name="color-scheme" content="light" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="preconnect" href="https://zvrvlogqjzpnojfzbapu.supabase.co" crossorigin />
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
+<link rel="dns-prefetch" href="https://cdn.sheetjs.com" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
 <style>
 :root {
   --bg:#f0f4ff; --surface:#fff; --border:#dde3f0; --text:#1a1c2e; --muted:#8892b0;
@@ -639,6 +645,63 @@ tr:last-child td{border-bottom:none}
 #page-shifts .sh-mini{padding:5px 11px;font-size:12px;border-radius:8px}
 #page-shifts .sh-empty{padding:36px 20px;text-align:center;color:var(--muted)}
 #page-shifts .sh-empty .sh-empty-ic{font-size:34px;display:block;margin-bottom:8px;opacity:.65}
+
+/* CashflowHQ professional UI pass: calmer hierarchy, less GPU work, clearer focus */
+:root{
+  --bg:#f5f7fb;--surface:#fff;--border:#e2e8f0;--text:#172033;--muted:#64748b;
+  --blue:#2459d3;--blue-bg:#e8efff;--blue-soft:#f3f6ff;
+  --green:#08785b;--green-bg:#dff5ed;--green-soft:#eefaf6;
+  --red:#b42318;--red-bg:#fee4e2;--red-soft:#fff2f1;
+  --amber:#a15c07;--amber-bg:#fff3d6;
+  --radius:14px;--radius-sm:9px;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 5px 16px rgba(15,23,42,.045);
+  --shadow-md:0 12px 32px rgba(15,23,42,.09);
+  --biz-grad:linear-gradient(180deg,#edf3fb 0%,#f5f7fb 42%,#f5f7fb 100%);
+  --home-grad:linear-gradient(180deg,#f8f2e9 0%,#f7f7f5 42%,#f5f7fb 100%);
+  --btn-grad:linear-gradient(135deg,#1f4fc2,#2d67e3)
+}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+#app-screen::before{display:none}
+#app-screen .topbar{background:rgba(255,255,255,.96);backdrop-filter:none;border-bottom:1px solid var(--border);box-shadow:none}
+#app-screen .bottom-nav{background:#fff;backdrop-filter:none;border-top:1px solid var(--border);box-shadow:0 -8px 24px rgba(15,23,42,.06)}
+.main{max-width:1180px;padding-top:1.5rem}
+#app-screen .card,#app-screen .section,#app-screen .emp-card,#app-screen .client-card,#app-screen .event-card,
+#app-screen .pill,#app-screen .tabs .tab,#page-shifts .sh-stat{
+  border:1px solid var(--border);box-shadow:var(--shadow);will-change:auto;transition:border-color .16s ease,box-shadow .16s ease,background-color .16s ease
+}
+#app-screen .card:hover,#app-screen .emp-card:hover,#app-screen .client-card:hover,#app-screen .event-card:hover,
+#app-screen .pill:hover,#app-screen .tabs .tab:hover,#page-shifts .sh-stat:hover{
+  transform:none;border-color:#cbd5e1;box-shadow:0 4px 14px rgba(15,23,42,.07)
+}
+#app-screen .section{box-shadow:var(--shadow)}
+#app-screen .tabs .tab{background:#fff;color:#64748b;box-shadow:none;font-weight:600}
+#app-screen .tabs .tab.active{background:#172033;border-color:#172033;color:#fff;box-shadow:none}
+.hero-balance{border:1px solid var(--border);background:#fff;background-image:none;box-shadow:var(--shadow);padding:1rem 1.25rem}
+.hero-value,.card-value{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.dash-group-title,.section-title{color:#334155;opacity:1;font-weight:700;letter-spacing:-.01em}
+.month-bar select,.export-btn,.settings-btn{backdrop-filter:none;background:#fff;border-color:var(--border);box-shadow:none}
+.btn-primary,.btn-add{box-shadow:none;font-weight:700}
+.field input,.form-row input,.form-row select,.form-group input,.form-group select,.form-group textarea{border-color:#cbd5e1;background:#fff}
+button,input,select,textarea{font-family:inherit}
+:where(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid rgba(36,89,211,.24);outline-offset:2px}
+.page.active .section{content-visibility:auto;contain-intrinsic-size:auto 420px}
+#app-screen .hero-balance,#app-screen .dash-group{animation:none}
+.auth-left{background:linear-gradient(150deg,#111c36 0%,#173a79 58%,#2459d3 100%)}
+.auth-left::before{opacity:.45}
+.auth-card-logo-icon{box-shadow:none}
+.auth-heading{letter-spacing:-.025em}
+.modal{box-shadow:0 24px 60px rgba(15,23,42,.18)}
+@media(max-width:600px){
+  .main{padding:1rem 1rem 92px}
+  #app-screen .bottom-nav{border-radius:16px 16px 0 0;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+  .topbar{padding-inline:1rem}
+  .topbar-title{letter-spacing:-.04em}
+  .cards-row,.cards-row-3{gap:8px}
+  .section{padding:1rem}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
 </style>
 </head>
 <body>

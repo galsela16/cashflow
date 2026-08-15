@@ -1,17 +1,18 @@
-// CashflowHQ Service Worker
-// גרסה — שנה את המספר בכל פריסה כדי לאלץ עדכון אצל המשתמשים
-const CACHE = 'cashflowhq-v2';
+// CashflowHQ Service Worker — network-first navigation, fast static fallback
+const CACHE = 'cashflowhq-v3';
 
-// נכסים סטטיים בלבד (לא ה-HTML — הוא תמיד מהרשת)
 const CORE = [
+  '/',
+  '/index.html',
   '/manifest.webmanifest',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/icon-maskable-512.png'
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE).catch(() => {})));
-  self.skipWaiting(); // הגרסה החדשה נכנסת מיד לתוקף
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)));
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
@@ -26,28 +27,32 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   const url = new URL(req.url);
 
-  // בקשות שאינן GET או למקורות חיצוניים (Supabase/Google) — לא נוגעים
-  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+  // Never cache writes, cross-origin data, or partial-content requests.
+  if (req.method !== 'GET' || url.origin !== self.location.origin || req.headers.has('range')) return;
 
-  // ניווט / HTML — תמיד מהרשת, תוך עקיפת מטמון הדפדפן.
   const isHTML = req.mode === 'navigate' ||
     (req.headers.get('accept') || '').includes('text/html');
 
   if (isHTML) {
     e.respondWith(
-      fetch(req, { cache: 'no-store' }).catch(() => caches.match('/index.html'))
+      fetch(req, { cache: 'no-store' })
+        .then((res) => {
+          if (res.ok) caches.open(CACHE).then((c) => c.put('/index.html', res.clone()));
+          return res;
+        })
+        .catch(() => caches.match('/index.html').then((cached) => cached || caches.match('/')))
     );
     return;
   }
 
-  // נכסים סטטיים — מהרשת עם גיבוי לקאש
+  // Cache-first for local static assets, refresh quietly in the background.
   e.respondWith(
-    fetch(req)
-      .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+    caches.match(req).then((cached) => {
+      const fresh = fetch(req).then((res) => {
+        if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone()));
         return res;
-      })
-      .catch(() => caches.match(req))
+      });
+      return cached || fresh;
+    })
   );
 });
