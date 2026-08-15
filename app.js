@@ -1,9 +1,11 @@
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.1';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
   versionBadge.textContent = 'v' + APP_VERSION;
   versionBadge.title = 'CashflowHQ גרסה ' + APP_VERSION;
 }
+const initialTxDate = document.getElementById('t-date');
+if (initialTxDate && !initialTxDate.value) initialTxDate.value = new Date().toISOString().slice(0, 10);
 
 const SB_URL = 'https://zvrvlogqjzpnojfzbapu.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2cnZsb2dxanpwbm9qZnpiYXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk2MjgsImV4cCI6MjA5NzgwNTYyOH0.2I45YWLkTDLjndmyoNImkPLfqOxJV7TVsff2kAOZHpg';
@@ -133,7 +135,7 @@ function t(s) { if (currentLang === 'en' && I18N[s] !== undefined && I18N[s] !==
 
 let currentUser = null;
 let cachedTx = [], cachedEmps = [], cachedEmpEvents = [], cachedClients = [];
-let cachedEventDetails = [], cachedEventWorkers = [], cachedRecurring = [];
+let cachedEventDetails = [], cachedEventWorkers = [], cachedRecurring = [], cachedForecastTx = [];
 let gcalEvents = [], allRenderedEvents = [];
 let profitBreakdownData = null;
 let eventViewMode = 'list';
@@ -147,6 +149,11 @@ const fmt = n => '\u20aa' + Math.round(n).toLocaleString('he-IL');
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const getMonth = () => $('yearSel').value + '-' + $('monthSel').value.padStart(2, '0');
+const todayYmd = () => new Date().toISOString().slice(0, 10);
+const txCashflowStatus = tx => tx.cashflow_status || 'paid';
+const txIsActual = tx => txCashflowStatus(tx) === 'paid';
+const txIsExpected = tx => txCashflowStatus(tx) === 'expected';
+const txCashflowDate = tx => tx.expected_date || (tx.created_at ? tx.created_at.slice(0, 10) : getMonth() + '-01');
 // מחזיר את פרטי האירועים של החודש הנבחר (משותף לכמה פונקציות)
 const getMonthDetails = (month) => {
   const m = month || getMonth();
@@ -586,7 +593,8 @@ async function importBankRows() {
     user_id: currentUser.id, month,
     description: r.desc, amount: r.amount, type: r.type,
     category: r.type === 'expense' ? r.category : 'אחר',
-    account_id: defaultAccountFor(r.mode)
+    account_id: defaultAccountFor(r.mode),
+    expected_date: r.date || (month + '-01'), cashflow_status: 'paid', paid_at: r.date || (month + '-01')
   });
   // פיצול לפי שיוך: עסק → transactions, בית → home_transactions
   const bizRecords = toImport.filter(r => r.mode !== 'home').map(build);
@@ -1552,6 +1560,7 @@ async function loadAll() {
     await loadChildren();
     await loadGoals();
     await loadShifts();
+    await loadCashflow30();
     renderShifts();
     loadAccounts();
     loadSnapshots();
@@ -1579,6 +1588,7 @@ async function loadAll() {
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
   await fetchAccounts();
   await autoImportRecurring(month, uid, cachedTx);
+  await loadCashflow30();
   renderAll();
   // טען השקעות לעסק
   loadEquipment();
@@ -1587,6 +1597,55 @@ async function loadAll() {
   loadSnapshots();
   // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
   loadGCal();
+}
+
+async function loadCashflow30() {
+  const start = todayYmd();
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + 30);
+  const end = endDate.toISOString().slice(0, 10);
+  try {
+    const result = await sb.from(TX_TABLE()).select('*')
+      .eq('user_id', currentUser.id)
+      .eq('cashflow_status', 'expected')
+      .gte('expected_date', start)
+      .lte('expected_date', end)
+      .order('expected_date', { ascending: true });
+    if (result.error) throw result.error;
+    cachedForecastTx = result.data || [];
+    if (appMode === 'business') {
+      const events = await sb.from('event_details').select('id,event_title,price,expected_payment_date,status')
+        .eq('user_id', currentUser.id)
+        .gte('expected_payment_date', start)
+        .lte('expected_payment_date', end)
+        .order('expected_payment_date', { ascending: true });
+      if (!events.error) {
+        cachedForecastTx = cachedForecastTx.concat((events.data || [])
+          .filter(event => !mvIsPaid(event.status) && Number(event.price) > 0)
+          .map(event => ({ id: 'event-' + event.id, description: event.event_title || 'אירוע', amount: Number(event.price) || 0, type: 'income', expected_date: event.expected_payment_date, cashflow_status: 'expected' })));
+      }
+    }
+  } catch (error) {
+    // Before the migration is installed, keep the app usable with current-month data.
+    cachedForecastTx = cachedTx.filter(tx => txIsExpected(tx) && txCashflowDate(tx) >= start && txCashflowDate(tx) <= end);
+  }
+}
+
+function renderCashflow30() {
+  const section = $('cf30-section');
+  if (!section) return;
+  const rows = cachedForecastTx.slice().sort((a, b) => txCashflowDate(a).localeCompare(txCashflowDate(b)));
+  const income = rows.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+  const expense = rows.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+  const change = income - expense;
+  $('cf30-income').textContent = fmt(income);
+  $('cf30-expense').textContent = fmt(expense);
+  $('cf30-change').textContent = (change >= 0 ? '+' : '−') + fmt(Math.abs(change));
+  $('cf30-change').style.color = change >= 0 ? 'var(--green)' : 'var(--red)';
+  $('cf30-net').textContent = rows.length ? rows.length + ' תנועות צפויות' : 'אין תנועות צפויות';
+  $('cf30-list').innerHTML = rows.length
+    ? rows.slice(0, 6).map(tx => '<div class="cf30-row"><span class="cf30-date">' + esc(txCashflowDate(tx)) + '</span><span>' + esc(tx.description || '') + '</span><span class="cf30-amount" style="color:' + (tx.type === 'income' ? 'var(--green)' : 'var(--red)') + '">' + (tx.type === 'income' ? '+' : '−') + fmt(tx.amount || 0) + '</span></div>').join('')
+    : '<div class="empty" style="padding:10px 0">הוסיפו רשומה וסמנו אותה כ״צפוי״ כדי לראות כאן את התזרים העתידי.</div>';
 }
 
 // ── RENDER HOME (מצב בית) ──
@@ -1601,8 +1660,8 @@ function renderHome() {
   let bizSalary = 0;
   try { bizSalary = (JSON.parse(localStorage.getItem('cf_biz_salary') || '{}'))[month] || 0; } catch (e) {}
 
-  const incomeRows = cachedTx.filter(t => t.type === 'income');
-  const expenseRows = cachedTx.filter(t => t.type === 'expense');
+  const incomeRows = cachedTx.filter(t => t.type === 'income' && txIsActual(t));
+  const expenseRows = cachedTx.filter(t => t.type === 'expense' && txIsActual(t));
   const manualIncome = incomeRows.reduce((s, t) => s + t.amount, 0);
   const salaries = cachedSalaries.filter(s => s.active);
   const salaryTotal = salaries.reduce((sum, s) => sum + (s.amount || 0), 0);
@@ -1611,6 +1670,7 @@ function renderHome() {
   const totalIncome = manualIncome + bizSalary + salaryTotal + shiftIncome;
   const totalExpense = expenseRows.reduce((s, t) => s + t.amount, 0);
   const net = totalIncome - totalExpense;
+  renderCashflow30();
 
   // כרטיסי סיכום
   if ($('h-income')) $('h-income').textContent = fmt(totalIncome);
@@ -3288,10 +3348,10 @@ function renderAll() {
   const monthDetails = getMonthDetails(month);
   const monthDetailIds = monthDetails.map(d => d.id);
 
-  const txIncome = cachedTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const txIncome = cachedTx.filter(t => t.type === 'income' && txIsActual(t)).reduce((s, t) => s + t.amount, 0);
   const eventIncome = monthDetails.filter(d => d.price > 0).reduce((s, d) => { const st = d.status; if (st === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd' || st === '\u05d1\u05d5\u05e6\u05e2 \u05ea\u05e9\u05dc\u05d5\u05dd + \u05d7\u05e9\u05d1\u05d5\u05e0\u05d9\u05ea \u05de\u05e1') return s + (d.price || 0); if (st === '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' || st === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd') return s + Math.min(Number(d.paid_amount) || 0, d.price || 0); return s; }, 0);
   const income = txIncome + eventIncome;
-  const txExpense = cachedTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const txExpense = cachedTx.filter(t => t.type === 'expense' && txIsActual(t)).reduce((s, t) => s + t.amount, 0);
   const paidEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, e) => s + e.amount, 0);
   const paidWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === '\u05e9\u05d5\u05dc\u05dd').reduce((s, w) => s + w.amount, 0);
   const salary = paidEmpSalary + paidWorkerSalary;
@@ -3299,16 +3359,18 @@ function renderAll() {
   const expense = txExpense + salary;
   const net = income - expense;
 
-  const pendingIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd')).reduce((s, d) => s + Math.max(0, (d.price || 0) - (Number(d.paid_amount) || 0)), 0);
+  const pendingTxIncome = cachedTx.filter(t => t.type === 'income' && txIsExpected(t)).reduce((s, t) => s + t.amount, 0);
+  const pendingTxExpense = cachedTx.filter(t => t.type === 'expense' && txIsExpected(t)).reduce((s, t) => s + t.amount, 0);
+  const pendingIncome = monthDetails.filter(d => d.price > 0 && (d.status === '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd' || d.status === '\u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd')).reduce((s, d) => s + Math.max(0, (d.price || 0) - (Number(d.paid_amount) || 0)), pendingTxIncome);
   const pendingEmpSalary = cachedEmpEvents.filter(e => e.status === '\u05de\u05de\u05ea\u05d9\u05df').reduce((s, e) => s + e.amount, 0);
   const pendingWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === '\u05de\u05de\u05ea\u05d9\u05df').reduce((s, w) => s + w.amount, 0);
   const totalClientIncome = income + pendingIncome;
   const totalWorkerSalary = salary + pendingEmpSalary + pendingWorkerSalary;
-  const pendingNet = totalClientIncome - (expense + pendingEmpSalary + pendingWorkerSalary);
+  const pendingNet = totalClientIncome - (expense + pendingTxExpense + pendingEmpSalary + pendingWorkerSalary);
 
   // שמור רכיבים לפירוט צפי הרווח (שקיפות מלאה)
   profitBreakdownData = {
-    txIncome, eventIncome, pendingIncome,
+    txIncome, eventIncome, pendingIncome, pendingTxIncome, pendingTxExpense,
     txExpense, paidEmpSalary, paidWorkerSalary, pendingEmpSalary, pendingWorkerSalary,
     income, pendingNet
   };
@@ -3321,6 +3383,7 @@ function renderAll() {
     localStorage.setItem('cf_biz_salary', JSON.stringify(bizSalary));
   } catch (e) {}
   if ($('profit-breakdown') && $('profit-breakdown').style.display !== 'none') renderProfitBreakdown();
+  renderCashflow30();
 
   $('d-income').textContent = fmt(income);
   $('d-expense').textContent = fmt(expense);
@@ -3708,8 +3771,8 @@ function toggleCatDetail(el) {
 }
 
 function renderTxTable() {  const tb = $('tx-table');
-  if (!cachedTx.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">\u05d0\u05d9\u05df \u05e8\u05e9\u05d5\u05de\u05d5\u05ea</td></tr>'; return; }
-  tb.innerHTML = cachedTx.map(t => '<tr><td><input type="checkbox" class="tx-check" value="' + t.id + '" onchange="updateTxSelCount()"></td><td>' + esc(t.description) + '</td><td style="color:var(--muted);font-size:12px">' + esc(t.category) + '</td><td><span class="badge badge-' + t.type + '">' + (t.type === 'income' ? '\u05d4\u05db\u05e0\u05e1\u05d4' : '\u05d4\u05d5\u05e6\u05d0\u05d4') + '</span></td><td style="font-weight:600">' + fmt(t.amount) + '</td><td><button class="btn-del" onclick="deleteTx(\'' + t.id + '\')">&#128465;</button></td></tr>').join('');
+  if (!cachedTx.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">\u05d0\u05d9\u05df \u05e8\u05e9\u05d5\u05de\u05d5\u05ea</td></tr>'; return; }
+  tb.innerHTML = cachedTx.map(t => '<tr><td><input type="checkbox" class="tx-check" value="' + t.id + '" onchange="updateTxSelCount()"></td><td>' + esc(t.description) + '</td><td style="white-space:nowrap;color:var(--muted);font-size:12px">' + esc(txCashflowDate(t)) + '</td><td><select class="status-select" onchange="updateTxCashflowStatus(\'' + t.id + '\',this.value)"><option value="paid"' + (txIsActual(t) ? ' selected' : '') + '>בוצע</option><option value="expected"' + (txIsExpected(t) ? ' selected' : '') + '>צפוי</option></select></td><td style="color:var(--muted);font-size:12px">' + esc(t.category) + '</td><td><span class="badge badge-' + t.type + '">' + (t.type === 'income' ? '\u05d4\u05db\u05e0\u05e1\u05d4' : '\u05d4\u05d5\u05e6\u05d0\u05d4') + '</span></td><td style="font-weight:600">' + fmt(t.amount) + '</td><td><button class="btn-del" onclick="deleteTx(\'' + t.id + '\')">&#128465;</button></td></tr>').join('');
   updateTxSelCount();
 }
 
@@ -3910,7 +3973,8 @@ function mvEditEvent(detailId) {
 
 // עדכון סטטוס אירוע ישירות מהשורה (בלי לפתוח מודל)
 async function updateEventStatus(id, status) {
-  await sb.from('event_details').update({ status }).eq('id', id);
+  const isPaid = mvIsPaid(status);
+  await sb.from('event_details').update({ status, paid_at: isPaid ? todayYmd() : null }).eq('id', id);
   await loadAll();
 }
 
@@ -4245,6 +4309,7 @@ function openNewEventModal() {
   $('modal-event-title').textContent = '\u05d0\u05d9\u05e8\u05d5\u05e2 \u05d7\u05d3\u05e9';
   $('modal-ev-title').value = ''; $('modal-ev-title').style.display = 'block';
   $('modal-ev-date').value = new Date().toISOString().slice(0, 10); $('modal-ev-date').style.display = 'block';
+  $('modal-expected-payment').value = new Date().toISOString().slice(0, 10);
   fillClientSelect(null);
   $('modal-price').value = ''; $('modal-status').value = '\u05dc\u05d0 \u05d9\u05e6\u05d0\u05d4 \u05d3\u05e8\u05d9\u05e9\u05ea \u05ea\u05e9\u05dc\u05d5\u05dd'; $('modal-notes').value = '';
   renderModalWorkers();
@@ -4345,6 +4410,7 @@ async function openEditEventModal({ title, date, source, detailId }) {
   // שדה התאריך תמיד פתוח לעריכה — מאפשר לתקן אירועים ללא תאריך או עם תאריך שגוי
   $('modal-ev-date').value = shownDate;
   $('modal-ev-date').style.display = 'block';
+  $('modal-expected-payment').value = detail ? (detail.expected_payment_date || shownDate) : shownDate;
   fillClientSelect(detail ? detail.client_id : null);
   $('modal-price').value = detail ? detail.price || '' : '';
   $('modal-status').value = detail ? detail.status || 'לא יצאה דרישת תשלום' : 'לא יצאה דרישת תשלום';
@@ -4581,6 +4647,7 @@ async function saveEvent() {
   const clientId = $('modal-client').value || null;
   const price = parseFloat($('modal-price').value) || 0;
   const status = $('modal-status').value;
+  const expectedPaymentDate = $('modal-expected-payment').value || date;
   const notes = $('modal-notes').value;
   const eventMonth = date ? date.slice(0, 7) : getMonth();
   if (!title) return;
@@ -4592,9 +4659,9 @@ async function saveEvent() {
   }
 
   if (detailId) {
-    await sb.from('event_details').update({ event_title: title, event_date: date, client_id: clientId, price, status, notes, month: eventMonth }).eq('id', detailId);
+    await sb.from('event_details').update({ event_title: title, event_date: date, expected_payment_date: expectedPaymentDate, paid_at: mvIsPaid(status) ? todayYmd() : null, client_id: clientId, price, status, notes, month: eventMonth }).eq('id', detailId);
   } else {
-    const res = await sb.from('event_details').insert({ user_id: uid, event_title: title, event_date: date, client_id: clientId, price, status, notes, month: eventMonth, is_manual: isNewManualEvent }).select();
+    const res = await sb.from('event_details').insert({ user_id: uid, event_title: title, event_date: date, expected_payment_date: expectedPaymentDate, paid_at: mvIsPaid(status) ? todayYmd() : null, client_id: clientId, price, status, notes, month: eventMonth, is_manual: isNewManualEvent }).select();
     detailId = res.data && res.data[0] ? res.data[0].id : null;
   }
 
@@ -4612,6 +4679,8 @@ async function saveEvent() {
 // ── TRANSACTIONS ──
 async function addTx() {
   const desc = $('t-desc').value.trim(), amount = parseFloat($('t-amount').value), type = $('t-type').value, category = $('t-cat').value;
+  const expectedDate = $('t-date').value || todayYmd();
+  const cashflowStatus = $('t-cashflow-status').value;
   const accSel = $('t-account');
   const picking = accSel && accSel.style.display !== 'none';
   // כשהבורר מוסתר — משייכים אוטומטית לחשבון של המצב הנוכחי
@@ -4620,9 +4689,19 @@ async function addTx() {
   $('btn-add-tx').disabled = true;
   // זוכר את החשבון האחרון שנבחר — רוב הרשומות נכנסות לאותו חשבון
   if (accountId) localStorage.setItem('cf_last_account_' + appMode, accountId);
-  await sb.from(TX_TABLE()).insert({ user_id: currentUser.id, month: getMonth(), description: desc, amount, type, category, account_id: accountId });
+  const result = await sb.from(TX_TABLE()).insert({ user_id: currentUser.id, month: expectedDate.slice(0, 7), description: desc, amount, type, category, account_id: accountId, expected_date: expectedDate, cashflow_status: cashflowStatus, paid_at: cashflowStatus === 'paid' ? expectedDate : null });
+  if (result.error) {
+    alert('לא ניתן לשמור את שדות התזרים. יש להריץ תחילה את קובץ המיגרציה ב-Supabase.');
+    $('btn-add-tx').disabled = false;
+    return;
+  }
   $('t-desc').value = ''; $('t-amount').value = '';
   $('btn-add-tx').disabled = false;
+  await loadAll();
+}
+async function updateTxCashflowStatus(id, status) {
+  const result = await sb.from(TX_TABLE()).update({ cashflow_status: status, paid_at: status === 'paid' ? todayYmd() : null }).eq('id', id);
+  if (result.error) { alert('עדכון המצב נכשל. ודאו שמיגרציית התזרים הותקנה ב-Supabase.'); return; }
   await loadAll();
 }
 async function deleteTx(id) { if (!confirm('\u05dc\u05de\u05d7\u05d5\u05e7?')) return; await sb.from(TX_TABLE()).delete().eq('id', id); await loadAll(); }
