@@ -1,9 +1,8 @@
 // CashflowHQ Service Worker — network-first navigation, fast static fallback
-const CACHE = 'cashflowhq-v8';
+const CACHE = 'cashflowhq-v9';
 
 const CORE = [
   '/',
-  '/index.html',
   '/styles.css',
   '/app.js',
   '/pdf-font.js',
@@ -41,10 +40,10 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(req, { cache: 'no-store' })
         .then((res) => {
-          if (res.ok) caches.open(CACHE).then((c) => c.put('/index.html', res.clone()));
+          if (res.ok) caches.open(CACHE).then((c) => c.put('/', res.clone()));
           return res;
         })
-        .catch(() => caches.match('/index.html').then((cached) => cached || caches.match('/')))
+        .catch(() => caches.match('/'))
     );
     return;
   }

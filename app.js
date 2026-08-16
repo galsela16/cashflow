@@ -1,4 +1,4 @@
-const APP_VERSION = '2.2.1';
+const APP_VERSION = '2.3.0';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
   versionBadge.textContent = 'v' + APP_VERSION;
@@ -49,6 +49,16 @@ const I18N = {
   'צפוי לעובדים': 'Expected to employees', 'טרם שולם': 'Not yet paid',
   'סטטוס עובדים החודש': 'Employee status this month', 'מס': 'Tax',
   'מס על נכנס': 'Tax on received', 'מס צפוי': 'Projected tax', '% מס': 'Tax %',
+  'תמונת מצב עסקית': 'Business overview', 'הכסף שלך, במבט אחד': 'Your money at a glance',
+  'מבוסס על הנתונים המעודכנים בחשבון': 'Based on the latest account data', 'הוספת תנועה': 'Add transaction',
+  'זמין עכשיו': 'Available now', 'יתרת חשבונות העסק': 'Business account balance',
+  'צפי לסוף החודש': 'Projected month-end balance', 'כולל תנועות צפויות עד סוף החודש': 'Includes expected transactions through month end',
+  'תזרים צפוי · 30 יום': 'Projected cash flow · 30 days', 'הכנסות פחות הוצאות צפויות': 'Expected income minus expenses',
+  'דורש טיפול היום': 'Needs attention today', 'לחץ לצפייה בפעולות': 'Click to view actions',
+  'תזרים ל־30 הימים הקרובים': 'Cash flow for the next 30 days', 'מה צפוי להיכנס ולצאת': 'Expected money in and out',
+  'צפוי להיכנס': 'Expected in', 'צפוי לצאת': 'Expected out', 'שינוי נטו': 'Net change',
+  'הפעולות שהכי חשוב לסגור': 'Your most important open actions', 'כל ההתראות': 'All alerts',
+  'פירוט החודש': 'Monthly details', 'הכנסות, הוצאות, עובדים ומס': 'Income, expenses, employees and tax',
   // Events
   'אירועים החודש': 'Events this month', '☰ רשימה': '☰ List', '📅 יומן': '📅 Calendar',
   '🔄 רענן': '🔄 Refresh', '+ אירוע ידני': '+ Manual event', 'טוען אירועים...': 'Loading events...',
@@ -1587,6 +1597,7 @@ async function loadAll() {
   }
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
   await fetchAccounts();
+  await loadMovements();
   await autoImportRecurring(month, uid, cachedTx);
   await loadCashflow30();
   renderAll();
@@ -1646,6 +1657,89 @@ function renderCashflow30() {
   $('cf30-list').innerHTML = rows.length
     ? rows.slice(0, 6).map(tx => '<div class="cf30-row"><span class="cf30-date">' + esc(txCashflowDate(tx)) + '</span><span>' + esc(tx.description || '') + '</span><span class="cf30-amount" style="color:' + (tx.type === 'income' ? 'var(--green)' : 'var(--red)') + '">' + (tx.type === 'income' ? '+' : '−') + fmt(tx.amount || 0) + '</span></div>').join('')
     : '<div class="empty" style="padding:10px 0">הוסיפו רשומה וסמנו אותה כ״צפוי״ כדי לראות כאן את התזרים העתידי.</div>';
+}
+
+// תמונת מצב עסקית: ארבע התשובות שצריך לקבל בתוך שניות.
+// החישוב משתמש רק בנתונים שכבר נטענו ואינו מוסיף שאילתות או משנה את מבנה המסד.
+function renderBusinessOverview(net, pendingIncome, pendingExpense, pendingSalary) {
+  const availableEl = $('biz-available-now');
+  if (!availableEl) return;
+
+  const businessAccounts = cachedAccounts.filter(a => (a.scope || 'business') === 'business');
+  const hasAccounts = businessAccounts.length > 0;
+  const available = hasAccounts
+    ? businessAccounts.reduce((sum, account) => sum + derivedBalance(account), 0)
+    : net;
+
+  const today = todayYmd();
+  const month = getMonth();
+  const monthEnd = month + '-' + String(new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate()).padStart(2, '0');
+  const forecastRows = cachedForecastTx.slice();
+  const eomRows = forecastRows.filter(tx => {
+    const date = txCashflowDate(tx);
+    return date >= today && date <= monthEnd;
+  });
+  const eomChange = eomRows.reduce((sum, tx) => sum + (tx.type === 'income' ? 1 : -1) * (Number(tx.amount) || 0), 0);
+  const cf30Income = forecastRows.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+  const cf30Expense = forecastRows.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+  const cf30Net = cf30Income - cf30Expense;
+
+  setOverviewMoney('biz-available-now', available);
+  setOverviewMoney('biz-eom-balance', available + eomChange);
+  setOverviewMoney('biz-cf30-net', cf30Net, true);
+  $('biz-available-note').textContent = hasAccounts ? businessAccounts.length + ' חשבונות עסקיים מעודכנים' : 'ללא חשבונות בנק — מוצג נטו החודש';
+  $('biz-eom-note').textContent = eomRows.length ? eomRows.length + ' תנועות צפויות עד סוף החודש' : 'לא הוגדרו תנועות נוספות החודש';
+  $('biz-cf30-note').textContent = forecastRows.length ? cf30Income.toLocaleString('he-IL') + ' ₪ נכנס · ' + cf30Expense.toLocaleString('he-IL') + ' ₪ יוצא' : 'לא הוגדרו תנועות צפויות';
+
+  const attention = [];
+  const overdueTx = cachedTx.filter(tx => txIsExpected(tx) && txCashflowDate(tx) && txCashflowDate(tx) < today);
+  const overdueAmount = overdueTx.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+  if (overdueTx.length) attention.push({
+    icon: '!', danger: true, title: overdueTx.length + ' תנועות צפויות עברו את התאריך',
+    text: fmt(overdueAmount) + ' ממתינים לעדכון', page: 'transactions'
+  });
+
+  const unpaidEvents = getMonthDetails(month).filter(event => Number(event.price) > Number(event.paid_amount || 0) && !mvIsPaid(event.status));
+  const clientDebt = unpaidEvents.reduce((sum, event) => sum + Math.max(0, Number(event.price) - Number(event.paid_amount || 0)), 0);
+  if (unpaidEvents.length) attention.push({
+    icon: '₪', title: unpaidEvents.length + ' תשלומי לקוחות פתוחים',
+    text: fmt(clientDebt) + ' טרם התקבלו', page: 'ops'
+  });
+
+  if (pendingSalary > 0) attention.push({
+    icon: '↗', title: 'תשלומי עובדים ממתינים', text: fmt(pendingSalary) + ' ממתינים לתשלום', page: 'ops'
+  });
+
+  const staleAccounts = businessAccounts.filter(account => {
+    if (!account.updated_on) return true;
+    return Math.floor((Date.now() - new Date(account.updated_on + 'T00:00:00').getTime()) / 86400000) >= 7;
+  });
+  if (staleAccounts.length) attention.push({
+    icon: '↻', title: 'כדאי לעדכן יתרות בנק',
+    text: staleAccounts.length + ' חשבונות לא עודכנו לפחות שבוע', page: 'accounts'
+  });
+
+  const list = $('biz-attention-list');
+  $('biz-attention-count').textContent = attention.length;
+  $('biz-attention-label').textContent = attention.length ? attention.length + ' פעולות פתוחות' : 'הכול מסודר';
+  list.innerHTML = attention.length ? attention.slice(0, 4).map(item =>
+    '<div class="attention-item' + (item.danger ? ' is-danger' : '') + '" onclick="showPage(\'' + item.page + '\',document.querySelector(\'.tab[onclick*=\"' + item.page + '\"]\'))">' +
+      '<span class="attention-icon">' + item.icon + '</span>' +
+      '<span class="attention-copy"><b>' + esc(item.title) + '</b><span>' + esc(item.text) + '</span></span>' +
+      '<span class="attention-arrow">‹</span>' +
+    '</div>'
+  ).join('') : '<div class="attention-clear"><b>✓ אין פעולות דחופות</b><span>הנתונים נראים מעודכנים להיום</span></div>';
+
+  const updated = $('overview-updated');
+  if (updated) updated.textContent = 'עודכן ' + new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+}
+
+function setOverviewMoney(id, value, showSign) {
+  const el = $(id);
+  if (!el) return;
+  const amount = Number(value) || 0;
+  el.textContent = (showSign && amount > 0 ? '+' : '') + fmt(amount);
+  el.style.color = amount < 0 ? 'var(--red)' : (id === 'biz-available-now' ? '#fff' : 'var(--overview-ink)');
 }
 
 // ── RENDER HOME (מצב בית) ──
@@ -3384,6 +3478,7 @@ function renderAll() {
   } catch (e) {}
   if ($('profit-breakdown') && $('profit-breakdown').style.display !== 'none') renderProfitBreakdown();
   renderCashflow30();
+  renderBusinessOverview(net, pendingIncome, pendingTxExpense, pendingEmpSalary + pendingWorkerSalary);
 
   $('d-income').textContent = fmt(income);
   $('d-expense').textContent = fmt(expense);
