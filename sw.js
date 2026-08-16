@@ -1,5 +1,5 @@
 // CashflowHQ Service Worker — network-first navigation, fast static fallback
-const CACHE = 'cashflowhq-v9';
+const CACHE = 'cashflowhq-v11';
 
 const CORE = [
   '/',

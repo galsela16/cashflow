@@ -1,4 +1,4 @@
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.2';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
   versionBadge.textContent = 'v' + APP_VERSION;
@@ -1615,31 +1615,54 @@ async function loadCashflow30() {
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + 30);
   const end = endDate.toISOString().slice(0, 10);
-  try {
-    const result = await sb.from(TX_TABLE()).select('*')
-      .eq('user_id', currentUser.id)
-      .eq('cashflow_status', 'expected')
-      .gte('expected_date', start)
-      .lte('expected_date', end)
-      .order('expected_date', { ascending: true });
-    if (result.error) throw result.error;
-    cachedForecastTx = result.data || [];
-    if (appMode === 'business') {
-      const events = await sb.from('event_details').select('id,event_title,price,expected_payment_date,status')
-        .eq('user_id', currentUser.id)
-        .gte('expected_payment_date', start)
-        .lte('expected_payment_date', end)
-        .order('expected_payment_date', { ascending: true });
-      if (!events.error) {
-        cachedForecastTx = cachedForecastTx.concat((events.data || [])
-          .filter(event => !mvIsPaid(event.status) && Number(event.price) > 0)
-          .map(event => ({ id: 'event-' + event.id, description: event.event_title || 'אירוע', amount: Number(event.price) || 0, type: 'income', expected_date: event.expected_payment_date, cashflow_status: 'expected' })));
-      }
-    }
-  } catch (error) {
-    // Before the migration is installed, keep the app usable with current-month data.
-    cachedForecastTx = cachedTx.filter(tx => txIsExpected(tx) && txCashflowDate(tx) >= start && txCashflowDate(tx) <= end);
+  const inWindow = date => date >= start && date <= end;
+  const rows = [];
+
+  // כלל העסק: הכנסות של חודש מסוים מתקבלות ב-10 בחודש הבא,
+  // והוצאות של אותו חודש משולמות ב-15 בחודש הבא.
+  if (appMode === 'business') {
+    cachedTx.forEach(tx => {
+      const month = tx.month || (tx.expected_date ? tx.expected_date.slice(0, 7) : getMonth());
+      const forecastDate = nextMonthCashflowDate(month, tx.type === 'income' ? 10 : 15);
+      if (!inWindow(forecastDate) || Number(tx.amount) <= 0) return;
+      rows.push(Object.assign({}, tx, { expected_date: forecastDate, cashflow_status: 'expected' }));
+    });
+  } else {
+    cachedTx.filter(tx => txIsExpected(tx) && inWindow(txCashflowDate(tx))).forEach(tx => rows.push(tx));
   }
+
+  if (appMode === 'business') {
+    cachedEventDetails.forEach(event => {
+      const remaining = Math.max(0, (Number(event.price) || 0) - (Number(event.paid_amount) || 0));
+      const eventMonth = event.event_date ? event.event_date.slice(0, 7) : (event.month || getMonth());
+      const forecastDate = nextMonthCashflowDate(eventMonth, 10);
+      if (!inWindow(forecastDate) || mvIsPaid(event.status) || remaining <= 0) return;
+      rows.push({ id: 'event-' + event.id, description: event.event_title || 'אירוע', amount: remaining, type: 'income', expected_date: forecastDate, cashflow_status: 'expected' });
+    });
+
+    // גם שכר שטרם שולם הוא הוצאה צפויה ב-15 בחודש הבא.
+    const addSalary = (item, prefix, relatedMonth) => {
+      if (item.status === 'שולם' || Number(item.amount) <= 0) return;
+      const itemMonth = item.month || (item.date ? item.date.slice(0, 7) : relatedMonth) || getMonth();
+      const forecastDate = nextMonthCashflowDate(itemMonth, 15);
+      if (!inWindow(forecastDate)) return;
+      rows.push({ id: prefix + item.id, description: item.event_name || 'שכר עובדים', amount: Number(item.amount) || 0, type: 'expense', expected_date: forecastDate, cashflow_status: 'expected' });
+    };
+    cachedEmpEvents.forEach(item => addSalary(item, 'salary-'));
+    cachedEventWorkers.forEach(item => {
+      const event = cachedEventDetails.find(detail => detail.id === item.event_detail_id);
+      const eventMonth = event && event.event_date ? event.event_date.slice(0, 7) : (event ? event.month : null);
+      addSalary(item, 'worker-', eventMonth);
+    });
+  }
+
+  cachedForecastTx = rows.sort((a, b) => txCashflowDate(a).localeCompare(txCashflowDate(b)));
+}
+
+function nextMonthCashflowDate(month, day) {
+  const parts = String(month || getMonth()).split('-');
+  const date = new Date(Number(parts[0]), Number(parts[1]), day);
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
 }
 
 function renderCashflow30() {
