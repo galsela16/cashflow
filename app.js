@@ -1,4 +1,4 @@
-const APP_VERSION = '2.4.6';
+const APP_VERSION = '2.4.7';
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
