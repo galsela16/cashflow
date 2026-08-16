@@ -1,4 +1,4 @@
-const APP_VERSION = '2.4.3';
+const APP_VERSION = '2.4.4';
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
@@ -1771,6 +1771,83 @@ function setOverviewMoney(id, value, showSign) {
   el.style.color = amount < 0 ? 'var(--red)' : (id === 'biz-available-now' ? '#fff' : 'var(--overview-ink)');
 }
 
+function closeSheetBreakdown() {
+  const panel = $('sheet-breakdown');
+  if (panel) { panel.hidden = true; panel.dataset.type = ''; }
+}
+
+function openSheetBreakdown(type) {
+  const panel = $('sheet-breakdown');
+  if (!panel) return;
+  if (!panel.hidden && panel.dataset.type === type) { closeSheetBreakdown(); return; }
+
+  const monthIds = getMonthDetails().map(event => event.id);
+  const details = getMonthDetails();
+  let title = '', rows = [], total = 0;
+  const add = (label, sub, amount, kind) => rows.push({ label, sub, amount: Number(amount) || 0, kind: kind || 'neutral' });
+
+  if (type === 'income') {
+    title = 'נכנס מלקוחות';
+    cachedTx.filter(tx => tx.type === 'income' && txIsActual(tx)).forEach(tx => add(tx.description || 'הכנסה', tx.category || 'עסקה', tx.amount, 'income'));
+    details.filter(event => Number(event.price) > 0 && mvIsPaid(event.status)).forEach(event => add(event.event_title || 'אירוע', 'אירוע ששולם', event.price, 'income'));
+  } else if (type === 'pending-income') {
+    title = 'צפוי מלקוחות';
+    cachedTx.filter(tx => tx.type === 'income' && txIsExpected(tx)).forEach(tx => add(tx.description || 'הכנסה צפויה', tx.category || 'עסקה', tx.amount, 'income'));
+    details.filter(event => Number(event.price) > Number(event.paid_amount || 0) && !mvIsPaid(event.status)).forEach(event => {
+      const remaining = Math.max(0, Number(event.price) - Number(event.paid_amount || 0));
+      add(event.event_title || 'אירוע', event.status || 'טרם שולם', remaining, 'income');
+    });
+  } else if (type === 'expense') {
+    title = 'הוצאות עסק';
+    cachedTx.filter(tx => tx.type === 'expense' && txIsActual(tx)).forEach(tx => add(tx.description || 'הוצאה', tx.category || 'עסק', tx.amount, 'expense'));
+  } else if (type === 'salary' || type === 'pending-salary') {
+    const wanted = type === 'salary' ? 'שולם' : 'ממתין';
+    title = type === 'salary' ? 'שכר ששולם' : 'שכר ממתין';
+    cachedEmpEvents.filter(item => item.status === wanted).forEach(item => {
+      const employee = cachedEmps.find(emp => emp.id === item.employee_id);
+      add(employee ? employee.name : 'עובד', item.event_name || 'שכר עובד', item.amount, 'expense');
+    });
+    cachedEventWorkers.filter(item => monthIds.includes(item.event_detail_id) && item.status === wanted).forEach(item => {
+      const employee = cachedEmps.find(emp => emp.id === item.employee_id);
+      const event = cachedEventDetails.find(detail => detail.id === item.event_detail_id);
+      add(employee ? employee.name : 'עובד', event ? event.event_title : 'שכר באירוע', item.amount, 'expense');
+    });
+  } else if (type === 'tax') {
+    title = 'מס צפוי';
+    const d = profitBreakdownData || {};
+    const rate = parseFloat($('tax-rate').value) || 20;
+    const recurring = cachedRecurring.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const taxable = Math.max(0, (Number(d.pendingIncome) || 0) - recurring);
+    add('הכנסות צפויות מלקוחות', 'בסיס החישוב', d.pendingIncome || 0, 'income');
+    if (recurring) add('הוצאות קבועות לקיזוז', 'לפני חישוב מס', recurring, 'expense');
+    add('שיעור המס', rate + '% מתוך ' + fmt(taxable), taxable * rate / 100, 'expense');
+  } else if (type === 'profit') {
+    title = 'צפי רווח';
+    const d = profitBreakdownData || {};
+    add('הכנסות שהתקבלו', 'עסקאות ואירועים', (d.txIncome || 0) + (d.eventIncome || 0), 'income');
+    add('הכנסות צפויות', 'טרם התקבלו', d.pendingIncome || 0, 'income');
+    add('הוצאות עסק', 'ששולמו וצפויות', (d.txExpense || 0) + (d.pendingTxExpense || 0), 'expense');
+    add('שכר עובדים', 'שולם וממתין', (d.paidEmpSalary || 0) + (d.paidWorkerSalary || 0) + (d.pendingEmpSalary || 0) + (d.pendingWorkerSalary || 0), 'expense');
+  }
+
+  total = rows.reduce((sum, row) => sum + (row.kind === 'expense' ? -row.amount : row.amount), 0);
+  if (type === 'tax') total = rows.length ? rows[rows.length - 1].amount : 0;
+  if (type === 'income' || type === 'pending-income' || type === 'salary' || type === 'pending-salary' || type === 'expense') total = rows.reduce((sum, row) => sum + row.amount, 0);
+  if (type === 'profit' && profitBreakdownData) total = Number(profitBreakdownData.pendingNet) || total;
+
+  $('sheet-breakdown-title').textContent = title;
+  $('sheet-breakdown-sub').textContent = rows.length + ' פריטים · סה״כ ' + fmt(total);
+  $('sheet-breakdown-list').innerHTML = rows.length ? rows.map(row =>
+    '<div class="sheet-detail-row"><div><b>' + esc(row.label) + '</b><small>' + esc(row.sub || '') + '</small></div>' +
+    '<strong style="color:' + (row.kind === 'expense' ? 'var(--red)' : row.kind === 'income' ? 'var(--green)' : 'var(--text)') + '">' +
+    (row.kind === 'expense' ? '−' : row.kind === 'income' ? '+' : '') + fmt(row.amount) + '</strong></div>'
+  ).join('') + '<div class="sheet-detail-row sheet-detail-total"><div><b>סה״כ</b></div><strong style="color:' + (total < 0 ? 'var(--red)' : 'var(--green)') + '">' + fmt(total) + '</strong></div>'
+    : '<div class="sheet-detail-empty">אין פריטים ברובריקה הזו בחודש הנבחר</div>';
+  panel.dataset.type = type;
+  panel.hidden = false;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 // ── RENDER HOME (מצב בית) ──
 function renderHome() {
   // הצג דשבורד בית, הסתר דשבורד עסק
@@ -3463,6 +3540,7 @@ async function renderAnnualSummary() {
 function renderAll() {
   // מצב בית — דלג על רינדור העסק (מטופל ב-renderHome)
   if (appMode === 'home') { renderHome(); return; }
+  closeSheetBreakdown();
   // הצג דשבורד עסק, הסתר בית
   const homeD = $('home-dashboard'), bizD = $('business-dashboard');
   if (homeD) homeD.style.display = 'none';
