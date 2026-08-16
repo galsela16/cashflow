@@ -1,4 +1,4 @@
-const APP_VERSION = '2.3.2';
+const APP_VERSION = '2.4.0';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
   versionBadge.textContent = 'v' + APP_VERSION;
@@ -59,6 +59,9 @@ const I18N = {
   'צפוי להיכנס': 'Expected in', 'צפוי לצאת': 'Expected out', 'שינוי נטו': 'Net change',
   'הפעולות שהכי חשוב לסגור': 'Your most important open actions', 'כל ההתראות': 'All alerts',
   'פירוט החודש': 'Monthly details', 'הכנסות, הוצאות, עובדים ומס': 'Income, expenses, employees and tax',
+  'טבלת החודש': 'Monthly table', 'כל המספרים המרכזיים מול העיניים': 'All key numbers at a glance',
+  'שכר ששולם': 'Payroll paid', 'שכר ממתין': 'Payroll pending',
+  'פירוט מלא של החודש': 'Full monthly details', 'פתוח תמיד — אפשר לצמצם בלחיצה': 'Always open — click to collapse',
   // Events
   'אירועים החודש': 'Events this month', '☰ רשימה': '☰ List', '📅 יומן': '📅 Calendar',
   '🔄 רענן': '🔄 Refresh', '+ אירוע ידני': '+ Manual event', 'טוען אירועים...': 'Loading events...',
@@ -3511,6 +3514,23 @@ function renderAll() {
   const pendEl = $('d-pending'); pendEl.textContent = (pendingNet >= 0 ? '+' : '') + fmt(Math.abs(pendingNet)); pendEl.style.color = pendingNet >= 0 ? 'var(--green)' : 'var(--red)';
 
   updateTax(income, pendingIncome);
+  // טבלת החודש — אותם חישובים קיימים, בתצוגה צפופה ומוכרת של גיליון.
+  const sheetValues = {
+    'sheet-income': income,
+    'sheet-pending-income': pendingIncome,
+    'sheet-expense': txExpense,
+    'sheet-salary': salary,
+    'sheet-pending-salary': pendingEmpSalary + pendingWorkerSalary,
+    'sheet-tax': Math.max(0, pendingIncome - cachedRecurring.reduce((s, r) => s + r.amount, 0)) * (parseFloat($('tax-rate').value) || 20) / 100,
+    'sheet-profit': pendingNet
+  };
+  Object.keys(sheetValues).forEach(id => {
+    const el = $(id); if (!el) return;
+    el.textContent = fmt(sheetValues[id]);
+    if (id === 'sheet-profit') el.style.color = sheetValues[id] >= 0 ? 'var(--green)' : 'var(--red)';
+  });
+  const sheetPeriod = $('sheet-period');
+  if (sheetPeriod) sheetPeriod.textContent = month.split('-').reverse().join('/');
   // update dashboard cards
   const salDbEl = $('d-salary-db'); if(salDbEl) salDbEl.textContent = fmt(salary);
   const pSalDbEl = $('d-pending-salary-db'); if(pSalDbEl) pSalDbEl.textContent = fmt(pendingEmpSalary + pendingWorkerSalary);

@@ -223,6 +223,36 @@
           </article>
         </div>
 
+        <section class="overview-panel monthly-sheet" aria-labelledby="monthly-sheet-title">
+          <div class="overview-panel-head">
+            <div><h2 id="monthly-sheet-title">טבלת החודש</h2><p>כל המספרים המרכזיים מול העיניים</p></div>
+            <span class="sheet-period" id="sheet-period">—</span>
+          </div>
+          <div class="sheet-scroll" tabindex="0" aria-label="טבלת סיכום כספי לחודש">
+            <table class="finance-sheet">
+              <thead><tr>
+                <th class="sheet-income">נכנס מלקוחות</th>
+                <th class="sheet-income-soft">צפוי מלקוחות</th>
+                <th class="sheet-expense">הוצאות עסק</th>
+                <th class="sheet-payroll">שכר ששולם</th>
+                <th class="sheet-payroll-soft">שכר ממתין</th>
+                <th class="sheet-tax">מס צפוי</th>
+                <th class="sheet-total">צפי רווח</th>
+              </tr></thead>
+              <tbody><tr>
+                <td id="sheet-income">—</td>
+                <td id="sheet-pending-income">—</td>
+                <td id="sheet-expense">—</td>
+                <td id="sheet-salary">—</td>
+                <td id="sheet-pending-salary">—</td>
+                <td id="sheet-tax">—</td>
+                <td id="sheet-profit">—</td>
+              </tr></tbody>
+            </table>
+          </div>
+          <div class="sheet-legend"><span><i class="legend-income"></i> הכנסות</span><span><i class="legend-expense"></i> הוצאות</span><span><i class="legend-payroll"></i> עובדים</span><span><i class="legend-tax"></i> מס</span></div>
+        </section>
+
         <div class="overview-grid">
           <section class="overview-panel cf30-section" id="cf30-section">
             <div class="overview-panel-head">
@@ -247,8 +277,8 @@
         </div>
 
       <!-- Income and expenses drill-down -->
-      <details class="overview-details">
-        <summary>פירוט החודש <span>הכנסות, הוצאות, עובדים ומס</span></summary>
+      <details class="overview-details" open>
+        <summary>פירוט מלא של החודש <span>פתוח תמיד — אפשר לצמצם בלחיצה</span></summary>
         <div class="overview-details-body">
       <div class="dash-group">
         <div class="dash-group-title">💵 הכנסות</div>

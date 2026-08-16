@@ -681,8 +681,33 @@ tr:last-child td{border-bottom:none}
 .overview-details>summary span{color:var(--muted);font-weight:500;margin-inline-start:auto;margin-inline-end:10px}
 .overview-details-body{padding:2px 18px 18px;border-top:1px solid var(--overview-line)}
 .overview-details .dash-group{margin:16px 0}.overview-details .section,.overview-details .card{box-shadow:none;border:1px solid var(--overview-line)}
+
+/* Spreadsheet-like monthly view: familiar, dense and always visible */
+.monthly-sheet{margin-bottom:12px;padding-bottom:14px}
+.sheet-period{font-size:11px;font-weight:800;color:var(--blue);background:var(--blue-soft);border-radius:999px;padding:5px 10px}
+.sheet-scroll{overflow-x:auto;border:1px solid #dfe3ea;border-radius:10px;scrollbar-width:thin;outline:none}
+.sheet-scroll:focus-visible{box-shadow:0 0 0 3px rgba(37,99,235,.16);border-color:var(--blue)}
+.finance-sheet{width:100%;min-width:820px;border-collapse:separate;border-spacing:0;table-layout:fixed;font-variant-numeric:tabular-nums}
+.finance-sheet th,.finance-sheet td{text-align:center;padding:11px 8px;border-inline-start:1px solid rgba(23,32,51,.08)}
+.finance-sheet th:first-child,.finance-sheet td:first-child{border-inline-start:0}
+.finance-sheet th{font-size:10.5px;line-height:1.3;color:#354052;border-bottom:1px solid rgba(23,32,51,.1);font-weight:800}
+.finance-sheet td{font-size:17px;font-weight:800;background:#fff;white-space:nowrap}
+.finance-sheet .sheet-income{background:#dff4e9}.finance-sheet .sheet-income-soft{background:#eef9f3}
+.finance-sheet .sheet-expense{background:#dff3f6}.finance-sheet .sheet-payroll{background:#dff0f8}.finance-sheet .sheet-payroll-soft{background:#edf6fa}
+.finance-sheet .sheet-tax{background:#fff3d7}.finance-sheet .sheet-total{background:#eee8fa}
+.finance-sheet td:nth-child(1),.finance-sheet td:nth-child(2){color:var(--green)}
+.finance-sheet td:nth-child(3),.finance-sheet td:nth-child(4),.finance-sheet td:nth-child(5),.finance-sheet td:nth-child(6){color:var(--red)}
+.finance-sheet td:last-child{color:var(--overview-ink);background:#faf8ff}
+.sheet-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:9px;font-size:10px;color:var(--muted)}
+.sheet-legend span{display:flex;align-items:center;gap:5px}.sheet-legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.legend-income{background:#b9e4cc}.legend-expense{background:#b9e3e9}.legend-payroll{background:#b8dcef}.legend-tax{background:#f4d999}
+.overview-details[open]>.overview-details-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+.overview-details[open] #tx-panel{grid-column:1/-1}
+.overview-details[open] .dash-group{min-width:0}
+.overview-details[open] .dash-group .section{height:auto}
 @media(max-width:900px){.overview-kpis{grid-template-columns:repeat(2,1fr)}.overview-grid{grid-template-columns:1fr}}
-@media(max-width:600px){.overview-heading{align-items:flex-start}.overview-heading h1{font-size:22px}.overview-action{padding:9px 11px}.overview-kpis{gap:8px}.overview-kpi{padding:13px;min-height:116px}.overview-kpi strong{font-size:21px;margin-top:14px}.business-overview .cf30-stats{grid-template-columns:repeat(3,1fr)}.overview-panel{padding:14px}.overview-details>summary span{display:none}}
+@media(max-width:720px){.overview-details[open]>.overview-details-body{grid-template-columns:1fr}}
+@media(max-width:600px){.overview-heading{align-items:flex-start}.overview-heading h1{font-size:22px}.overview-action{padding:9px 11px}.overview-kpis{gap:8px}.overview-kpi{padding:13px;min-height:116px}.overview-kpi strong{font-size:21px;margin-top:14px}.business-overview .cf30-stats{grid-template-columns:repeat(3,1fr)}.overview-panel{padding:14px}.overview-details>summary span{display:none}.monthly-sheet{margin-inline:-2px}.finance-sheet th,.finance-sheet td{padding:10px 7px}.sheet-scroll:after{content:'גללו לצדדים לצפייה בכל העמודות';display:block;font-size:10px;color:var(--muted);padding:7px;text-align:center;background:#fafbfc;position:sticky;right:0}}
 @media(max-width:380px){.overview-kpis{grid-template-columns:1fr}.overview-kpi{min-height:104px}.business-overview .cf30-stats{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.overview-kpi-attention{transition:none}}
 
