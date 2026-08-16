@@ -12,12 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="CashflowHQ" />
-<meta name="description" content="ניהול תזרים מזומנים, לקוחות, עובדים ואירועים — לעסק ולבית." />
-<meta name="color-scheme" content="light" />
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-<link rel="preconnect" href="https://zvrvlogqjzpnojfzbapu.supabase.co" crossorigin />
-<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
-<link rel="dns-prefetch" href="https://cdn.sheetjs.com" />
+<!-- הסקריפט של סופאבייס נטען סינכרונית כי האפליקציה תלויה בו, השאר ב-defer -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
@@ -84,7 +79,7 @@
 <div id="abundance-bg" aria-hidden="true"></div>
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:14px">
-      <div class="topbar-title"><span style="color:var(--text)">cash</span><span style="color:var(--blue)">flow</span><span class="version-badge" id="app-version" aria-label="גרסת האפליקציה"></span></div>
+      <div class="topbar-title"><span style="color:var(--text)">cash</span><span style="color:var(--blue)">flow</span></div>
       <div class="mode-switch">
         <button class="mode-btn" id="mode-home" onclick="setMode('home')">🏠 בית</button>
         <button class="mode-btn active" id="mode-business" onclick="setMode('business')">🏢 עסק</button>
@@ -170,22 +165,6 @@
     <!-- dashboard -->
     <div id="page-dashboard" class="page active">
 
-      <div class="section cf30-section" id="cf30-section">
-        <div class="cf30-head">
-          <div>
-            <div class="section-title" style="margin-bottom:2px">📆 30 הימים הקרובים</div>
-            <div class="cf30-sub">רק רשומות שסומנו כצפויות</div>
-          </div>
-          <div class="cf30-net" id="cf30-net">—</div>
-        </div>
-        <div class="cf30-stats">
-          <div><span>צפוי להיכנס</span><strong class="c-green" id="cf30-income">—</strong></div>
-          <div><span>צפוי לצאת</span><strong class="c-red" id="cf30-expense">—</strong></div>
-          <div><span>שינוי צפוי</span><strong id="cf30-change">—</strong></div>
-        </div>
-        <div class="cf30-list" id="cf30-list"></div>
-      </div>
-
       <!-- home dashboard (home mode only) -->
       <div id="home-dashboard" style="display:none">
         <div class="hero-balance" style="margin-bottom:1.1rem">
@@ -211,9 +190,96 @@
       </div>
 
       <!-- business dashboard content -->
-      <div id="business-dashboard">
+      <div id="business-dashboard" class="business-overview">
+        <div class="overview-heading">
+          <div>
+            <div class="overview-eyebrow">תמונת מצב עסקית</div>
+            <h1>הכסף שלך, במבט אחד</h1>
+            <p id="overview-updated">מבוסס על הנתונים המעודכנים בחשבון</p>
+          </div>
+          <button class="overview-action" onclick="showPage('transactions',document.querySelector('.tab[onclick*=\"transactions\"]'))">הוספת תנועה <span>＋</span></button>
+        </div>
 
-      <!-- 2. Income -->
+        <div class="overview-kpis">
+          <article class="overview-kpi overview-kpi-primary">
+            <div class="overview-kpi-top"><span>זמין עכשיו</span><span class="status-dot" aria-hidden="true"></span></div>
+            <strong id="biz-available-now">—</strong>
+            <small id="biz-available-note">יתרת חשבונות העסק</small>
+          </article>
+          <article class="overview-kpi">
+            <div class="overview-kpi-top"><span>צפי לסוף החודש</span><span class="kpi-icon">↗</span></div>
+            <strong id="biz-eom-balance">—</strong>
+            <small id="biz-eom-note">כולל תנועות צפויות עד סוף החודש</small>
+          </article>
+          <article class="overview-kpi">
+            <div class="overview-kpi-top"><span>תזרים צפוי · 30 יום</span><span class="kpi-icon">30</span></div>
+            <strong id="biz-cf30-net">—</strong>
+            <small id="biz-cf30-note">הכנסות פחות הוצאות צפויות</small>
+          </article>
+          <article class="overview-kpi overview-kpi-attention" onclick="document.getElementById('today-attention').scrollIntoView({behavior:'smooth',block:'start'})">
+            <div class="overview-kpi-top"><span>דורש טיפול היום</span><span class="attention-count" id="biz-attention-count">0</span></div>
+            <strong id="biz-attention-label">הכול מסודר</strong>
+            <small>לחץ לצפייה בפעולות</small>
+          </article>
+        </div>
+
+        <section class="overview-panel monthly-sheet" aria-labelledby="monthly-sheet-title">
+          <div class="overview-panel-head">
+            <div><h2 id="monthly-sheet-title">טבלת החודש</h2><p>כל המספרים המרכזיים מול העיניים</p></div>
+            <span class="sheet-period" id="sheet-period">—</span>
+          </div>
+          <div class="sheet-scroll" tabindex="0" aria-label="טבלת סיכום כספי לחודש">
+            <table class="finance-sheet">
+              <thead><tr>
+                <th class="sheet-income">נכנס מלקוחות</th>
+                <th class="sheet-income-soft">צפוי מלקוחות</th>
+                <th class="sheet-expense">הוצאות עסק</th>
+                <th class="sheet-payroll">שכר ששולם</th>
+                <th class="sheet-payroll-soft">שכר ממתין</th>
+                <th class="sheet-tax">מס צפוי</th>
+                <th class="sheet-total">צפי רווח</th>
+              </tr></thead>
+              <tbody><tr>
+                <td id="sheet-income">—</td>
+                <td id="sheet-pending-income">—</td>
+                <td id="sheet-expense">—</td>
+                <td id="sheet-salary">—</td>
+                <td id="sheet-pending-salary">—</td>
+                <td id="sheet-tax">—</td>
+                <td id="sheet-profit">—</td>
+              </tr></tbody>
+            </table>
+          </div>
+          <div class="sheet-legend"><span><i class="legend-income"></i> הכנסות</span><span><i class="legend-expense"></i> הוצאות</span><span><i class="legend-payroll"></i> עובדים</span><span><i class="legend-tax"></i> מס</span></div>
+        </section>
+
+        <div class="overview-grid">
+          <section class="overview-panel cf30-section" id="cf30-section">
+            <div class="overview-panel-head">
+              <div><h2>תזרים ל־30 הימים הקרובים</h2><p>מה צפוי להיכנס ולצאת</p></div>
+              <span class="cf30-net" id="cf30-net">—</span>
+            </div>
+            <div class="cf30-stats">
+              <div><span>צפוי להיכנס</span><strong class="c-green" id="cf30-income">—</strong></div>
+              <div><span>צפוי לצאת</span><strong class="c-red" id="cf30-expense">—</strong></div>
+              <div><span>שינוי נטו</span><strong id="cf30-change">—</strong></div>
+            </div>
+            <div class="cf30-list" id="cf30-list"></div>
+          </section>
+
+          <section class="overview-panel attention-panel" id="today-attention">
+            <div class="overview-panel-head">
+              <div><h2>דורש טיפול היום</h2><p>הפעולות שהכי חשוב לסגור</p></div>
+              <button class="panel-link" onclick="showPage('alerts',document.querySelector('.tab[onclick*=\"alerts\"]'))">כל ההתראות</button>
+            </div>
+            <div id="biz-attention-list" class="attention-list"><div class="empty">בודק מה דורש טיפול…</div></div>
+          </section>
+        </div>
+
+      <!-- Income and expenses drill-down -->
+      <details class="overview-details" open>
+        <summary>פירוט מלא של החודש <span>פתוח תמיד — אפשר לצמצם בלחיצה</span></summary>
+        <div class="overview-details-body">
       <div class="dash-group">
         <div class="dash-group-title">💵 הכנסות</div>
         <div class="cards-row" style="margin-bottom:0">
@@ -257,6 +323,9 @@
           <div class="pill"><span class="pill-label">% מס</span><input type="number" id="tax-rate-db" value="20" min="0" max="100" class="tax-input" oninput="updateTaxFromDB()" /><span class="pill-label">%</span></div>
         </div>
       </div>
+
+        </div>
+      </details>
 
       </div><!-- /business-dashboard -->
     </div>
@@ -385,11 +454,6 @@
             <select id="t-type"><option value="income">הכנסה</option><option value="expense">הוצאה</option></select>
             <select id="t-cat"></select>
             <select id="t-account" title="לאיזה חשבון בנק שייכת הרשומה"></select>
-            <input type="date" id="t-date" title="תאריך צפוי או תאריך ביצוע" />
-            <select id="t-cashflow-status" title="האם הכסף כבר נכנס/יצא">
-              <option value="paid">בוצע בפועל</option>
-              <option value="expected">צפוי</option>
-            </select>
           </div>
           <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
 
@@ -403,7 +467,7 @@
               <button class="btn-del-multi" id="tx-del-multi" onclick="deleteSelectedTx()" style="display:none">🗑 מחק מסומנות (<span id="tx-sel-count">0</span>)</button>
             </div>
           </div>
-          <table><thead><tr><th style="width:30px"><input type="checkbox" id="tx-check-all" onchange="toggleAllTx(this)"></th><th>תיאור</th><th>תאריך</th><th>מצב</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th></th></tr></thead>
+          <table><thead><tr><th style="width:30px"><input type="checkbox" id="tx-check-all" onchange="toggleAllTx(this)"></th><th>תיאור</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th></th></tr></thead>
           <tbody id="tx-table"></tbody></table>
         </div>
       </div>
@@ -1008,8 +1072,7 @@
     <div class="modal-body">
       <div class="ev-form-grid">
         <div class="form-group ev-span2"><label>שם האירוע</label><input type="text" id="modal-ev-title" /></div>
-        <div class="form-group"><label>תאריך האירוע</label><input type="date" id="modal-ev-date" /></div>
-        <div class="form-group"><label>צפי לקבלת התשלום</label><input type="date" id="modal-expected-payment" /></div>
+        <div class="form-group"><label>תאריך</label><input type="date" id="modal-ev-date" /></div>
         <div class="form-group"><label>מחיר ללקוח (₪)</label><input type="number" id="modal-price" placeholder="0" min="0" /></div>
         <div class="form-group"><label>לקוח</label><select id="modal-client"></select></div>
         <div class="form-group"><label>סטטוס תשלום</label>
@@ -1081,8 +1144,7 @@
   </div>
 </div>
 
-<script src="/pdf-font.js" defer></script>
-<script src="/app.js" defer></script>
+<script src="/app.js"></script>
 <script src="/pwa.js" defer></script>
 </body>
 </html>
