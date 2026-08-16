@@ -1,4 +1,4 @@
-const APP_VERSION = '2.4.4';
+const APP_VERSION = '2.4.5';
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
@@ -1784,18 +1784,20 @@ function openSheetBreakdown(type) {
   const monthIds = getMonthDetails().map(event => event.id);
   const details = getMonthDetails();
   let title = '', rows = [], total = 0;
-  const add = (label, sub, amount, kind) => rows.push({ label, sub, amount: Number(amount) || 0, kind: kind || 'neutral' });
+  const add = (label, sub, amount, kind, meta) => rows.push(Object.assign({ label, sub, amount: Number(amount) || 0, kind: kind || 'neutral' }, meta || {}));
 
   if (type === 'income') {
     title = 'נכנס מלקוחות';
     cachedTx.filter(tx => tx.type === 'income' && txIsActual(tx)).forEach(tx => add(tx.description || 'הכנסה', tx.category || 'עסקה', tx.amount, 'income'));
-    details.filter(event => Number(event.price) > 0 && mvIsPaid(event.status)).forEach(event => add(event.event_title || 'אירוע', 'אירוע ששולם', event.price, 'income'));
+    details.filter(event => Number(event.price) > 0 && mvIsPaid(event.status)).forEach(event => add(
+      event.event_title || 'אירוע', 'אירוע ששולם · ' + sheetEventDate(event.event_date), event.price, 'income', { eventId: event.id }
+    ));
   } else if (type === 'pending-income') {
     title = 'צפוי מלקוחות';
     cachedTx.filter(tx => tx.type === 'income' && txIsExpected(tx)).forEach(tx => add(tx.description || 'הכנסה צפויה', tx.category || 'עסקה', tx.amount, 'income'));
     details.filter(event => Number(event.price) > Number(event.paid_amount || 0) && !mvIsPaid(event.status)).forEach(event => {
       const remaining = Math.max(0, Number(event.price) - Number(event.paid_amount || 0));
-      add(event.event_title || 'אירוע', event.status || 'טרם שולם', remaining, 'income');
+      add(event.event_title || 'אירוע', (event.status || 'טרם שולם') + ' · ' + sheetEventDate(event.event_date), remaining, 'income', { eventId: event.id });
     });
   } else if (type === 'expense') {
     title = 'הוצאות עסק';
@@ -1839,13 +1841,47 @@ function openSheetBreakdown(type) {
   $('sheet-breakdown-sub').textContent = rows.length + ' פריטים · סה״כ ' + fmt(total);
   $('sheet-breakdown-list').innerHTML = rows.length ? rows.map(row =>
     '<div class="sheet-detail-row"><div><b>' + esc(row.label) + '</b><small>' + esc(row.sub || '') + '</small></div>' +
-    '<strong style="color:' + (row.kind === 'expense' ? 'var(--red)' : row.kind === 'income' ? 'var(--green)' : 'var(--text)') + '">' +
-    (row.kind === 'expense' ? '−' : row.kind === 'income' ? '+' : '') + fmt(row.amount) + '</strong></div>'
+    '<div class="sheet-detail-end"><strong style="color:' + (row.kind === 'expense' ? 'var(--red)' : row.kind === 'income' ? 'var(--green)' : 'var(--text)') + '">' +
+    (row.kind === 'expense' ? '−' : row.kind === 'income' ? '+' : '') + fmt(row.amount) + '</strong>' +
+    (row.eventId ? '<span class="sheet-row-actions"><button onclick="openSheetEvent(\'' + row.eventId + '\')">עריכה</button><button class="is-delete" onclick="deleteSheetEvent(\'' + row.eventId + '\')">מחיקה</button></span>' : '') + '</div></div>'
   ).join('') + '<div class="sheet-detail-row sheet-detail-total"><div><b>סה״כ</b></div><strong style="color:' + (total < 0 ? 'var(--red)' : 'var(--green)') + '">' + fmt(total) + '</strong></div>'
     : '<div class="sheet-detail-empty">אין פריטים ברובריקה הזו בחודש הנבחר</div>';
   panel.dataset.type = type;
   panel.hidden = false;
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function sheetEventDate(date) {
+  if (!date || date.length < 10) return 'ללא תאריך';
+  return date.slice(0, 10).split('-').reverse().join('/');
+}
+
+async function openSheetEvent(detailId) {
+  const detail = cachedEventDetails.find(event => event.id === detailId);
+  if (!detail) { alert('האירוע לא נמצא. נסו לרענן את הדף.'); return; }
+  await openEditEventModal({
+    title: detail.event_title || '',
+    date: detail.event_date || '',
+    source: detail.is_manual ? 'manual' : 'gcal',
+    detailId: detail.id
+  });
+}
+
+async function deleteSheetEvent(detailId) {
+  const detail = cachedEventDetails.find(event => event.id === detailId);
+  if (!detail) return;
+  if (!confirm('למחוק את האירוע "' + (detail.event_title || 'אירוע') + '"?')) return;
+  await sb.from('event_workers').delete().eq('event_detail_id', detailId);
+  const filesResult = await sb.from('event_files').select('id,storage_path').eq('event_detail_id', detailId);
+  const files = filesResult.data || [];
+  if (files.length) {
+    await sb.storage.from('event-files').remove(files.map(file => file.storage_path));
+    await sb.from('event_files').delete().in('id', files.map(file => file.id));
+  }
+  if (!detail.is_manual && detail.event_title && detail.event_date) hideEvent(detail.event_title, detail.event_date);
+  const result = await sb.from('event_details').delete().eq('id', detailId);
+  if (result.error) { alert('מחיקת האירוע נכשלה: ' + result.error.message); return; }
+  await loadAll();
 }
 
 // ── RENDER HOME (מצב בית) ──
