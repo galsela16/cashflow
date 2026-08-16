@@ -1,4 +1,5 @@
-const APP_VERSION = '2.4.2';
+const APP_VERSION = '2.4.3';
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
   versionBadge.textContent = 'v' + APP_VERSION;
@@ -1221,6 +1222,8 @@ async function enterApp(user) {
   // טען קודם הוצאות קבועות, ורק אז loadAll (שתלוי בהן לייבוא אוטומטי)
   await loadRecurring();
   await loadAll();
+  // רענון או עדכון PWA לא משחזרים מיקום עמוק מהמסך הקודם.
+  requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
 }
 
 // ── MONTHS ──
