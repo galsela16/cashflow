@@ -1,4 +1,4 @@
-const APP_VERSION = '2.4.5';
+const APP_VERSION = '2.4.6';
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
@@ -1554,8 +1554,8 @@ function renderShifts() {
       '<td style="color:var(--muted)">' + esc(s.notes || '—') + '</td>' +
       '<td class="sh-total">' + fmt(total) + '</td>' +
       '<td style="white-space:nowrap">' +
-        '<button class="btn sh-mini" onclick="startEditShift(\'' + s.id + '\')">ערוך</button> ' +
-        '<button class="btn sh-mini" onclick="deleteShift(\'' + s.id + '\')">מחק</button>' +
+        '<button class="action-edit" onclick="startEditShift(\'' + s.id + '\')">עריכה</button> ' +
+        '<button class="action-delete" onclick="deleteShift(\'' + s.id + '\')">מחיקה</button>' +
       '</td></tr>';
   }).join('');
 }
@@ -2253,8 +2253,8 @@ function renderChildren() {
       '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">תשואה ' + (c.annual_rate || 0) + '% · עודכן ' + dateStr + '</div>' +
       '<div class="goal-actions">' +
         '<button class="btn-paid-quick" onclick="updateChildValue(\'' + c.id + '\')">💰 עדכן שווי</button>' +
-        '<button class="btn-edit-sm" onclick="editChild(\'' + c.id + '\')" title="ערוך">&#9998;</button>' +
-        '<button class="btn-del" onclick="deleteChild(\'' + c.id + '\')" title="מחק">&#128465;</button>' +
+        '<button class="action-edit" onclick="editChild(\'' + c.id + '\')">עריכה</button>' +
+        '<button class="action-delete" onclick="deleteChild(\'' + c.id + '\')">מחיקה</button>' +
       '</div>' +
     '</div>';
   }).join('') + '</div>';
@@ -2897,8 +2897,8 @@ function renderHomeGoalsList() {
       '</div>' +
       '<div class="goal-actions">' +
         '<button class="btn-paid-quick" onclick="updateGoalSaved(\'' + g.id + '\',\'custom\')">➕ הוסף חיסכון</button>' +
-        '<button class="btn-edit-sm" onclick="editGoal(\'' + g.id + '\')" title="ערוך יעד">&#9998;</button>' +
-        '<button class="btn-del" onclick="deleteGoal(\'' + g.id + '\')" title="מחק">&#128465;</button>' +
+        '<button class="action-edit" onclick="editGoal(\'' + g.id + '\')">עריכה</button>' +
+        '<button class="action-delete" onclick="deleteGoal(\'' + g.id + '\')">מחיקה</button>' +
       '</div>' +
       goalItemsHtml(g) +
     '</div>';
@@ -4327,14 +4327,14 @@ function eventBodyHtml(info) {
 
 // כפתורי עריכה/מחיקה (משותף)
 function eventActionsHtml(ev, info) {
-  const editBtn = '<button class="btn-sm" onclick="event.stopPropagation();openEditEventModalByTitle(this);return false;" data-title="' + esc(ev.title||'') + '" data-date="' + localDateStr(ev.start) + '" data-source="' + ev.source + '" data-detailid="' + (ev.detailId||'') + '">&#9999;</button>';
+  const editBtn = '<button class="action-edit" onclick="event.stopPropagation();openEditEventModalByTitle(this);return false;" data-title="' + esc(ev.title||'') + '" data-date="' + localDateStr(ev.start) + '" data-source="' + ev.source + '" data-detailid="' + (ev.detailId||'') + '">עריכה</button>';
   let delBtn = '';
   if (ev.source === 'manual') {
     // אירוע ידני — מחיקה אמיתית מה-DB
-    delBtn = '<button class="btn-del" onclick="event.stopPropagation();deleteManualEventByEl(this);return false;" data-detailid="' + (ev.detailId||'') + '">&#128465;</button>';
+    delBtn = '<button class="action-delete" onclick="event.stopPropagation();deleteManualEventByEl(this);return false;" data-detailid="' + (ev.detailId||'') + '">מחיקה</button>';
   } else {
     // אירוע יומן — הסתרה קבועה (לא יחזור בסנכרון)
-    delBtn = '<button class="btn-del" onclick="event.stopPropagation();hideGcalEventByEl(this);return false;" data-title="' + esc(ev.title||'') + '" data-date="' + localDateStr(ev.start) + '" title="' + t('הסתר אירוע') + '">&#128465;</button>';
+    delBtn = '<button class="action-delete" onclick="event.stopPropagation();hideGcalEventByEl(this);return false;" data-title="' + esc(ev.title||'') + '" data-date="' + localDateStr(ev.start) + '">' + t('מחיקה') + '</button>';
   }
   // סטטוס תשלום — ניתן לשינוי ישירות מהרשימה (רק לאירוע עם פרטים שמורים)
   let statusHtml = '';
@@ -4455,7 +4455,7 @@ function renderEmpCards(monthDetailIds) {
 
     const empEvRows = evs.map(ev => '<tr><td style="font-size:13px">' + esc(ev.event_name) + '</td><td style="font-size:12px;color:var(--muted)">' + (ev.date || '\u2014') + '</td><td style="font-weight:600">' + fmt(ev.amount) + '</td><td><select class="status-select" onchange="updateEmpEventStatus(\'' + ev.id + '\',this.value)">' + ['\u05de\u05de\u05ea\u05d9\u05df', '\u05e9\u05d5\u05dc\u05dd', '\u05d1\u05d0\u05d9\u05d7\u05d5\u05e8'].map(s => '<option value="' + s + '"' + (ev.status === s ? ' selected' : '') + '>' + t(s) + '</option>').join('') + '</select></td><td><button class="btn-del" onclick="deleteEmpEvent(\'' + ev.id + '\')">&#128465;</button></td></tr>').join('');
 
-    return '<div class="emp-card"><div class="emp-card-header" onclick="toggleCard(\'' + emp.id + '\')"><div><div class="emp-card-name">&#128100; ' + esc(emp.name) + '</div><div class="emp-card-meta">' + esc(emp.role || '') + (emp.phone ? ' \u00b7 ' + esc(emp.phone) : '') + ' \u00b7 ' + (evs.length + ewks.length) + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9' + (total > 0 ? ' \u00b7 ' + fmt(total) : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="btn-outline" style="font-size:12px" onclick="event.stopPropagation();openEmpModal(\'' + emp.id + '\')">✏️</button><button class="btn-del" onclick="event.stopPropagation();deleteEmp(\'' + emp.id + '\')">&#128465;</button><span id="toggle-icon-' + emp.id + '">&#9660;</span></div></div><div class="emp-card-body" id="card-body-' + emp.id + '"><div class="event-form"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">+ \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2</div><div class="form-row"><input type="text" id="ev-event-' + emp.id + '" placeholder="\u05e9\u05dd \u05d4\u05d0\u05d9\u05e8\u05d5\u05e2" /><input type="date" id="ev-date-' + emp.id + '" /><input type="number" id="ev-amount-' + emp.id + '" placeholder="\u05e1\u05db\u05d5\u05dd \u20aa" min="0" /></div><button class="btn-sm" onclick="addEmpEvent(\'' + emp.id + '\')">\u05d4\u05d5\u05e1\u05e3</button></div>' + ((evs.length + ewks.length) ? '<table><thead><tr><th>\u05d0\u05d9\u05e8\u05d5\u05e2</th><th>\u05ea\u05d0\u05e8\u05d9\u05da</th><th>\u05e1\u05db\u05d5\u05dd</th><th>\u05e1\u05d8\u05d0\u05d8\u05d5\u05e1</th><th></th></tr></thead><tbody>' + evRows + empEvRows + '</tbody></table>' : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9</div>') + '</div></div>';
+    return '<div class="emp-card"><div class="emp-card-header" onclick="toggleCard(\'' + emp.id + '\')"><div><div class="emp-card-name">&#128100; ' + esc(emp.name) + '</div><div class="emp-card-meta">' + esc(emp.role || '') + (emp.phone ? ' \u00b7 ' + esc(emp.phone) : '') + ' \u00b7 ' + (evs.length + ewks.length) + ' \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9' + (total > 0 ? ' \u00b7 ' + fmt(total) : '') + '</div></div><div style="display:flex;align-items:center;gap:8px"><button class="action-edit" onclick="event.stopPropagation();openEmpModal(\'' + emp.id + '\')">עריכה</button><button class="action-delete" onclick="event.stopPropagation();deleteEmp(\'' + emp.id + '\')">מחיקה</button><span id="toggle-icon-' + emp.id + '">&#9660;</span></div></div><div class="emp-card-body" id="card-body-' + emp.id + '"><div class="event-form"><div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500">+ \u05d4\u05d5\u05e1\u05e3 \u05d0\u05d9\u05e8\u05d5\u05e2</div><div class="form-row"><input type="text" id="ev-event-' + emp.id + '" placeholder="\u05e9\u05dd \u05d4\u05d0\u05d9\u05e8\u05d5\u05e2" /><input type="date" id="ev-date-' + emp.id + '" /><input type="number" id="ev-amount-' + emp.id + '" placeholder="\u05e1\u05db\u05d5\u05dd \u20aa" min="0" /></div><button class="btn-sm" onclick="addEmpEvent(\'' + emp.id + '\')">\u05d4\u05d5\u05e1\u05e3</button></div>' + ((evs.length + ewks.length) ? '<table><thead><tr><th>\u05d0\u05d9\u05e8\u05d5\u05e2</th><th>\u05ea\u05d0\u05e8\u05d9\u05da</th><th>\u05e1\u05db\u05d5\u05dd</th><th>\u05e1\u05d8\u05d0\u05d8\u05d5\u05e1</th><th></th></tr></thead><tbody>' + evRows + empEvRows + '</tbody></table>' : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:10px">\u05d0\u05d9\u05df \u05d0\u05d9\u05e8\u05d5\u05e2\u05d9\u05dd \u05d4\u05d7\u05d5\u05d3\u05e9</div>') + '</div></div>';
   }).join('');
 }
 
@@ -5223,7 +5223,7 @@ function renderSalaries() {
       '<td style="font-weight:500">' + esc(s.person_name) + '</td>' +
       '<td style="font-weight:600;color:var(--green)">' + fmt(s.amount || 0) + '</td>' +
       '<td><input type="checkbox" ' + (s.active ? 'checked' : '') + ' onchange="toggleSalaryActive(\'' + s.id + '\',this.checked)" style="width:16px;height:16px;cursor:pointer" title="פעיל"></td>' +
-      '<td style="white-space:nowrap"><button class="btn-edit-sm" onclick="editSalary(\'' + s.id + '\')" title="ערוך">&#9998;</button> <button class="btn-del" onclick="deleteSalary(\'' + s.id + '\')" title="מחק">&#128465;</button></td>' +
+      '<td style="white-space:nowrap"><button class="action-edit" onclick="editSalary(\'' + s.id + '\')">עריכה</button> <button class="action-delete" onclick="deleteSalary(\'' + s.id + '\')">מחיקה</button></td>' +
     '</tr>'
   ).join('');
 }
@@ -5254,7 +5254,7 @@ function renderRecurring() {
   if (!tb) return;
   if (totalEl) totalEl.textContent = '\u05e1\u05d4"\u05db: ' + fmt(total) + ' / \u05d7\u05d5\u05d3\u05e9';
   if (!cachedRecurring.length) { tb.innerHTML = '<tr><td colspan="4" class="empty">\u05d0\u05d9\u05df \u05d4\u05d5\u05e6\u05d0\u05d5\u05ea \u05e7\u05d1\u05d5\u05e2\u05d5\u05ea</td></tr>'; return; }
-  tb.innerHTML = cachedRecurring.map(r => '<tr id="rec-row-' + r.id + '"><td style="font-weight:500">' + esc(r.description) + '</td><td style="font-size:12px;color:var(--muted)">' + esc(r.category) + '</td><td style="font-weight:600;color:var(--red)">' + fmt(r.amount) + '</td><td style="white-space:nowrap"><button class="btn-edit-sm" onclick="editRecurring(\'' + r.id + '\')" title="ערוך">&#9998;</button> <button class="btn-del" onclick="deleteRecurring(\'' + r.id + '\')" title="מחק">&#128465;</button></td></tr>').join('');
+  tb.innerHTML = cachedRecurring.map(r => '<tr id="rec-row-' + r.id + '"><td style="font-weight:500">' + esc(r.description) + '</td><td style="font-size:12px;color:var(--muted)">' + esc(r.category) + '</td><td style="font-weight:600;color:var(--red)">' + fmt(r.amount) + '</td><td style="white-space:nowrap"><button class="action-edit" onclick="editRecurring(\'' + r.id + '\')">עריכה</button> <button class="action-delete" onclick="deleteRecurring(\'' + r.id + '\')">מחיקה</button></td></tr>').join('');
 }
 // מעבר למצב עריכה — הופך את השורה לשדות ניתנים לעריכה
 const REC_CATEGORIES = ['שכירות', 'ביטוח', 'תוכנות', 'טלפון', 'רכב', 'שיווק', 'אחר'];
@@ -5340,7 +5340,7 @@ function renderPFSliders() {
 }
 function updatePFSlider(i, val) { pfSettings.accounts[i].pct = parseInt(val); $('pf-pct-' + i).textContent = val + '%'; updatePFTotal(); }
 function updatePFTotal() { const total = pfSettings.accounts.reduce((s, a) => s + a.pct, 0); const el = $('pf-total-pct'); if (el) { el.textContent = total + '%'; el.style.color = total === 100 ? 'var(--green)' : 'var(--red)'; } }
-function togglePFEdit() { const el = $('pf-edit'), btn = $('pf-edit-btn'); if (!el) return; const isOpen = el.style.display !== 'none'; el.style.display = isOpen ? 'none' : 'block'; btn.textContent = isOpen ? '\u270f\ufe0f \u05e2\u05e8\u05d5\u05da \u05d0\u05d7\u05d5\u05d6\u05d9\u05dd' : '\u2715 \u05e1\u05d2\u05d5\u05e8'; if (!isOpen) renderPFSliders(); }
+function togglePFEdit() { const el = $('pf-edit'), btn = $('pf-edit-btn'); if (!el) return; const isOpen = el.style.display !== 'none'; el.style.display = isOpen ? 'none' : 'block'; btn.textContent = isOpen ? '\u05e2\u05e8\u05d9\u05db\u05ea \u05d0\u05d7\u05d5\u05d6\u05d9\u05dd' : '\u05e1\u05d2\u05d9\u05e8\u05d4'; if (!isOpen) renderPFSliders(); }
 
 // ── יועץ AI ──
 let advHistory = [];

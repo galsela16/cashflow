@@ -719,6 +719,9 @@ tr:last-child td{border-bottom:none}
 .sheet-detail-end{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .sheet-row-actions{display:flex;align-items:center;gap:5px}.sheet-row-actions button{border:1px solid var(--overview-line);background:#fff;border-radius:7px;padding:5px 8px;color:var(--blue);font-size:9.5px;font-weight:750;cursor:pointer}
 .sheet-row-actions button:hover{border-color:var(--blue);background:var(--blue-soft)}.sheet-row-actions button.is-delete{color:var(--red)}.sheet-row-actions button.is-delete:hover{border-color:var(--red);background:var(--red-soft)}
+.action-edit,.action-delete{appearance:none;border:1px solid var(--overview-line,var(--border));background:#fff;border-radius:8px;padding:6px 10px;font:inherit;font-size:10.5px;font-weight:750;line-height:1;color:#5b3f8c;cursor:pointer;white-space:nowrap;box-shadow:none}
+.action-edit:hover{border-color:#7c5bb2;background:#f6f1fc}.action-delete{color:var(--red)}.action-delete:hover{border-color:var(--red);background:var(--red-soft)}
+.action-edit:focus-visible,.action-delete:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .sheet-detail-total{background:#fff;font-weight:800}.sheet-detail-empty{text-align:center;padding:20px;color:var(--muted);font-size:11px}
 .overview-details[open]>.overview-details-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
 .overview-details[open] #tx-panel{grid-column:1/-1}
