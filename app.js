@@ -1636,18 +1636,28 @@ async function loadAll() {
 
 async function loadCashflow30() {
   const start = todayYmd();
-  const endDate = new Date();
-  endDate.setDate(endDate.getDate() + 30);
-  const end = endDate.toISOString().slice(0, 10);
+  const end = addDays(start, 91);
   const inWindow = date => date >= start && date <= end;
   const rows = [];
 
   // כלל העסק: הכנסות של חודש מסוים מתקבלות ב-10 בחודש הבא,
   // והוצאות של אותו חודש משולמות ב-15 בחודש הבא.
   if (appMode === 'business') {
-    cachedTx.forEach(tx => {
+    // הדשבורד החודשי טוען בדרך כלל רק חודש אחד. לתחזית 13 השבועות
+    // נטען כאן גם את הרשומות של החודשים הקרובים, בלי לשנות את מבנה המסד.
+    let forecastSourceTx = cachedTx;
+    const futureResult = await sb.from('transactions').select('*')
+      .eq('user_id', currentUser.id)
+      .gte('month', start.slice(0, 7))
+      .lte('month', end.slice(0, 7));
+    if (!futureResult.error && futureResult.data) {
+      const byId = new Map();
+      cachedTx.concat(futureResult.data).forEach(tx => byId.set(tx.id, tx));
+      forecastSourceTx = Array.from(byId.values());
+    }
+    forecastSourceTx.forEach(tx => {
       const month = tx.month || (tx.expected_date ? tx.expected_date.slice(0, 7) : getMonth());
-      const forecastDate = nextMonthCashflowDate(month, tx.type === 'income' ? 10 : 15);
+      const forecastDate = tx.expected_date || nextMonthCashflowDate(month, tx.type === 'income' ? 10 : 15);
       if (!inWindow(forecastDate) || Number(tx.amount) <= 0) return;
       rows.push(Object.assign({}, tx, { expected_date: forecastDate, cashflow_status: 'expected' }));
     });
@@ -1659,7 +1669,10 @@ async function loadCashflow30() {
     cachedEventDetails.forEach(event => {
       const remaining = Math.max(0, (Number(event.price) || 0) - (Number(event.paid_amount) || 0));
       const eventMonth = event.event_date ? event.event_date.slice(0, 7) : (event.month || getMonth());
-      const forecastDate = nextMonthCashflowDate(eventMonth, 10);
+      const googleDate = googleDateForDetail(event);
+      const correctedEventDate = googleDate || event.event_date;
+      const correctedMonth = correctedEventDate ? correctedEventDate.slice(0, 7) : eventMonth;
+      const forecastDate = event.expected_payment_date || nextMonthCashflowDate(correctedMonth, 10);
       if (!inWindow(forecastDate) || mvIsPaid(event.status) || remaining <= 0) return;
       rows.push({ id: 'event-' + event.id, description: event.event_title || 'אירוע', amount: remaining, type: 'income', expected_date: forecastDate, cashflow_status: 'expected' });
     });
@@ -1692,7 +1705,9 @@ function nextMonthCashflowDate(month, day) {
 function renderCashflow30() {
   const section = $('cf30-section');
   if (!section) return;
-  const rows = cachedForecastTx.slice().sort((a, b) => txCashflowDate(a).localeCompare(txCashflowDate(b)));
+  const end30 = addDays(todayYmd(), 30);
+  const rows = cachedForecastTx.filter(tx => txCashflowDate(tx) >= todayYmd() && txCashflowDate(tx) <= end30)
+    .sort((a, b) => txCashflowDate(a).localeCompare(txCashflowDate(b)));
   const income = rows.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
   const expense = rows.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
   const change = income - expense;
@@ -1704,6 +1719,46 @@ function renderCashflow30() {
   $('cf30-list').innerHTML = rows.length
     ? rows.slice(0, 6).map(tx => '<div class="cf30-row"><span class="cf30-date">' + esc(txCashflowDate(tx)) + '</span><span>' + esc(tx.description || '') + '</span><span class="cf30-amount" style="color:' + (tx.type === 'income' ? 'var(--green)' : 'var(--red)') + '">' + (tx.type === 'income' ? '+' : '−') + fmt(tx.amount || 0) + '</span></div>').join('')
     : '<div class="empty" style="padding:10px 0">הוסיפו רשומה וסמנו אותה כ״צפוי״ כדי לראות כאן את התזרים העתידי.</div>';
+}
+
+function renderCashflow13Weeks(fallbackBalance) {
+  const grid = $('cf13-grid');
+  if (!grid) return;
+  const businessAccounts = cachedAccounts.filter(a => (a.scope || 'business') === 'business');
+  const opening = businessAccounts.length
+    ? businessAccounts.reduce((sum, account) => sum + derivedBalance(account), 0)
+    : (Number(fallbackBalance) || 0);
+  const start = todayYmd();
+  let balance = opening;
+  let lowest = opening;
+  const weeks = [];
+  for (let i = 0; i < 13; i++) {
+    const from = addDays(start, i * 7);
+    const to = addDays(from, 6);
+    const rows = cachedForecastTx.filter(tx => {
+      const date = txCashflowDate(tx);
+      return date >= from && date <= to;
+    });
+    const income = rows.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    const expense = rows.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    const weekOpening = balance;
+    balance += income - expense;
+    lowest = Math.min(lowest, balance);
+    weeks.push({ index: i + 1, from, to, opening: weekOpening, income, expense, closing: balance, count: rows.length });
+  }
+  $('cf13-opening').textContent = fmt(opening);
+  $('cf13-lowest').textContent = fmt(lowest);
+  $('cf13-lowest').style.color = lowest < 0 ? 'var(--red)' : 'var(--green)';
+  $('cf13-ending').textContent = fmt(balance);
+  $('cf13-ending').style.color = balance < 0 ? 'var(--red)' : 'var(--green)';
+  const negativeWeek = weeks.find(week => week.closing < 0);
+  $('cf13-status').textContent = negativeWeek ? 'דורש תשומת לב · שבוע ' + negativeWeek.index : 'התזרים נשאר חיובי';
+  $('cf13-status').className = 'cf13-status' + (negativeWeek ? ' is-warning' : ' is-positive');
+  grid.innerHTML = '<div class="cf13-row cf13-head"><span>שבוע</span><span>יתרת פתיחה</span><span>נכנס</span><span>יוצא</span><span>יתרת סגירה</span></div>' +
+    weeks.map(week => '<div class="cf13-row' + (week.closing < 0 ? ' is-negative' : '') + '">' +
+      '<span><b>שבוע ' + week.index + '</b><small>' + week.from.slice(8, 10) + '/' + week.from.slice(5, 7) + '–' + week.to.slice(8, 10) + '/' + week.to.slice(5, 7) + '</small></span>' +
+      '<span>' + fmt(week.opening) + '</span><span class="c-green">' + (week.income ? '+' + fmt(week.income) : '—') + '</span>' +
+      '<span class="c-red">' + (week.expense ? '−' + fmt(week.expense) : '—') + '</span><span class="cf13-close">' + fmt(week.closing) + '</span></div>').join('');
 }
 
 // תמונת מצב עסקית: ארבע התשובות שצריך לקבל בתוך שניות.
@@ -1721,7 +1776,8 @@ function renderBusinessOverview(net, pendingIncome, pendingExpense, pendingSalar
   const today = todayYmd();
   const month = getMonth();
   const monthEnd = month + '-' + String(new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate()).padStart(2, '0');
-  const forecastRows = cachedForecastTx.slice();
+  const end30 = addDays(today, 30);
+  const forecastRows = cachedForecastTx.filter(tx => txCashflowDate(tx) >= today && txCashflowDate(tx) <= end30);
   const eomRows = forecastRows.filter(tx => {
     const date = txCashflowDate(tx);
     return date >= today && date <= monthEnd;
@@ -1925,6 +1981,7 @@ function renderHome() {
   const totalExpense = expenseRows.reduce((s, t) => s + t.amount, 0);
   const net = totalIncome - totalExpense;
   renderCashflow30();
+  renderCashflow13Weeks(net);
 
   // כרטיסי סיכום
   if ($('h-income')) $('h-income').textContent = fmt(totalIncome);
@@ -3639,6 +3696,7 @@ function renderAll() {
   } catch (e) {}
   if ($('profit-breakdown') && $('profit-breakdown').style.display !== 'none') renderProfitBreakdown();
   renderCashflow30();
+  renderCashflow13Weeks(net);
   renderBusinessOverview(net, pendingIncome, pendingTxExpense, pendingEmpSalary + pendingWorkerSalary);
 
   $('d-income').textContent = fmt(income);
