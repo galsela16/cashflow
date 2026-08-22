@@ -8,6 +8,7 @@
 
   const SETTINGS_KEY = 'cf_pricing_settings_v1';
   const defaults = Object.freeze({
+    warehouseLocation: 'עין ורד, ישראל',
     annualEvents: 100,
     annualOverhead: 8660,
     equipmentValue: 150000,
@@ -55,6 +56,7 @@
   ];
 
   const settingFields = [
+    ['warehouseLocation', 'מיקום המחסן', 'text', 1],
     ['annualEvents', 'אירועים בשנה', 'number', 1],
     ['annualOverhead', 'תקורה שנתית', 'number', 0],
     ['equipmentValue', 'שווי ציוד', 'number', 0],
@@ -69,7 +71,6 @@
     ['longTripThresholdKm', 'סף נסיעה ארוכה (ק״מ)', 'number', 0],
     ['longTripSurcharge', 'תוספת נסיעה ארוכה', 'number', 0],
     ['foodPerPerson', 'אוכל לאיש צוות', 'number', 0],
-    ['markupRate', 'תוספת רווח גולמי (%)', 'number', 0.1],
     ['annualInterestRate', 'ריבית שנתית לשוטף (%)', 'number', 0.1],
     ['vatRate', 'מע״מ (%)', 'number', 0.1],
     ['stageMinimum', 'מינימום במה / גב במה', 'number', 0],
@@ -78,6 +79,8 @@
 
   let initialized = false;
   let settings = loadSettings();
+  let distanceTimer = null;
+  let distanceRequest = 0;
   const byId = (id) => document.getElementById(id);
   const num = (id) => Math.max(0, Number(byId(id)?.value) || 0);
   const money = (value) => new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 }).format(Number(value) || 0);
@@ -125,7 +128,7 @@
   function readSettings() {
     document.querySelectorAll('[data-pricing-setting]').forEach((el) => {
       const key = el.dataset.pricingSetting;
-      settings[key] = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? Math.max(0, Number(el.value) || 0) : el.value);
+      settings[key] = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? Math.max(0, Number(el.value) || 0) : el.value.trim());
     });
     saveSettings();
   }
@@ -156,6 +159,9 @@
     readSettings();
     const hours = timeHours(byId('pc-start').value, byId('pc-end').value);
     const actions = Math.max(1, num('pc-actions'));
+    const selectedMarkup = num('pc-profit-rate');
+    settings.markupRate = selectedMarkup;
+    saveSettings();
     const eventCount = Math.max(1, num('pc-events'));
     const soundCount = num('pc-sound');
     const lightCount = num('pc-light');
@@ -236,6 +242,52 @@
     calculate();
   };
 
+  async function geocode(query) {
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=il&q=' + encodeURIComponent(query);
+    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error('geocode');
+    const results = await response.json();
+    if (!results.length) throw new Error('not-found');
+    return { lat: Number(results[0].lat), lon: Number(results[0].lon), label: results[0].display_name };
+  }
+
+  window.pricingFindDistance = async function () {
+    const destination = byId('pc-location')?.value.trim();
+    const status = byId('pc-distance-status');
+    const button = byId('pc-distance-button');
+    if (!destination) {
+      if (status) status.textContent = 'יש להזין מקום או כתובת';
+      return;
+    }
+    const requestId = ++distanceRequest;
+    if (status) { status.textContent = 'מחשב מסלול מהמחסן…'; status.className = 'is-loading'; }
+    if (button) button.disabled = true;
+    try {
+      const [origin, target] = await Promise.all([geocode(settings.warehouseLocation), geocode(destination)]);
+      const routeUrl = 'https://router.project-osrm.org/route/v1/driving/' + origin.lon + ',' + origin.lat + ';' + target.lon + ',' + target.lat + '?overview=false&alternatives=false&steps=false';
+      const routeResponse = await fetch(routeUrl, { headers: { Accept: 'application/json' } });
+      if (!routeResponse.ok) throw new Error('route');
+      const route = await routeResponse.json();
+      if (!route.routes?.length) throw new Error('route');
+      if (requestId !== distanceRequest) return;
+      const oneWayKm = route.routes[0].distance / 1000;
+      byId('pc-distance-oneway').value = oneWayKm.toFixed(1);
+      if (status) {
+        status.className = 'is-success';
+        status.textContent = oneWayKm.toLocaleString('he-IL', { maximumFractionDigits: 1 }) + ' ק״מ לכיוון · ' + settings.warehouseLocation + ' ← ' + destination;
+      }
+      calculate();
+    } catch (_) {
+      if (requestId !== distanceRequest) return;
+      if (status) {
+        status.className = 'is-error';
+        status.textContent = 'לא הצלחנו לזהות מסלול. אפשר לנסות כתובת מדויקת יותר או להזין מרחק ידנית.';
+      }
+    } finally {
+      if (requestId === distanceRequest && button) button.disabled = false;
+    }
+  };
+
   window.pricingToggleSettings = function () {
     const panel = byId('pc-settings');
     if (!panel) return;
@@ -247,6 +299,7 @@
     settings = Object.assign({}, defaults);
     saveSettings();
     renderSettings();
+    if (byId('pc-profit-rate')) byId('pc-profit-rate').value = settings.markupRate;
     calculate();
   };
 
@@ -260,6 +313,16 @@
     if (pane.parentElement !== opsPage) opsPage.appendChild(pane);
     renderAddons();
     renderSettings();
+    byId('pc-profit-rate').value = settings.markupRate;
+    byId('pc-location').addEventListener('input', function () {
+      clearTimeout(distanceTimer);
+      const status = byId('pc-distance-status');
+      if (status) { status.className = ''; status.textContent = 'ממתין לסיום ההקלדה…'; }
+      if (this.value.trim().length >= 3) distanceTimer = setTimeout(window.pricingFindDistance, 850);
+    });
+    byId('pc-location').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') { event.preventDefault(); clearTimeout(distanceTimer); window.pricingFindDistance(); }
+    });
     pane.addEventListener('input', calculate);
     pane.addEventListener('change', calculate);
     initialized = true;
