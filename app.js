@@ -163,7 +163,10 @@ const fmt = n => '\u20aa' + Math.round(n).toLocaleString('he-IL');
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const getMonth = () => $('yearSel').value + '-' + $('monthSel').value.padStart(2, '0');
-const todayYmd = () => new Date().toISOString().slice(0, 10);
+const todayYmd = () => {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
 const txCashflowStatus = tx => tx.cashflow_status || 'paid';
 const txIsActual = tx => txCashflowStatus(tx) === 'paid';
 const txIsExpected = tx => txCashflowStatus(tx) === 'expected';
@@ -173,10 +176,13 @@ const getMonthDetails = (month) => {
   const m = month || getMonth();
   // התאריך הוא מקור האמת: אם קיים event_date — משייכים לפיו בלבד.
   // שדה month משמש רק כגיבוי לרשומות ישנות שאין להן תאריך.
-  const matching = cachedEventDetails.filter(d =>
-    d.event_date ? d.event_date.slice(0, 7) === m : d.month === m
-  );
-  // סנן כפילויות שנוצרו מבאג אזור-זמן: אותו שם + אותו מחיר + תאריכים סמוכים = אירוע אחד
+  const matching = cachedEventDetails.map(d => {
+    const googleDate = googleDateForDetail(d);
+    return googleDate && googleDate !== d.event_date
+      ? Object.assign({}, d, { event_date: googleDate, month: googleDate.slice(0, 7) })
+      : d;
+  }).filter(d => d.event_date ? d.event_date.slice(0, 7) === m : d.month === m);
+  // סנן רק כפילות אמיתית באותו יום. אירועים דומים בימים סמוכים יכולים להיות אירועים לגיטימיים.
   const seen = [];
   const unique = [];
   for (const d of matching) {
@@ -184,7 +190,7 @@ const getMonthDetails = (month) => {
       s.event_title === d.event_title &&
       (s.price || 0) === (d.price || 0) &&
       s.client_id === d.client_id &&
-      Math.abs(dateDiffDays(s.event_date, d.event_date)) <= 2
+      s.event_date === d.event_date
     );
     if (!dup) { seen.push(d); unique.push(d); }
   }
@@ -193,9 +199,21 @@ const getMonthDetails = (month) => {
 // מספר ימים בין שני תאריכים (מחזיר 999 אם אחד חסר, כדי שלא ייחשבו סמוכים)
 function dateDiffDays(a, b) {
   if (!a || !b) return 999;
-  const da = new Date(a.slice(0, 10)), db = new Date(b.slice(0, 10));
-  if (isNaN(da) || isNaN(db)) return 999;
-  return Math.round((da - db) / 86400000);
+  const ap = a.slice(0, 10).split('-').map(Number), bp = b.slice(0, 10).split('-').map(Number);
+  if (ap.length !== 3 || bp.length !== 3 || ap.some(isNaN) || bp.some(isNaN)) return 999;
+  return Math.round((Date.UTC(ap[0], ap[1] - 1, ap[2]) - Date.UTC(bp[0], bp[1] - 1, bp[2])) / 86400000);
+}
+
+// Google Calendar הוא מקור האמת לתאריך של אירוע מסונכרן. רשומות ישנות נשמרו לעיתים
+// יום מוקדם מדי בגלל UTC; מתקנים את התצוגה והשיוך לחודש בזיכרון בלבד, ללא כתיבה אוטומטית ל-DB.
+function googleDateForDetail(detail) {
+  if (!detail || detail.is_manual || !detail.event_title || !Array.isArray(gcalEvents)) return '';
+  const candidates = gcalEvents.filter(ev => ev.title === detail.event_title).map(ev => localDateStr(ev.start)).filter(Boolean);
+  if (!candidates.length) return '';
+  if (candidates.includes(detail.event_date)) return detail.event_date;
+  const near = candidates.map(date => ({ date, diff: Math.abs(dateDiffDays(date, detail.event_date)) }))
+    .filter(item => item.diff === 1).sort((a, b) => a.diff - b.diff);
+  return near.length ? near[0].date : '';
 }
 
 // ── EXPORT (Excel / PDF) ──
@@ -4498,7 +4516,9 @@ async function loadGCal(showLoading) {
     const data = await res.json();
     gcalConnected = !!data.connected;
     gcalEvents = Array.isArray(data.events) ? data.events : [];
-    renderEventsList();
+    // רנדר מלא לאחר טעינת Google כדי שגם טבלת החודש, התחזית והפירוט
+    // ישתמשו בתאריך Google המתוקן ולא בתאריך UTC ישן מהמסד.
+    renderAll();
     updateGCalButton();
   } catch (err) {
     if (!Array.isArray(gcalEvents)) gcalEvents = [];
@@ -4656,7 +4676,10 @@ async function openEditEventModal({ title, date, source, detailId }) {
   currentEditDetailId = detail ? detail.id : (detailId || null);
 
   // התאריך שמוצג: מהרשומה אם קיים, אחרת מה שהגיע מהיומן
-  const shownDate = (detail && detail.event_date) ? detail.event_date : (date || '');
+  // באירוע Google התאריך שהגיע מהיומן עדכני יותר מרשומה ישנה שנשמרה ב-UTC.
+  const shownDate = source === 'gcal'
+    ? (date || (detail && detail.event_date) || '')
+    : ((detail && detail.event_date) ? detail.event_date : (date || ''));
   currentEventDate = shownDate;
   const shownTitle = title || (detail && detail.event_title) || '';
 
