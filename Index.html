@@ -153,7 +153,6 @@
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
       <button class="tab" data-mode="business" data-page="ops" onclick="showPage('ops',this)">🎯 תפעול ואירועים</button>
-      <button class="tab" data-mode="business" data-page="pricing" onclick="showPage('pricing',this)">🧮 מחשבון תמחור</button>
       <button class="tab" data-mode="business" data-adminonly="1" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" data-mode="home" data-page="advisor" onclick="showPage('advisor',this)">💬 יועץ</button>
@@ -481,6 +480,7 @@
         <button class="ops-subtab active" id="ops-tab-events" onclick="setOpsTab('events')">🎯 אירועים</button>
         <button class="ops-subtab" id="ops-tab-employees" onclick="setOpsTab('employees')">👥 עובדים</button>
         <button class="ops-subtab" id="ops-tab-clients" onclick="setOpsTab('clients')">🤝 לקוחות</button>
+        <button class="ops-subtab" id="ops-tab-pricing" onclick="setOpsTab('pricing')">🧮 מחשבון תמחור</button>
       </div>
 
       <!-- אירועים -->
@@ -827,7 +827,7 @@
   </div>
 
     <!-- pricing calculator -->
-    <div id="page-pricing" class="page">
+    <div id="ops-pane-pricing" class="ops-pane pricing-ops-pane" style="display:none">
       <div class="pricing-shell">
         <header class="pricing-heading">
           <div>
@@ -914,7 +914,6 @@
     <button class="bnav-item active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="bnav-icon">📊</span>סיכום</button>
     <button class="bnav-item" onclick="showPage('transactions',this)" data-page="transactions"><span class="bnav-icon">💸</span>הכנסות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('ops',this)" data-page="ops"><span class="bnav-icon">🎯</span>תפעול</button>
-    <button class="bnav-item" data-mode="business" onclick="showPage('pricing',this)" data-page="pricing"><span class="bnav-icon">🧮</span>תמחור</button>
     <button class="bnav-item" data-mode="business" data-adminonly="1" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('advisor',this)" data-page="advisor"><span class="bnav-icon">💬</span>יועץ</button>

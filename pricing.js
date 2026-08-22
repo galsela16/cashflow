@@ -252,11 +252,16 @@
 
   window.initPricingCalculator = function () {
     if (initialized) { calculate(); return; }
-    if (!byId('page-pricing')) return;
+    const pane = byId('ops-pane-pricing');
+    const opsPage = byId('page-ops');
+    if (!pane || !opsPage) return;
+    // Keep the calculator physically inside Operations even though its large
+    // markup is placed later in index.html for a small, low-risk integration.
+    if (pane.parentElement !== opsPage) opsPage.appendChild(pane);
     renderAddons();
     renderSettings();
-    byId('page-pricing').addEventListener('input', calculate);
-    byId('page-pricing').addEventListener('change', calculate);
+    pane.addEventListener('input', calculate);
+    pane.addEventListener('change', calculate);
     initialized = true;
     calculate();
   };

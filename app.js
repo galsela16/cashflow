@@ -1064,7 +1064,7 @@ function updatePlanUI() {
 // basic: בית מלא + דשבורד/הכנסות/חשבונות מלא, השאר קריאה בלבד
 // trial/pro: הכל (חוץ מ-Profit First שהוא אדמין בלבד כרגע)
 // expired: חסום לגמרי עד תשלום
-const BASIC_FULL = ['dashboard', 'transactions', 'accounts', 'goals', 'pricing'];
+const BASIC_FULL = ['dashboard', 'transactions', 'accounts', 'goals'];
 const BASIC_READONLY = ['ops', 'equipment', 'alerts'];
 const ADMIN_ONLY_PAGES = ['profitfirst'];
 
@@ -4064,13 +4064,14 @@ function toggleMonthView() {
 
 // ── תתי-לשוניות: תפעול ואירועים ──
 function setOpsTab(which) {
-  const tabs = ['events', 'employees', 'clients'];
+  const tabs = ['events', 'employees', 'clients', 'pricing'];
   tabs.forEach(t => {
     const pane = $('ops-pane-' + t), btn = $('ops-tab-' + t);
     if (pane) pane.style.display = (t === which) ? 'block' : 'none';
     if (btn) btn.classList.toggle('active', t === which);
   });
   localStorage.setItem('cf_ops_tab', which);
+  if (which === 'pricing' && typeof initPricingCalculator === 'function') initPricingCalculator();
   // התוכן כבר מרונדר ע"י renderAll — כאן רק מציגים/מסתירים
 }
 
@@ -5522,7 +5523,6 @@ function showPage(id, el) {
   if (id === 'forecast') renderForecast();
   if (id === 'accounts') { renderAccounts(); loadSnapshots().then(renderReconcile); }
   if (id === 'advisor') renderAdvisor();
-  if (id === 'pricing' && typeof initPricingCalculator === 'function') initPricingCalculator();
   applyReadOnly();
 }
 
