@@ -153,6 +153,7 @@
       <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
       <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
       <button class="tab" data-mode="business" data-page="ops" onclick="showPage('ops',this)">🎯 תפעול ואירועים</button>
+      <button class="tab" data-mode="business" data-page="pricing" onclick="showPage('pricing',this)">🧮 מחשבון תמחור</button>
       <button class="tab" data-mode="business" data-adminonly="1" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
       <button class="tab" data-mode="home" data-page="advisor" onclick="showPage('advisor',this)">💬 יועץ</button>
@@ -825,10 +826,95 @@
     </div>
   </div>
 
+    <!-- pricing calculator -->
+    <div id="page-pricing" class="page">
+      <div class="pricing-shell">
+        <header class="pricing-heading">
+          <div>
+            <span class="pricing-kicker">תמחור מבוסס עלות</span>
+            <h1>מחשבון תמחור</h1>
+            <p>עלות אמיתית, מחיר מומלץ ורווחיות — לפי הלוגיקה של מחשבון ההגברה.</p>
+          </div>
+          <button class="pricing-settings-toggle" type="button" onclick="pricingToggleSettings()">⚙️ הגדרות חישוב</button>
+        </header>
+
+        <div class="pricing-layout">
+          <main class="pricing-form">
+            <section class="pricing-card">
+              <div class="pricing-card-head"><span class="pricing-step">1</span><div><h2>פרטי האירוע</h2><p>זמנים, פעולות וכמות אירועים זהים</p></div></div>
+              <div class="pricing-grid cols-3">
+                <label>שם / תיאור האירוע<input id="pc-event-name" type="text" placeholder="לדוגמה: הופעה במועדון" /></label>
+                <label>שעת הגעה למחסן<input id="pc-start" type="time" value="12:00" /></label>
+                <label>שעת סיום במחסן<input id="pc-end" type="time" value="22:00" /></label>
+                <label>מספר פעולות<input id="pc-actions" type="number" min="1" step="1" value="1" /></label>
+                <label>מספר אירועים<input id="pc-events" type="number" min="1" step="1" value="1" /></label>
+                <label>תנאי תשלום — שוטף + ימים<input id="pc-payment-days" type="number" min="0" step="1" value="0" /></label>
+              </div>
+              <div class="pricing-duration">משך עבודה מחושב: <strong id="pc-duration">10 שעות</strong></div>
+            </section>
+
+            <section class="pricing-card">
+              <div class="pricing-card-head"><span class="pricing-step">2</span><div><h2>צוות</h2><p>כמות אנשי צוות ועלות העבודה</p></div></div>
+              <div class="pricing-crew-list">
+                <div class="pricing-crew-row"><div><b>סאונדמן</b><small id="pc-sound-note">₪1,200 × פעולה</small></div><div class="qty-control"><button type="button" onclick="pricingStep('pc-sound',-1)">−</button><input id="pc-sound" type="number" min="0" step="1" value="2" /><button type="button" onclick="pricingStep('pc-sound',1)">+</button></div><strong id="pc-sound-cost">—</strong></div>
+                <div class="pricing-crew-row"><div><b>תאורן</b><small id="pc-light-note">₪1,200 ליומית</small></div><div class="qty-control"><button type="button" onclick="pricingStep('pc-light',-1)">−</button><input id="pc-light" type="number" min="0" step="1" value="0" /><button type="button" onclick="pricingStep('pc-light',1)">+</button></div><strong id="pc-light-cost">—</strong></div>
+                <div class="pricing-crew-row"><div><b>בקליינר</b><small id="pc-backline-note">₪50 לשעה × 1.2 · מינימום לפי האקסל</small></div><div class="qty-control"><button type="button" onclick="pricingStep('pc-backline',-1)">−</button><input id="pc-backline" type="number" min="0" step="1" value="0" /><button type="button" onclick="pricingStep('pc-backline',1)">+</button></div><strong id="pc-backline-cost">—</strong></div>
+              </div>
+            </section>
+
+            <section class="pricing-card">
+              <div class="pricing-card-head"><span class="pricing-step">3</span><div><h2>נסיעות ואוכל</h2><p>הזינו מרחק לכיוון אחד; המחשבון מכפיל להלוך־חזור</p></div></div>
+              <div class="pricing-grid cols-3">
+                <label>מקום האירוע<input id="pc-location" type="text" placeholder="שם המקום" /></label>
+                <label>מרחק לכיוון אחד (ק״מ)<input id="pc-distance-oneway" type="number" min="0" step="0.1" value="0" /></label>
+                <label class="pricing-check"><input id="pc-food-enabled" type="checkbox" checked /><span>העסק משלם אוכל לצוות</span></label>
+              </div>
+              <div class="pricing-inline-results"><span>נסיעה: <b id="pc-travel-cost">—</b></span><span>אוכל: <b id="pc-food-cost">—</b></span><span>תקורה ורכש: <b id="pc-overhead-cost">—</b></span></div>
+            </section>
+
+            <section class="pricing-card">
+              <div class="pricing-card-head"><span class="pricing-step">4</span><div><h2>ציוד ותוספות</h2><p>מחירי היחידה תואמים לברירות המחדל בגיליון</p></div></div>
+              <div id="pc-addons" class="pricing-addons"></div>
+              <div class="pricing-custom-addon">
+                <label>תוספת חופשית<input id="pc-custom-addon-name" type="text" placeholder="תיאור" /></label>
+                <label>סכום<input id="pc-custom-addon" type="number" min="0" step="1" value="0" /></label>
+              </div>
+            </section>
+
+            <section id="pc-settings" class="pricing-card pricing-settings" hidden>
+              <div class="pricing-card-head"><span class="pricing-step">⚙</span><div><h2>הגדרות חישוב</h2><p>ברירות המחדל משקפות את הקובץ; החריגות נשארות גלויות ומבודדות</p></div></div>
+              <div id="pc-settings-grid" class="pricing-grid cols-3"></div>
+              <div class="pricing-warning">הגיליון מציג מחיר כולל לפי 18% מע״מ, אך שורת סכום המע״מ עצמה משתמשת ב־17%. כאן שיעור המע״מ אחיד וברירת המחדל היא 18%. אומדן “רווח נקי אחרי מס” אינו חלק ממדדי הרווחיות הראשיים.</div>
+              <button class="pricing-link-button" type="button" onclick="pricingResetSettings()">איפוס לברירות המחדל של האקסל</button>
+            </section>
+          </main>
+
+          <aside class="pricing-summary" aria-live="polite">
+            <div class="pricing-summary-label">מחיר מומלץ ללקוח</div>
+            <strong class="pricing-recommended" id="pc-recommended">—</strong>
+            <span class="pricing-vat-line" id="pc-vat-line">לפני מע״מ</span>
+            <div class="pricing-summary-grid">
+              <div><span>עלות משוערת</span><b id="pc-total-cost">—</b></div>
+              <div><span>רווח</span><b id="pc-profit">—</b></div>
+              <div><span>רווחיות</span><b id="pc-margin">—</b></div>
+              <div><span>תוספת אשראי</span><b id="pc-interest">—</b></div>
+            </div>
+            <div class="pricing-breakdown" id="pc-breakdown"></div>
+            <label class="pricing-override-label">מחיר ידני לפני מע״מ<input id="pc-override" type="number" min="0" step="1" placeholder="השאירו ריק למחיר המומלץ" /></label>
+            <div id="pc-override-effect" class="pricing-override-effect" hidden></div>
+            <div class="pricing-total-vat"><span>סה״כ כולל מע״מ</span><strong id="pc-with-vat">—</strong></div>
+            <button class="pricing-primary-disabled" type="button" disabled title="שמירה תחובר בגרסה עתידית ללא שינוי סכמת DB">שמירת תמחור — בקרוב</button>
+            <p class="pricing-safe-note">החישוב מתבצע מקומית ואינו משנה נתונים ב־Supabase.</p>
+          </aside>
+        </div>
+      </div>
+    </div>
+
   <div class="bottom-nav">
     <button class="bnav-item active" onclick="showPage('dashboard',this)" data-page="dashboard"><span class="bnav-icon">📊</span>סיכום</button>
     <button class="bnav-item" onclick="showPage('transactions',this)" data-page="transactions"><span class="bnav-icon">💸</span>הכנסות</button>
     <button class="bnav-item" data-mode="business" onclick="showPage('ops',this)" data-page="ops"><span class="bnav-icon">🎯</span>תפעול</button>
+    <button class="bnav-item" data-mode="business" onclick="showPage('pricing',this)" data-page="pricing"><span class="bnav-icon">🧮</span>תמחור</button>
     <button class="bnav-item" data-mode="business" data-adminonly="1" onclick="showPage('profitfirst',this)" data-page="profitfirst"><span class="bnav-icon">🏦</span>Profit First</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('goals',this)" data-page="goals"><span class="bnav-icon">🐷</span>חיסכונות</button>
     <button class="bnav-item" data-mode="home" onclick="showPage('advisor',this)" data-page="advisor"><span class="bnav-icon">💬</span>יועץ</button>
@@ -1144,6 +1230,7 @@
   </div>
 </div>
 
+<script src="/pricing.js"></script>
 <script src="/app.js"></script>
 <script src="/pwa.js" defer></script>
 </body>

@@ -1064,7 +1064,7 @@ function updatePlanUI() {
 // basic: בית מלא + דשבורד/הכנסות/חשבונות מלא, השאר קריאה בלבד
 // trial/pro: הכל (חוץ מ-Profit First שהוא אדמין בלבד כרגע)
 // expired: חסום לגמרי עד תשלום
-const BASIC_FULL = ['dashboard', 'transactions', 'accounts', 'goals'];
+const BASIC_FULL = ['dashboard', 'transactions', 'accounts', 'goals', 'pricing'];
 const BASIC_READONLY = ['ops', 'equipment', 'alerts'];
 const ADMIN_ONLY_PAGES = ['profitfirst'];
 
@@ -5522,6 +5522,7 @@ function showPage(id, el) {
   if (id === 'forecast') renderForecast();
   if (id === 'accounts') { renderAccounts(); loadSnapshots().then(renderReconcile); }
   if (id === 'advisor') renderAdvisor();
+  if (id === 'pricing' && typeof initPricingCalculator === 'function') initPricingCalculator();
   applyReadOnly();
 }
 

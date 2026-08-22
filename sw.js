@@ -1,10 +1,11 @@
 // CashflowHQ Service Worker — network-first navigation, fast static fallback
-const CACHE = 'cashflowhq-v19';
+const CACHE = 'cashflowhq-v20-pricing';
 
 const CORE = [
   '/',
   '/styles.css',
   '/app.js',
+  '/pricing.js',
   '/pdf-font.js',
   '/pwa.js',
   '/manifest.webmanifest',
