@@ -150,8 +150,8 @@
 
     <!-- tabs (navigation) -->
     <div class="tabs">
-      <button class="tab active" onclick="showPage('dashboard',this)">📊 דשבורד</button>
-      <button class="tab" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
+      <button class="tab active" data-page="dashboard" onclick="showPage('dashboard',this)">📊 דשבורד</button>
+      <button class="tab" data-page="transactions" onclick="showPage('transactions',this)">💸 הכנסות/הוצאות</button>
       <button class="tab" data-mode="business" data-page="ops" onclick="showPage('ops',this)">🎯 תפעול ואירועים</button>
       <button class="tab" data-mode="business" data-adminonly="1" onclick="showPage('profitfirst',this)">🏦 Profit First</button>
       <button class="tab" data-mode="home" onclick="showPage('goals',this)">🐷 חיסכונות</button>
@@ -159,7 +159,7 @@
       <button class="tab" data-mode="business" onclick="showPage('equipment',this)">📈 השקעות לעסק</button>
       <button class="tab" data-mode="business" data-page="forecast" onclick="showPage('forecast',this)">🔮 תכנון עתידי</button>
       <button class="tab" data-page="accounts" onclick="showPage('accounts',this)">💳 מצב חשבונות</button>
-      <button class="tab" data-mode="business" onclick="showPage('alerts',this)">🔔 התראות</button>
+      <button class="tab" data-mode="business" data-page="alerts" onclick="showPage('alerts',this)">🔔 התראות</button>
     </div>
 
     <!-- dashboard -->
@@ -197,7 +197,7 @@
             <h1>הכסף שלך, במבט אחד</h1>
             <p id="overview-updated">מבוסס על הנתונים המעודכנים בחשבון</p>
           </div>
-          <button class="overview-action" onclick="showPage('transactions',document.querySelector('.tab[onclick*=\"transactions\"]'))">הוספת תנועה <span>＋</span></button>
+          <button class="overview-action" onclick="showPage('transactions',document.querySelector('.tab[data-page=transactions]'))">הוספת תנועה <span>＋</span></button>
         </div>
 
         <div class="overview-kpis">
@@ -270,7 +270,7 @@
           <section class="overview-panel attention-panel" id="today-attention">
             <div class="overview-panel-head">
               <div><h2>דורש טיפול היום</h2><p>הפעולות שהכי חשוב לסגור</p></div>
-              <button class="panel-link" onclick="showPage('alerts',document.querySelector('.tab[onclick*=\"alerts\"]'))">כל ההתראות</button>
+              <button class="panel-link" onclick="showPage('alerts',document.querySelector('.tab[data-page=alerts]'))">כל ההתראות</button>
             </div>
             <div id="biz-attention-list" class="attention-list"><div class="empty">בודק מה דורש טיפול…</div></div>
           </section>
