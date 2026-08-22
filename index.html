@@ -231,26 +231,33 @@
           <div class="sheet-scroll" tabindex="0" aria-label="טבלת סיכום כספי לחודש">
             <table class="finance-sheet">
               <thead><tr>
-                <th class="sheet-income">נכנס מלקוחות</th>
-                <th class="sheet-income-soft">צפוי מלקוחות</th>
-                <th class="sheet-expense">הוצאות עסק</th>
-                <th class="sheet-payroll">שכר ששולם</th>
-                <th class="sheet-payroll-soft">שכר ממתין</th>
-                <th class="sheet-tax">מס צפוי</th>
-                <th class="sheet-total">צפי רווח</th>
+                <th class="sheet-income"><button class="sheet-head-btn" onclick="openSheetBreakdown('income')">נכנס מלקוחות <span>⌄</span></button></th>
+                <th class="sheet-income-soft"><button class="sheet-head-btn" onclick="openSheetBreakdown('pending-income')">צפוי מלקוחות <span>⌄</span></button></th>
+                <th class="sheet-expense"><button class="sheet-head-btn" onclick="openSheetBreakdown('expense')">הוצאות עסק <span>⌄</span></button></th>
+                <th class="sheet-payroll"><button class="sheet-head-btn" onclick="openSheetBreakdown('salary')">שכר ששולם <span>⌄</span></button></th>
+                <th class="sheet-payroll-soft"><button class="sheet-head-btn" onclick="openSheetBreakdown('pending-salary')">שכר ממתין <span>⌄</span></button></th>
+                <th class="sheet-tax"><button class="sheet-head-btn" onclick="openSheetBreakdown('tax')">מס צפוי <span>⌄</span></button></th>
+                <th class="sheet-total"><button class="sheet-head-btn" onclick="openSheetBreakdown('profit')">צפי רווח <span>⌄</span></button></th>
               </tr></thead>
               <tbody><tr>
-                <td id="sheet-income">—</td>
-                <td id="sheet-pending-income">—</td>
-                <td id="sheet-expense">—</td>
-                <td id="sheet-salary">—</td>
-                <td id="sheet-pending-salary">—</td>
-                <td id="sheet-tax">—</td>
-                <td id="sheet-profit">—</td>
+                <td><button class="sheet-value-btn" onclick="openSheetBreakdown('income')"><span id="sheet-income">—</span><small>לחץ לפירוט</small></button></td>
+                <td><button class="sheet-value-btn" onclick="openSheetBreakdown('pending-income')"><span id="sheet-pending-income">—</span><small>לחץ לפירוט</small></button></td>
+                <td><button class="sheet-value-btn" onclick="openSheetBreakdown('expense')"><span id="sheet-expense">—</span><small>לחץ לפירוט</small></button></td>
+                <td><button class="sheet-value-btn" onclick="openSheetBreakdown('salary')"><span id="sheet-salary">—</span><small>לחץ לפירוט</small></button></td>
+                <td><button class="sheet-value-btn" onclick="openSheetBreakdown('pending-salary')"><span id="sheet-pending-salary">—</span><small>לחץ לפירוט</small></button></td>
+                <td><button class="sheet-value-btn" onclick="openSheetBreakdown('tax')"><span id="sheet-tax">—</span><small>לחץ לפירוט</small></button></td>
+                <td><button class="sheet-value-btn" onclick="openSheetBreakdown('profit')"><span id="sheet-profit">—</span><small>לחץ לפירוט</small></button></td>
               </tr></tbody>
             </table>
           </div>
           <div class="sheet-legend"><span><i class="legend-income"></i> הכנסות</span><span><i class="legend-expense"></i> הוצאות</span><span><i class="legend-payroll"></i> עובדים</span><span><i class="legend-tax"></i> מס</span></div>
+          <div class="sheet-breakdown" id="sheet-breakdown" data-type="" hidden>
+            <div class="sheet-breakdown-head">
+              <div><strong id="sheet-breakdown-title">פירוט</strong><span id="sheet-breakdown-sub"></span></div>
+              <button type="button" onclick="closeSheetBreakdown()" aria-label="סגירת הפירוט">✕</button>
+            </div>
+            <div id="sheet-breakdown-list"></div>
+          </div>
         </section>
 
         <div class="overview-grid">
