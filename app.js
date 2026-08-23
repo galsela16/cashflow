@@ -1376,6 +1376,38 @@ function computeShiftHours(start, end) {
 }
 function fmtHours(h) { return (Math.round(h * 100) / 100).toLocaleString('he-IL') + ' שע׳'; }
 
+function shiftHoursValue(startId, endId, hoursId) {
+  const manual = parseFloat($(hoursId) ? $(hoursId).value : '');
+  if (!isNaN(manual) && manual > 0) return Math.round(manual * 100) / 100;
+  return computeShiftHours($(startId) ? $(startId).value : '', $(endId) ? $(endId).value : '');
+}
+
+function shiftTimeChanged() {
+  if ($('sh-hours') && (($('sh-start') && $('sh-start').value) || ($('sh-end') && $('sh-end').value))) $('sh-hours').value = '';
+  shiftPreview();
+}
+
+function shiftManualHoursChanged() {
+  if ($('sh-hours') && $('sh-hours').value) {
+    if ($('sh-start')) $('sh-start').value = '';
+    if ($('sh-end')) $('sh-end').value = '';
+  }
+  shiftPreview();
+}
+
+function editShiftTimeChanged(id) {
+  const hours = $('she-hours-' + id);
+  const start = $('she-start-' + id), end = $('she-end-' + id);
+  if (hours && ((start && start.value) || (end && end.value))) hours.value = '';
+}
+
+function editShiftManualHoursChanged(id) {
+  const hours = $('she-hours-' + id);
+  if (!hours || !hours.value) return;
+  if ($('she-start-' + id)) $('she-start-' + id).value = '';
+  if ($('she-end-' + id)) $('she-end-' + id).value = '';
+}
+
 // החלפה בין בחירת מעסיק קיים לבין הזנת מעסיק חדש
 function onEmployerSelect() {
   const sel = $('sh-employer-select'), inp = $('sh-employer');
@@ -1409,20 +1441,22 @@ async function addShift() {
   const employer = currentEmployerValue();
   const date = $('sh-date').value;
   const start = $('sh-start').value, end = $('sh-end').value;
+  const manualHours = parseFloat($('sh-hours').value);
   const rate = parseFloat($('sh-rate').value);
   const notes = $('sh-notes').value.trim();
   if (!employer) { alert('נא לבחור או להזין מעסיק'); return; }
-  if (!start || !end) { alert('נא למלא שעת התחלה וסיום'); return; }
-  const hours = computeShiftHours(start, end);
-  if (hours <= 0) { alert('טווח השעות אינו תקין'); return; }
+  const hasManualHours = !isNaN(manualHours) && manualHours > 0;
+  if (!hasManualHours && (!start || !end)) { alert('נא למלא שעת התחלה וסיום, או להזין מספר שעות'); return; }
+  const hours = hasManualHours ? Math.round(manualHours * 100) / 100 : computeShiftHours(start, end);
+  if (hours <= 0) { alert('מספר השעות או טווח השעות אינם תקינים'); return; }
   if (isNaN(rate) || rate < 0) { alert('נא למלא תעריף תקין'); return; }
   $('btn-add-shift').disabled = true;
   await sb.from('home_shifts').insert({
     user_id: currentUser.id, month: getMonth(), employer,
-    shift_date: date || null, start_time: start, end_time: end, hours, rate, notes: notes || null
+    shift_date: date || null, start_time: hasManualHours ? null : start, end_time: hasManualHours ? null : end, hours, rate, notes: notes || null
   });
   lastEmployer = employer; // שמור את המעסיק שנבחר להזנה הבאה
-  $('sh-notes').value = ''; $('sh-start').value = ''; $('sh-end').value = '';
+  $('sh-notes').value = ''; $('sh-start').value = ''; $('sh-end').value = ''; $('sh-hours').value = '';
   $('btn-add-shift').disabled = false;
   await loadShifts();
   renderShifts();
@@ -1434,13 +1468,15 @@ async function saveShift(id) {
   const employer = $('she-employer-' + id).value.trim();
   const date = $('she-date-' + id).value;
   const start = $('she-start-' + id).value, end = $('she-end-' + id).value;
+  const manualHours = parseFloat($('she-hours-' + id).value);
   const rate = parseFloat($('she-rate-' + id).value);
   const notes = $('she-notes-' + id).value.trim();
-  if (!employer || !start || !end || isNaN(rate) || rate < 0) { alert('נתונים לא תקינים'); return; }
-  const hours = computeShiftHours(start, end);
-  if (hours <= 0) { alert('טווח השעות אינו תקין'); return; }
+  const hasManualHours = !isNaN(manualHours) && manualHours > 0;
+  if (!employer || (!hasManualHours && (!start || !end)) || isNaN(rate) || rate < 0) { alert('נתונים לא תקינים'); return; }
+  const hours = hasManualHours ? Math.round(manualHours * 100) / 100 : computeShiftHours(start, end);
+  if (hours <= 0) { alert('מספר השעות או טווח השעות אינם תקינים'); return; }
   await sb.from('home_shifts').update({
-    employer, shift_date: date || null, start_time: start, end_time: end, hours, rate, notes: notes || null
+    employer, shift_date: date || null, start_time: hasManualHours ? null : start, end_time: hasManualHours ? null : end, hours, rate, notes: notes || null
   }).eq('id', id).eq('user_id', currentUser.id);
   editingShiftId = null;
   await loadShifts();
@@ -1475,7 +1511,7 @@ function toggleShiftsPanel() {  const wrap = $('sh-panel-wrap'), chev = $('sh-ch
 }
 
 function shiftPreview() {
-  const h = computeShiftHours($('sh-start') ? $('sh-start').value : '', $('sh-end') ? $('sh-end').value : '');
+  const h = shiftHoursValue('sh-start', 'sh-end', 'sh-hours');
   const r = parseFloat($('sh-rate') ? $('sh-rate').value : '') || 0;
   if ($('sh-preview-hours')) $('sh-preview-hours').textContent = fmtHours(h);
   if ($('sh-preview-val')) $('sh-preview-val').textContent = fmt(h * r);
@@ -1554,7 +1590,7 @@ function renderShifts() {
       return '<tr>' +
         '<td><input id="she-employer-' + s.id + '" value="' + esc(s.employer || '') + '" style="' + inp + '"></td>' +
         '<td><input id="she-date-' + s.id + '" type="date" value="' + esc(s.shift_date || '') + '" style="' + inp + '"></td>' +
-        '<td><div style="display:flex;gap:4px"><input id="she-start-' + s.id + '" type="time" value="' + esc(s.start_time || '') + '" style="' + inp + '"><input id="she-end-' + s.id + '" type="time" value="' + esc(s.end_time || '') + '" style="' + inp + '"></div></td>' +
+        '<td><div style="display:grid;gap:4px"><div style="display:flex;gap:4px"><input id="she-start-' + s.id + '" type="time" value="' + esc(s.start_time || '') + '" oninput="editShiftTimeChanged(\'' + s.id + '\')" style="' + inp + '"><input id="she-end-' + s.id + '" type="time" value="' + esc(s.end_time || '') + '" oninput="editShiftTimeChanged(\'' + s.id + '\')" style="' + inp + '"></div><input id="she-hours-' + s.id + '" type="number" min="0.01" step="0.25" placeholder="מספר שעות" value="' + ((!s.start_time || !s.end_time) ? (Number(s.hours) || '') : '') + '" oninput="editShiftManualHoursChanged(\'' + s.id + '\')" style="' + inp + '"></div></td>' +
         '<td><input id="she-rate-' + s.id + '" type="number" value="' + (Number(s.rate) || 0) + '" style="' + inp + '"></td>' +
         '<td><input id="she-notes-' + s.id + '" value="' + esc(s.notes || '') + '" style="' + inp + '"></td>' +
         '<td style="color:var(--muted)">—</td>' +

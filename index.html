@@ -415,8 +415,9 @@
                 <input id="sh-employer" placeholder="שם מעסיק חדש" style="margin-top:8px;display:none">
               </div>
               <div><label>תאריך</label><input id="sh-date" type="date"></div>
-              <div><label>משעה</label><input id="sh-start" type="time" oninput="shiftPreview()"></div>
-              <div><label>עד שעה</label><input id="sh-end" type="time" oninput="shiftPreview()"></div>
+              <div><label>משעה</label><input id="sh-start" type="time" oninput="shiftTimeChanged()"></div>
+              <div><label>עד שעה</label><input id="sh-end" type="time" oninput="shiftTimeChanged()"></div>
+              <div class="sh-manual-hours"><label>או מספר שעות</label><input id="sh-hours" type="number" min="0.01" step="0.25" placeholder="לדוגמה 5.5" oninput="shiftManualHoursChanged()"><small>ללא שעת התחלה וסיום</small></div>
               <div><label>תעריף לשעה (₪)</label><input id="sh-rate" type="number" value="50" oninput="shiftPreview()"></div>
               <div><label>הערה (לא חובה)</label><input id="sh-notes" placeholder="סופ״ש / שעות נוספות"></div>
               <button class="btn btn-primary" id="btn-add-shift" onclick="addShift()" style="height:42px">הוסף משמרת</button>
