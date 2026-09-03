@@ -1,5 +1,5 @@
 // CashflowHQ Service Worker — network-first navigation, fast static fallback
-const CACHE = 'cashflowhq-v27-manual-shift-hours';
+const CACHE = 'cashflowhq-v255-payment-edit';
 
 const CORE = [
   '/',
@@ -49,7 +49,22 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Cache-first for local static assets, refresh quietly in the background.
+  // קבצי האפליקציה הקריטיים הם network-first כדי שרענון אחרי Deploy
+  // לא ימשיך להריץ JavaScript ישן מתוך ה-PWA cache.
+  const critical = ['/app.js', '/pricing.js', '/styles.css', '/pwa.js'];
+  if (critical.includes(url.pathname)) {
+    e.respondWith(
+      fetch(req, { cache: 'no-store' })
+        .then((res) => {
+          if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // שאר הנכסים המקומיים: cache-first עם רענון ברקע.
   e.respondWith(
     caches.match(req).then((cached) => {
       const fresh = fetch(req).then((res) => {

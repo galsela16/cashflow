@@ -27,7 +27,7 @@
     markupRate: 45,
     annualInterestRate: 7.5,
     vatRate: 18,
-    applyActionsToLighting: false,
+    applyActionsToLighting: true,
     stageMinimum: 1500,
     stageDelivery: 1800
   });

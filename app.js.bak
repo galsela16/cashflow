@@ -1,4 +1,4 @@
-const APP_VERSION = '2.5.5';
+const APP_VERSION = '2.4.8';
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
@@ -171,64 +171,6 @@ const txCashflowStatus = tx => tx.cashflow_status || 'paid';
 const txIsActual = tx => txCashflowStatus(tx) === 'paid';
 const txIsExpected = tx => txCashflowStatus(tx) === 'expected';
 const txCashflowDate = tx => tx.expected_date || (tx.created_at ? tx.created_at.slice(0, 10) : getMonth() + '-01');
-
-// תנועות פנימיות שמייצגות תקבולים מאירועים בתוך יומן הבנק.
-// הן משתתפות ביתרת החשבון, אך מוסתרות מרשימת העסקאות והדוחות כדי לא לספור
-// את אותה הכנסה פעמיים (האירוע עצמו כבר נספר בהכנסות העסק).
-const EVENT_RECEIPT_CATEGORY = '__cf_event_receipt__';
-const EVENT_RECEIPT_PREFIX = '__CF_EVENT_RECEIPT__:';
-const isEventReceiptMovement = tx => !!tx && (tx.category === EVENT_RECEIPT_CATEGORY || String(tx.description || '').startsWith(EVENT_RECEIPT_PREFIX));
-const visibleTransactions = rows => (rows || []).filter(tx => !isEventReceiptMovement(tx));
-const eventReceiptDescription = detail => EVENT_RECEIPT_PREFIX + detail.id;
-const eventReceiptIdFromMovement = tx => String((tx && tx.description) || '').startsWith(EVENT_RECEIPT_PREFIX)
-  ? String(tx.description).slice(EVENT_RECEIPT_PREFIX.length) : '';
-const movementDisplayName = tx => {
-  if (!isEventReceiptMovement(tx)) return tx && tx.description ? tx.description : 'תנועה';
-  const id = eventReceiptIdFromMovement(tx);
-  const event = cachedEventDetails.find(detail => detail.id === id);
-  return event ? 'תקבול אירוע · ' + (event.event_title || 'אירוע') : 'תקבול מאירוע';
-};
-
-// גיבוי ישיר לתקבולי אירועים: אם מסיבה כלשהי תנועת הבנק הפנימית לא נוצרה
-// (למשל RLS/סכמה ישנה), היתרה עדיין תדע על הכסף שהתקבל באירוע.
-// הרשומות הווירטואליות משמשות רק לחישוב יתרות ולא נכנסות לרשימת העסקאות.
-function effectiveEventPaidAmount(event) {
-  if (!event) return 0;
-  const price = Math.max(0, Number(event.price) || 0);
-  // סטטוס 'בוצע תשלום' הוא מקור אמת לתשלום מלא גם ברשומות ישנות שבהן paid_amount נשאר 0.
-  if (mvIsPaid(event.status)) return price;
-  return Math.max(0, Math.min(Number(event.paid_amount) || 0, price || Number(event.paid_amount) || 0));
-}
-
-function virtualEventReceiptMovements() {
-  if (appMode !== 'business') return [];
-  const existingIds = new Set((cachedMovements || []).map(eventReceiptIdFromMovement).filter(Boolean));
-  const fallbackAccount = defaultAccountFor('business');
-  return (cachedEventDetails || []).flatMap(event => {
-    if (existingIds.has(event.id)) return [];
-    const price = Math.max(0, Number(event.price) || 0);
-    const paidAmount = effectiveEventPaidAmount(event);
-    if (paidAmount <= 0) return [];
-    const paidDate = String(event.paid_at || event.updated_at || event.event_date || todayYmd()).slice(0, 10);
-    return [{
-      id: 'virtual-event-' + event.id,
-      account_id: fallbackAccount,
-      amount: paidAmount,
-      type: 'income',
-      description: eventReceiptDescription(event),
-      category: EVENT_RECEIPT_CATEGORY,
-      expected_date: paidDate,
-      cashflow_status: 'paid',
-      paid_at: paidDate,
-      created_at: event.updated_at || null,
-      _virtual_event_receipt: true
-    }];
-  });
-}
-
-function balanceMovements() {
-  return (cachedMovements || []).concat(virtualEventReceiptMovements());
-}
 // מחזיר את פרטי האירועים של החודש הנבחר (משותף לכמה פונקציות)
 const getMonthDetails = (month) => {
   const m = month || getMonth();
@@ -286,26 +228,24 @@ document.addEventListener('click', function(e) {
 function collectReportData() {
   const month = getMonth();
   const monthTx = cachedTx.filter(t => t.month === month);
-  // דוח חודשי = ביצוע בפועל בלבד. תנועות שמסומנות "צפוי" שייכות לתחזית ולא לדוח הביצוע.
-  const txIncome = monthTx.filter(t => t.type === 'income' && txIsActual(t));
-  const expense = monthTx.filter(t => t.type === 'expense' && txIsActual(t));
+  const txIncome = monthTx.filter(t => t.type === 'income');
+  const expense = monthTx.filter(t => t.type === 'expense');
   const monthDetails = getMonthDetails();
   const monthDetailIds = monthDetails.map(d => d.id);
   // הכנסות מאירועים ששולמו (כמו בדשבורד) — נספרות כהכנסה
   const isPaid = s => s === 'בוצע תשלום' || s === 'בוצע תשלום + חשבונית מס';
-  const paidEvents = monthDetails.filter(d => d.price > 0 && (isPaid(d.status) || Number(d.paid_amount) > 0));
-  // רשימת הכנסות מאוחדת: עסקאות income שבוצעו + הסכום שבאמת התקבל מאירועים.
+  const paidEvents = monthDetails.filter(d => d.price > 0 && isPaid(d.status));
+  // רשימת הכנסות מאוחדת: עסקאות income + אירועים ששולמו
   const income = [
-    ...txIncome.map(t => ({ description: t.description, category: t.category || '', amount: Number(t.amount) || 0, status: 'בוצע' })),
+    ...txIncome.map(t => ({ description: t.description, category: t.category || '', amount: t.amount })),
     ...paidEvents.map(d => {
       const c = cachedClients.find(cl => cl.id === d.client_id);
-      const received = isPaid(d.status) ? (Number(d.price) || 0) : Math.min(Number(d.paid_amount) || 0, Number(d.price) || 0);
-      return { description: d.event_title || 'אירוע', category: c ? c.name : 'אירוע', amount: received, status: isPaid(d.status) ? 'שולם' : 'תשלום חלקי' };
-    }).filter(row => row.amount > 0)
+      return { description: d.event_title || 'אירוע', category: c ? c.name : 'אירוע', amount: d.price || 0 };
+    })
   ];
-  // תשלומי עובדים בדוח הביצוע: רק מה ששולם בפועל.
-  const empPays = cachedEmpEvents.filter(e => (e.month === month || (e.date && e.date.slice(0,7) === month)) && e.status === 'שולם');
-  const workerPays = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === 'שולם');
+  // תשלומי עובדים
+  const empPays = cachedEmpEvents.filter(e => e.month === month || (e.date && e.date.slice(0,7) === month));
+  const workerPays = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id));
   // סיכומים
   const totalIncome = income.reduce((s, t) => s + t.amount, 0);
   const totalExpense = expense.reduce((s, t) => s + t.amount, 0);
@@ -1679,13 +1619,10 @@ async function loadAll() {
   // ── מצב בית: טען רק עסקאות בית + קבועות בית ──
   if (appMode === 'home') {
     const txR = await sb.from('home_transactions').select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false });
-    cachedTx = visibleTransactions(txR.data || []);
+    cachedTx = txR.data || [];
     // אין אירועים/עובדים/לקוחות במצב בית
     cachedEmps = []; cachedEmpEvents = []; cachedClients = []; cachedEventDetails = []; cachedEventWorkers = [];
-    // חשבונות ותנועות חייבים להיות מוכנים לפני הרינדור, אחרת ״זמין עכשיו״ יכול להציג נתון ישן.
     await fetchAccounts();
-    await backfillAccountLinks();
-    await loadMovements();
     await autoImportRecurring(month, uid, cachedTx);
     await loadSalaries();
     await loadGoalDeposits();
@@ -1695,8 +1632,7 @@ async function loadAll() {
     await loadShifts();
     await loadCashflow30();
     renderShifts();
-    populateAccountSelect();
-    renderAccounts();
+    loadAccounts();
     loadSnapshots();
     renderHome();
     return;
@@ -1709,7 +1645,7 @@ async function loadAll() {
     sb.from('clients').select('*').eq('user_id', uid).order('name'),
     sb.from('event_details').select('*').eq('user_id', uid).order('event_date', { ascending: false })
   ]);
-  cachedTx = visibleTransactions(txR.data || []); cachedEmps = empR.data || []; cachedEmpEvents = evR.data || [];
+  cachedTx = txR.data || []; cachedEmps = empR.data || []; cachedEmpEvents = evR.data || [];
   cachedClients = clientR.data || []; cachedEventDetails = detailR.data || [];
   // event_workers מסונן לפי האירועים של המשתמש בלבד (אבטחה + ביצועים)
   const detailIds = cachedEventDetails.map(d => d.id);
@@ -1720,13 +1656,7 @@ async function loadAll() {
     cachedEventWorkers = [];
   }
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
-  // חשוב: משייכים רשומות ישנות וטוענים את התנועות לפני renderAll,
-  // כדי ש״זמין עכשיו״ יתבסס על הנתונים העדכניים כבר ברינדור הראשון אחרי רענון.
   await fetchAccounts();
-  // תקבול שסומן בתוך אירוע הוא כסף אמיתי שנכנס לבנק. מסנכרנים אותו לתנועת
-  // בנק פנימית לפני חישוב ״זמין עכשיו״, בלי להציג/לספור אותו שוב בדוחות.
-  await syncEventPaymentMovements();
-  await backfillAccountLinks();
   await loadMovements();
   await autoImportRecurring(month, uid, cachedTx);
   await loadCashflow30();
@@ -1734,8 +1664,7 @@ async function loadAll() {
   // טען השקעות לעסק
   loadEquipment();
   cleanupOldEventFiles(); // ניקוי קבצים של אירועים שעברו (רקע)
-  populateAccountSelect();
-  renderAccounts();
+  loadAccounts();
   loadSnapshots();
   // סנכרון יומן גוגל אוטומטי ברקע (לא מעכב את שאר הטעינה)
   loadGCal();
@@ -1763,7 +1692,6 @@ async function loadCashflow30() {
       forecastSourceTx = Array.from(byId.values());
     }
     forecastSourceTx.forEach(tx => {
-      if (isEventReceiptMovement(tx)) return;
       // תנועה שכבר בוצעה שייכת ליתרה בפועל ולא לתחזית העתידית.
       // בעבר כל תנועות העסק הוכנסו לכאן מחדש כ״צפויות״, מה שיכול היה לנפח
       // את תחזית 30/91 הימים ולהציג כסף שכבר נכנס או יצא פעם נוספת.
@@ -1786,7 +1714,7 @@ async function loadCashflow30() {
       const correctedMonth = correctedEventDate ? correctedEventDate.slice(0, 7) : eventMonth;
       const forecastDate = event.expected_payment_date || nextMonthCashflowDate(correctedMonth, 10);
       if (!inWindow(forecastDate) || mvIsPaid(event.status) || remaining <= 0) return;
-      rows.push({ id: 'event-' + event.id, event_id: event.id, description: event.event_title || 'אירוע', amount: remaining, type: 'income', expected_date: forecastDate, cashflow_status: 'expected' });
+      rows.push({ id: 'event-' + event.id, description: event.event_title || 'אירוע', amount: remaining, type: 'income', expected_date: forecastDate, cashflow_status: 'expected' });
     });
 
     // גם שכר שטרם שולם הוא הוצאה צפויה ב-15 בחודש הבא.
@@ -1829,7 +1757,7 @@ function renderCashflow30() {
   $('cf30-change').style.color = change >= 0 ? 'var(--green)' : 'var(--red)';
   $('cf30-net').textContent = rows.length ? rows.length + ' תנועות צפויות' : 'אין תנועות צפויות';
   $('cf30-list').innerHTML = rows.length
-    ? rows.slice(0, 6).map(tx => '<div class="cf30-row"' + (tx.event_id ? ' style="cursor:pointer" onclick="openSheetEvent(\'' + tx.event_id + '\')" title="עריכת אירוע"' : '') + '><span class="cf30-date">' + esc(txCashflowDate(tx)) + '</span><span>' + esc(tx.description || '') + (tx.event_id ? ' <small style="color:var(--blue);font-weight:700">✎ עריכה</small>' : '') + '</span><span class="cf30-amount" style="color:' + (tx.type === 'income' ? 'var(--green)' : 'var(--red)') + '">' + (tx.type === 'income' ? '+' : '−') + fmt(tx.amount || 0) + '</span></div>').join('')
+    ? rows.slice(0, 6).map(tx => '<div class="cf30-row"><span class="cf30-date">' + esc(txCashflowDate(tx)) + '</span><span>' + esc(tx.description || '') + '</span><span class="cf30-amount" style="color:' + (tx.type === 'income' ? 'var(--green)' : 'var(--red)') + '">' + (tx.type === 'income' ? '+' : '−') + fmt(tx.amount || 0) + '</span></div>').join('')
     : '<div class="empty" style="padding:10px 0">הוסיפו רשומה וסמנו אותה כ״צפוי״ כדי לראות כאן את התזרים העתידי.</div>';
 }
 
@@ -1873,30 +1801,6 @@ function renderCashflow13Weeks(fallbackBalance) {
       '<span class="c-red">' + (week.expense ? '−' + fmt(week.expense) : '—') + '</span><span class="cf13-close">' + fmt(week.closing) + '</span></div>').join('');
 }
 
-// תנועות שבוצעו אך לא שויכו לחשבון: הן עדיין כסף אמיתי של העסק.
-// כדי לא לספור היסטוריה שכבר כלולה ביתרות העוגן, מצרפים רק תנועות שנוצרו
-// אחרי העוגן המאוחר ביותר של חשבונות העסק.
-function unassignedActualMovementsSinceAnchor(accounts) {
-  const list = (accounts || []).filter(Boolean);
-  if (!list.length) return [];
-  const anchorTimes = list.map(a => a.anchor_date ? new Date(a.anchor_date).getTime() : 0).filter(t => Number.isFinite(t) && t > 0);
-  const latestAnchor = anchorTimes.length ? Math.max(...anchorTimes) : 0;
-  const latestAnchorDay = latestAnchor ? new Date(latestAnchor).toISOString().slice(0, 10) : '';
-  return balanceMovements().filter(m => {
-    if (!m || !txIsActual(m) || m.account_id) return false;
-    const created = m.created_at ? new Date(m.created_at).getTime() : 0;
-    const paidDay = m.paid_at ? String(m.paid_at).slice(0, 10) : '';
-    if (!latestAnchor) return false; // בלי עוגן אי אפשר לדעת אם ההיסטוריה כבר בתוך היתרה.
-    return (created && created > latestAnchor) || (paidDay && paidDay > latestAnchorDay);
-  });
-}
-function unassignedActualDeltaSinceAnchor(accounts) {
-  return unassignedActualMovementsSinceAnchor(accounts).reduce((sum, m) => {
-    const amount = Number(m.amount) || 0;
-    return sum + (m.type === 'income' ? amount : -amount);
-  }, 0);
-}
-
 // תמונת מצב עסקית: ארבע התשובות שצריך לקבל בתוך שניות.
 // החישוב משתמש רק בנתונים שכבר נטענו ואינו מוסיף שאילתות או משנה את מבנה המסד.
 function renderBusinessOverview(net, pendingIncome, pendingExpense, pendingSalary) {
@@ -1905,9 +1809,8 @@ function renderBusinessOverview(net, pendingIncome, pendingExpense, pendingSalar
 
   const businessAccounts = cachedAccounts.filter(a => (a.scope || 'business') === 'business');
   const hasAccounts = businessAccounts.length > 0;
-  const unassignedDelta = hasAccounts ? unassignedActualDeltaSinceAnchor(businessAccounts) : 0;
   const available = hasAccounts
-    ? businessAccounts.reduce((sum, account) => sum + derivedBalance(account), 0) + unassignedDelta
+    ? businessAccounts.reduce((sum, account) => sum + derivedBalance(account), 0)
     : net;
 
   const today = todayYmd();
@@ -1927,11 +1830,7 @@ function renderBusinessOverview(net, pendingIncome, pendingExpense, pendingSalar
   setOverviewMoney('biz-available-now', available);
   setOverviewMoney('biz-eom-balance', available + eomChange);
   setOverviewMoney('biz-cf30-net', cf30Net, true);
-  const unassignedRecent = hasAccounts ? unassignedActualMovementsSinceAnchor(businessAccounts) : [];
-  const unassignedAll = hasAccounts ? balanceMovements().filter(m => txIsActual(m) && !m.account_id).length : 0;
-  $('biz-available-note').textContent = hasAccounts
-    ? (businessAccounts.length + ' חשבונות · לחצו לפירוט · רק תנועות שבוצעו בפועל' + (unassignedRecent.length ? ' · +' + fmt(Math.max(0, unassignedDelta)).replace('₪','₪') + ' ללא שיוך נכללו' : (unassignedAll ? ' · ⚠️ ' + unassignedAll + ' תנועות ישנות ללא חשבון' : '')))
-    : 'ללא חשבונות בנק — מוצג נטו החודש';
+  $('biz-available-note').textContent = hasAccounts ? businessAccounts.length + ' חשבונות עסקיים מעודכנים' : 'ללא חשבונות בנק — מוצג נטו החודש';
   $('biz-eom-note').textContent = eomRows.length ? eomRows.length + ' תנועות צפויות עד סוף החודש' : 'לא הוגדרו תנועות נוספות החודש';
   $('biz-cf30-note').textContent = forecastRows.length ? cf30Income.toLocaleString('he-IL') + ' ₪ נכנס · ' + cf30Expense.toLocaleString('he-IL') + ' ₪ יוצא' : 'לא הוגדרו תנועות צפויות';
 
@@ -2004,10 +1903,9 @@ function openSheetBreakdown(type) {
   if (type === 'income') {
     title = 'נכנס מלקוחות';
     cachedTx.filter(tx => tx.type === 'income' && txIsActual(tx)).forEach(tx => add(tx.description || 'הכנסה', tx.category || 'עסקה', tx.amount, 'income'));
-    details.filter(event => Number(event.price) > 0 && (mvIsPaid(event.status) || Number(event.paid_amount) > 0)).forEach(event => {
-      const received = mvIsPaid(event.status) ? Number(event.price) || 0 : Math.min(Number(event.paid_amount) || 0, Number(event.price) || 0);
-      if (received > 0) add(event.event_title || 'אירוע', (mvIsPaid(event.status) ? 'אירוע ששולם' : 'תשלום חלקי') + ' · ' + sheetEventDate(event.event_date), received, 'income', { eventId: event.id });
-    });
+    details.filter(event => Number(event.price) > 0 && mvIsPaid(event.status)).forEach(event => add(
+      event.event_title || 'אירוע', 'אירוע ששולם · ' + sheetEventDate(event.event_date), event.price, 'income', { eventId: event.id }
+    ));
   } else if (type === 'pending-income') {
     title = 'צפוי מלקוחות';
     cachedTx.filter(tx => tx.type === 'income' && txIsExpected(tx)).forEach(tx => add(tx.description || 'הכנסה צפויה', tx.category || 'עסקה', tx.amount, 'income'));
@@ -2059,7 +1957,7 @@ function openSheetBreakdown(type) {
     '<div class="sheet-detail-row"><div><b>' + esc(row.label) + '</b><small>' + esc(row.sub || '') + '</small></div>' +
     '<div class="sheet-detail-end"><strong style="color:' + (row.kind === 'expense' ? 'var(--red)' : row.kind === 'income' ? 'var(--green)' : 'var(--text)') + '">' +
     (row.kind === 'expense' ? '−' : row.kind === 'income' ? '+' : '') + fmt(row.amount) + '</strong>' +
-    (row.eventId ? '<span class="sheet-row-actions"><button onclick="openSheetEvent(\'' + row.eventId + '\')">✎ עריכת אירוע</button><button class="is-delete" onclick="deleteSheetEvent(\'' + row.eventId + '\')">מחיקה</button></span>' : '') + '</div></div>'
+    (row.eventId ? '<span class="sheet-row-actions"><button onclick="openSheetEvent(\'' + row.eventId + '\')">עריכה</button><button class="is-delete" onclick="deleteSheetEvent(\'' + row.eventId + '\')">מחיקה</button></span>' : '') + '</div></div>'
   ).join('') + '<div class="sheet-detail-row sheet-detail-total"><div><b>סה״כ</b></div><strong style="color:' + (total < 0 ? 'var(--red)' : 'var(--green)') + '">' + fmt(total) + '</strong></div>'
     : '<div class="sheet-detail-empty">אין פריטים ברובריקה הזו בחודש הנבחר</div>';
   panel.dataset.type = type;
@@ -2072,19 +1970,14 @@ function sheetEventDate(date) {
   return date.slice(0, 10).split('-').reverse().join('/');
 }
 
-function openSheetEvent(detailId) {
+async function openSheetEvent(detailId) {
   const detail = cachedEventDetails.find(event => event.id === detailId);
   if (!detail) { alert('האירוע לא נמצא. נסו לרענן את הדף.'); return; }
-  // פותחים מיד מה-cache כדי שהכפתור יגיב גם ברשת סלולרית איטית / PWA.
-  // openEditEventModal ישלים נתונים מהשרת רק אם באמת חסר משהו מקומית.
-  openEditEventModal({
+  await openEditEventModal({
     title: detail.event_title || '',
     date: detail.event_date || '',
     source: detail.is_manual ? 'manual' : 'gcal',
     detailId: detail.id
-  }).catch(err => {
-    console.error('Could not open event editor:', err);
-    alert('לא הצלחתי לפתוח את האירוע לעריכה. נסו לרענן פעם אחת.');
   });
 }
 
@@ -3365,7 +3258,6 @@ function renderEquipment() {
 // ── מצב חשבונות בנק (שיקוף) ──
 let cachedAccounts = [];
 let cachedMovements = [];
-let eventReceiptSyncErrors = [];
 
 // שליפת החשבונות בלבד — נדרשת מוקדם, לפני ייבוא הקבועות
 async function fetchAccounts() {
@@ -3384,78 +3276,8 @@ async function backfillAccountLinks() {
     .is('account_id', null);
 }
 
-async function syncEventPaymentMovements() {
-  eventReceiptSyncErrors = [];
-  if (appMode !== 'business' || !currentUser) return;
-  const businessAccounts = cachedAccounts.filter(a => (a.scope || 'business') === 'business');
-  if (!businessAccounts.length) return;
-
-  const existingRes = await sb.from('transactions')
-    .select('id,description,amount,account_id,paid_at,expected_date,cashflow_status,category,month')
-    .eq('user_id', currentUser.id)
-    .eq('category', EVENT_RECEIPT_CATEGORY);
-  if (existingRes.error) {
-    console.warn('Could not load event receipt movements:', existingRes.error);
-    return;
-  }
-
-  const existing = existingRes.data || [];
-  const byEvent = new Map();
-  existing.forEach(tx => {
-    const eventId = eventReceiptIdFromMovement(tx);
-    if (eventId) byEvent.set(eventId, tx);
-  });
-  const liveIds = new Set(cachedEventDetails.map(event => event.id));
-  const fallbackAccount = defaultAccountFor('business');
-
-  for (const event of cachedEventDetails) {
-    const price = Math.max(0, Number(event.price) || 0);
-    const paidAmount = effectiveEventPaidAmount(event);
-    const old = byEvent.get(event.id);
-
-    if (paidAmount <= 0) {
-      if (old) await sb.from('transactions').delete().eq('id', old.id);
-      continue;
-    }
-
-    // paid_at הוא מקור האמת. לרשומות חלקיות ישנות שלא קיבלו paid_at בעבר,
-    // updated_at (אם קיים) הוא הקירוב הטוב ביותר למועד שבו התקבול נרשם.
-    const paidDate = String(event.paid_at || event.updated_at || event.event_date || todayYmd()).slice(0, 10);
-    const accountId = (old && old.account_id) || fallbackAccount;
-    const row = {
-      user_id: currentUser.id,
-      month: paidDate.slice(0, 7),
-      description: eventReceiptDescription(event),
-      amount: paidAmount,
-      type: 'income',
-      category: EVENT_RECEIPT_CATEGORY,
-      account_id: accountId,
-      expected_date: paidDate,
-      cashflow_status: 'paid',
-      paid_at: paidDate
-    };
-
-    if (old) {
-      const changed = Number(old.amount) !== paidAmount || old.account_id !== accountId ||
-        String(old.paid_at || '') !== paidDate || String(old.expected_date || '') !== paidDate ||
-        old.cashflow_status !== 'paid' || old.month !== row.month;
-      if (changed) { const r = await sb.from('transactions').update(row).eq('id', old.id); if (r.error) eventReceiptSyncErrors.push(r.error.message); }
-    } else {
-      const r = await sb.from('transactions').insert(row); if (r.error) eventReceiptSyncErrors.push(r.error.message);
-    }
-  }
-
-  // אם אירוע נמחק, מנקים גם את תנועת הבנק הפנימית שלו.
-  const staleIds = existing.filter(tx => {
-    const eventId = eventReceiptIdFromMovement(tx);
-    return eventId && !liveIds.has(eventId);
-  }).map(tx => tx.id);
-  if (staleIds.length) { const r = await sb.from('transactions').delete().in('id', staleIds); if (r.error) eventReceiptSyncErrors.push(r.error.message); }
-}
-
 async function loadAccounts() {
   await fetchAccounts();
-  await syncEventPaymentMovements();
   await backfillAccountLinks();
   await loadMovements();
   populateAccountSelect();
@@ -3464,47 +3286,21 @@ async function loadAccounts() {
 
 // כל התנועות המשויכות לחשבון — הבסיס לחישוב היתרה הנגזרת
 async function loadMovements() {
-  // חשוב: יתרת בנק היא כסף שבאמת זז, לא תחזית. לכן טוענים גם את סטטוס
-  // התזרים ומסננים ב-movementsSince רק תנועות שבוצעו בפועל.
-  // משאירים גם רשומות ללא account_id בזיכרון כדי שנוכל להתריע עליהן.
   const res = await sb.from(TX_TABLE())
-    .select('id,account_id,amount,type,description,category,created_at,expected_date,cashflow_status,paid_at')
-    .eq('user_id', currentUser.id);
+    .select('account_id,amount,type,created_at')
+    .eq('user_id', currentUser.id)
+    .not('account_id', 'is', null);
   cachedMovements = res.data || [];
 }
 
-// סכום התנועות שבוצעו בפועל בחשבון מאז תאריך העוגן
-// (הכנסה מוסיפה, הוצאה מחסרת). תנועות "צפוי" לעולם לא משנות "זמין עכשיו".
-function movementIsAfterAnchor(m, acc) {
-  if (!acc || !acc.anchor_date || !m || !txIsActual(m) || m.account_id !== acc.id) return false;
-  const from = new Date(acc.anchor_date).getTime();
-  const anchorDay = String(acc.anchor_date).slice(0, 10);
-  const createdTs = m.created_at ? new Date(m.created_at).getTime() : 0;
-  const paidDay = m.paid_at ? String(m.paid_at).slice(0, 10) : '';
-  // תקבולי אירועים ישנים מסונכרנים כעת לראשונה ולכן created_at שלהם חדש,
-  // אף שהכסף כבר היה בתוך יתרת העוגן. אצלם paid_at הוא מקור האמת כדי למנוע
-  // ספירה כפולה של היסטוריה. אם התקבול נרשם היום אחרי עוגן שנעשה היום,
-  // created_at מאפשר לו עדיין להיכנס מיד ליתרה.
-  if (isEventReceiptMovement(m)) {
-    if (paidDay > anchorDay) return true;
-    if (paidDay < anchorDay) return false;
-    // אם יש חותמת זמן אמיתית אפשר להשוות לעוגן במדויק.
-    if (createdTs) return createdTs > from;
-    // ברשומת גיבוי וירטואלית יש רק paid_at ברמת יום. אם התקבול סומן היום,
-    // עדיף לכלול אותו מאשר להעלים כסף שבפועל התקבל (זו בדיוק התקלה של v2.5.2).
-    return !!m._virtual_event_receipt && paidDay === todayYmd();
-  }
-  // בתנועה רגילה created_at חשוב: ייתכן שהמשתמש הזין היום תשלום שתאריך
-  // הביצוע שלו הוא היום, אחרי שכבר עדכן בבוקר את יתרת החשבון.
-  return createdTs > from || (!!paidDay && paidDay > anchorDay);
-}
-function movementsForAccountSince(acc) {
-  return balanceMovements().filter(m => movementIsAfterAnchor(m, acc));
-}
+// סכום התנועות בחשבון מאז תאריך העוגן (הכנסה מוסיפה, הוצאה מחסרת)
 function movementsSince(acc) {
-  return movementsForAccountSince(acc).reduce((s, m) => {
-    const amount = Number(m.amount) || 0;
-    return s + (m.type === 'income' ? amount : -amount);
+  if (!acc.anchor_date) return 0;
+  const from = new Date(acc.anchor_date).getTime();
+  return cachedMovements.reduce((s, m) => {
+    if (m.account_id !== acc.id) return s;
+    if (new Date(m.created_at).getTime() <= from) return s;
+    return s + (m.type === 'income' ? (m.amount || 0) : -(m.amount || 0));
   }, 0);
 }
 
@@ -3512,70 +3308,6 @@ function movementsSince(acc) {
 function derivedBalance(acc) {
   if (!acc.anchor_date) return acc.balance || 0;
   return (acc.anchor_balance || 0) + movementsSince(acc);
-}
-
-function openAvailableBreakdown() {
-  const modal = $('available-breakdown-modal');
-  const body = $('available-breakdown-body');
-  if (!modal || !body) return;
-  const accounts = cachedAccounts.filter(a => (a.scope || 'business') === 'business');
-  if (!accounts.length) {
-    body.innerHTML = '<div class="empty">אין חשבונות עסקיים. ״זמין עכשיו״ מחושב כרגע מהנטו החודשי.</div>';
-    modal.style.display = 'flex';
-    return;
-  }
-
-  let total = 0;
-  let html = '';
-  accounts.forEach(acc => {
-    const anchor = acc.anchor_date ? Number(acc.anchor_balance) || 0 : Number(acc.balance) || 0;
-    const rows = acc.anchor_date ? movementsForAccountSince(acc) : [];
-    const delta = rows.reduce((sum, tx) => sum + (tx.type === 'income' ? 1 : -1) * (Number(tx.amount) || 0), 0);
-    const balance = anchor + delta;
-    total += balance;
-    const anchorDate = acc.anchor_date ? new Date(acc.anchor_date).toLocaleString('he-IL', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : 'יתרה ידנית';
-    html += '<section style="padding:14px 0;border-bottom:1px solid var(--border)">' +
-      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><strong>' + esc(acc.name) + '</strong><div style="font-size:11px;color:var(--muted);margin-top:3px">יתרת בסיס ' + fmt(anchor) + ' · ' + anchorDate + '</div></div><strong style="color:' + (balance < 0 ? 'var(--red)' : 'var(--green)') + '">' + fmt(balance) + '</strong></div>';
-    if (rows.length) {
-      html += '<div style="margin-top:10px;display:grid;gap:6px">' + rows.slice().sort((a,b) => String(b.created_at || b.paid_at || '').localeCompare(String(a.created_at || a.paid_at || ''))).map(tx => {
-        const amount = Number(tx.amount) || 0;
-        const sign = tx.type === 'income' ? '+' : '−';
-        const color = tx.type === 'income' ? 'var(--green)' : 'var(--red)';
-        const date = String(tx.paid_at || tx.expected_date || tx.created_at || '').slice(0,10);
-        const fallbackTag = tx._virtual_event_receipt ? ' <small style="color:#b45309">(גיבוי ישיר)</small>' : '';
-        return '<div style="display:grid;grid-template-columns:74px 1fr auto;gap:8px;align-items:center;font-size:12px"><span style="color:var(--muted)">' + esc(date || '—') + '</span><span>' + esc(movementDisplayName(tx)) + fallbackTag + '</span><strong style="color:' + color + '">' + sign + fmt(amount) + '</strong></div>';
-      }).join('') + '</div>';
-    } else {
-      html += '<div style="font-size:12px;color:var(--muted);margin-top:9px">אין תנועות שבוצעו מאז יתרת הבסיס.</div>';
-    }
-    html += '</section>';
-  });
-
-  const unassignedRecent = unassignedActualMovementsSinceAnchor(accounts);
-  if (unassignedRecent.length) {
-    const delta = unassignedRecent.reduce((sum, tx) => sum + (tx.type === 'income' ? 1 : -1) * (Number(tx.amount) || 0), 0);
-    total += delta;
-    html += '<div style="margin-top:12px;padding:12px;border-radius:10px;background:var(--blue-soft,#eff6ff);font-size:12px">' +
-      '<div style="display:flex;justify-content:space-between;gap:10px"><strong>תנועות שבוצעו ללא שיוך לחשבון</strong><strong style="color:' + (delta < 0 ? 'var(--red)' : 'var(--green)') + '">' + (delta >= 0 ? '+' : '−') + fmt(Math.abs(delta)) + '</strong></div>' +
-      '<div style="color:var(--muted);margin-top:4px">נכללות בזמין עכשיו כדי שכסף אמיתי לא ייעלם. אפשר לשייך אותן לחשבון אחר כך.</div>' +
-      unassignedRecent.map(tx => '<div style="display:flex;justify-content:space-between;gap:8px;padding-top:7px"><span>' + esc(movementDisplayName(tx)) + '</span><span style="color:' + (tx.type === 'income' ? 'var(--green)' : 'var(--red)') + '">' + (tx.type === 'income' ? '+' : '−') + fmt(tx.amount || 0) + '</span></div>').join('') +
-      '</div>';
-  }
-  const unassigned = balanceMovements().filter(m => txIsActual(m) && !m.account_id);
-  if (unassigned.length) {
-    const unassignedNet = unassigned.reduce((sum, tx) => sum + (tx.type === 'income' ? 1 : -1) * (Number(tx.amount) || 0), 0);
-    html += '<div style="margin-top:14px;padding:12px;border-radius:10px;background:#fffbeb;color:#92400e;font-size:12px"><strong>⚠️ ' + unassigned.length + ' תנועות שבוצעו ללא חשבון</strong><br>הן לא נכללות ביתרה עד שיוך לחשבון. נטו: ' + fmt(unassignedNet) + '</div>';
-  }
-  if (eventReceiptSyncErrors.length) {
-    html += '<div style="margin-top:10px;padding:12px;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px"><strong>תקבולי אירועים מחושבים כרגע במצב גיבוי</strong><br>הסנכרון לטבלת התנועות נתקל בשגיאה, אבל הסכומים עדיין נכללים ב״זמין עכשיו״. אם זה חוזר, כדאי לבדוק הרשאות/סכמת Supabase.</div>';
-  }
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:16px;font-size:17px;font-weight:800"><span>זמין עכשיו</span><span style="color:' + (total < 0 ? 'var(--red)' : 'var(--green)') + '">' + fmt(total) + '</span></div>';
-  body.innerHTML = html;
-  modal.style.display = 'flex';
-}
-function closeAvailableBreakdown() {
-  const modal = $('available-breakdown-modal');
-  if (modal) modal.style.display = 'none';
 }
 
 // חשבון ברירת המחדל של מצב מסוים (עסק/בית) — לפי הבחירה האחרונה, אחרת הראשון
@@ -3594,9 +3326,8 @@ function populateAccountSelect() {
   const list = accountsForMode();
   if (list.length < 2) { sel.style.display = 'none'; sel.innerHTML = ''; return; }
   sel.style.display = '';
-  // כשיש חשבונות בנק, תנועה חדשה תמיד משויכת לחשבון. האפשרות "ללא חשבון"
-  // הוסרה כי היא יצרה מצב שבו ההכנסה הופיעה בדוחות אך לא ב"זמין עכשיו".
-  sel.innerHTML = list.map(a => '<option value="' + a.id + '">' + esc(a.name) + (a.account_hint ? ' ••' + esc(a.account_hint) : '') + '</option>').join('');
+  sel.innerHTML = '<option value="">— ללא חשבון —</option>' +
+    list.map(a => '<option value="' + a.id + '">' + esc(a.name) + (a.account_hint ? ' ••' + esc(a.account_hint) : '') + '</option>').join('');
   const def = defaultAccountFor(appMode);
   if (def) sel.value = def;
 }
@@ -3890,7 +3621,7 @@ async function renderAnnualSummary() {
   const uid = currentUser.id;
   // שלוף את כל העסקאות של השנה (12 חודשים) בשאילתה אחת
   const { data: txs } = await sb.from('transactions')
-    .select('month,amount,type,cashflow_status,category,description')
+    .select('month,amount,type')
     .eq('user_id', uid)
     .gte('month', year + '-01')
     .lte('month', year + '-12');
@@ -3900,40 +3631,20 @@ async function renderAnnualSummary() {
   const exp = new Array(12).fill(0);
 
   (txs || []).forEach(t => {
-    if (isEventReceiptMovement(t)) return;
-    if ((t.cashflow_status || 'paid') !== 'paid') return;
     const mi = parseInt((t.month || '').slice(5, 7), 10) - 1;
     if (mi < 0 || mi > 11) return;
-    if (t.type === 'income') inc[mi] += Number(t.amount) || 0;
-    else exp[mi] += Number(t.amount) || 0;
+    if (t.type === 'income') inc[mi] += t.amount || 0;
+    else exp[mi] += t.amount || 0;
   });
 
-  // הכנסות מאירועים: מלא כששולם, או רק הסכום שהתקבל בתשלום חלקי.
-  const yearEventIds = [];
+  // הוסף הכנסה מאירועים ששולמו (לפי שנת התאריך)
   cachedEventDetails.forEach(d => {
-    if (!d.event_date || !d.price || d.event_date.slice(0, 4) !== year) return;
-    yearEventIds.push(d.id);
-    const received = mvIsPaid(d.status) ? (Number(d.price) || 0) : Math.min(Number(d.paid_amount) || 0, Number(d.price) || 0);
-    const mi = parseInt(d.event_date.slice(5, 7), 10) - 1;
-    if (received > 0 && mi >= 0 && mi <= 11) inc[mi] += received;
-  });
-
-  // שכר ששולם נכלל בהוצאות השנתיות כדי שהרווח השנתי יתאים להגדרת הנטו החודשית.
-  const { data: yearEmpPays } = await sb.from('employee_events')
-    .select('*')
-    .eq('user_id', uid)
-    .gte('month', year + '-01')
-    .lte('month', year + '-12');
-  (yearEmpPays || []).filter(e => e.status === 'שולם').forEach(e => {
-    const ym = e.month || (e.date ? e.date.slice(0, 7) : '');
-    const mi = parseInt(ym.slice(5, 7), 10) - 1;
-    if (mi >= 0 && mi <= 11) exp[mi] += Number(e.amount) || 0;
-  });
-  cachedEventWorkers.filter(w => yearEventIds.includes(w.event_detail_id) && w.status === 'שולם').forEach(w => {
-    const detail = cachedEventDetails.find(d => d.id === w.event_detail_id);
-    if (!detail || !detail.event_date) return;
-    const mi = parseInt(detail.event_date.slice(5, 7), 10) - 1;
-    if (mi >= 0 && mi <= 11) exp[mi] += Number(w.amount) || 0;
+    if (!d.event_date || !d.price) return;
+    if (d.event_date.slice(0, 4) !== year) return;
+    if (d.status === 'בוצע תשלום' || d.status === 'בוצע תשלום + חשבונית מס') {
+      const mi = parseInt(d.event_date.slice(5, 7), 10) - 1;
+      if (mi >= 0 && mi <= 11) inc[mi] += d.price;
+    }
   });
 
   // כבד את חודש התחלת השימוש — אפס חודשים שלפניו באותה שנה
@@ -4121,83 +3832,76 @@ function toggleTxPanel(type) {
   const panel = $('tx-panel');
   const title = $('tx-panel-title');
   const content_el = $('tx-panel-content');
-
-  if (!panel || !title || !content_el) return;
+  
+  // אם כבר פתוח באותו סוג — סגור
   if (panel.style.display !== 'none' && panel.dataset.type === type) {
     panel.style.display = 'none';
     return;
   }
-
+  
   panel.dataset.type = type;
   let rows = [], titleText = '';
-  const monthDetails = getMonthDetails();
-
+  
   if (type === 'income') {
     titleText = '✅ נכנס מלקוחות — פירוט';
-    const txIncome = cachedTx.filter(t => t.type === 'income' && txIsActual(t));
-    const receivedEvents = monthDetails.filter(d => Number(d.price) > 0 && (mvIsPaid(d.status) || Number(d.paid_amount) > 0));
+    // עסקאות הכנסה + אירועים ששולמו
+    const monthDetails = getMonthDetails();
+    const paidEvents = monthDetails.filter(d => d.price > 0 && (d.status === 'בוצע תשלום' || d.status === 'בוצע תשלום + חשבונית מס'));
+    const txIncome = cachedTx.filter(t => t.type === 'income');
     rows = [
-      ...txIncome.map(t => ({ name: t.description, amount: Number(t.amount) || 0, sub: t.category || 'עסקה' })),
-      ...receivedEvents.map(d => {
-        const c = cachedClients.find(cl => cl.id === d.client_id);
-        const received = mvIsPaid(d.status) ? Number(d.price) || 0 : Math.min(Number(d.paid_amount) || 0, Number(d.price) || 0);
-        return { name: d.event_title, amount: received, sub: (c ? c.name + ' · ' : '') + (mvIsPaid(d.status) ? 'שולם' : 'תשלום חלקי'), isEvent: true, eventTitle: d.event_title, eventDate: d.event_date, detailId: d.id, paid: mvIsPaid(d.status), paidAmount: Number(d.paid_amount) || 0, price: Number(d.price) || 0 };
-      }).filter(r => r.amount > 0)
+      ...txIncome.map(t => ({ name: t.description, amount: t.amount, sub: t.category })),
+      ...paidEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: c ? c.name : 'אירוע', isEvent: true, eventTitle: d.event_title, eventDate: d.event_date, detailId: d.id, paid: true }; })
     ];
   } else if (type === 'pending') {
     titleText = '🕐 צפוי מלקוחות — פירוט';
-    const expectedTx = cachedTx.filter(t => t.type === 'income' && txIsExpected(t)).map(t => ({
-      name: t.description, amount: Number(t.amount) || 0,
-      sub: (t.category || 'עסקה') + (txCashflowDate(t) ? ' · ' + sheetEventDate(txCashflowDate(t)) : '')
-    }));
-    const pendingEvents = monthDetails.filter(d => Number(d.price) > Number(d.paid_amount || 0) && !mvIsPaid(d.status));
-    rows = [
-      ...expectedTx,
-      ...pendingEvents.map(d => {
-        const c = cachedClients.find(cl => cl.id === d.client_id);
-        const paidAmount = Math.min(Number(d.paid_amount) || 0, Number(d.price) || 0);
-        const remaining = Math.max(0, (Number(d.price) || 0) - paidAmount);
-        return { name: d.event_title, amount: remaining, sub: (c ? c.name + ' · ' : '') + d.status, isEvent: true, eventTitle: d.event_title, eventDate: d.event_date, detailId: d.id, paid: false, paidAmount, price: Number(d.price) || 0 };
-      }).filter(r => r.amount > 0)
-    ];
+    const monthDetails = getMonthDetails();
+    const pendingEvents = monthDetails.filter(d => d.price > 0 && (d.status === 'לא יצאה דרישת תשלום' || d.status === 'יצאה דרישת תשלום'));
+    rows = pendingEvents.map(d => { const c = cachedClients.find(cl => cl.id === d.client_id); return { name: d.event_title, amount: d.price, sub: (c ? c.name + ' · ' : '') + d.status, isEvent: true, eventTitle: d.event_title, eventDate: d.event_date, detailId: d.id, paid: false, paidAmount: Number(d.paid_amount) || 0, price: d.price || 0 }; });
   } else if (type === 'expense') {
     titleText = '💸 הוצאות — פירוט';
-    const monthDetailIds = monthDetails.map(d => d.id);
-    const txExpense = cachedTx.filter(t => t.type === 'expense' && txIsActual(t)).map(t => ({ name: t.description, amount: Number(t.amount) || 0, sub: t.category }));
+    const monthDetailIds = getMonthDetails().map(d => d.id);
+    // עסקאות הוצאה
+    const txExpense = cachedTx.filter(t => t.type === 'expense').map(t => ({ name: t.description, amount: t.amount, sub: t.category }));
+    // תשלומים לעובדים מאירועי עובדים
     const empPayments = cachedEmpEvents.filter(e => e.status === 'שולם').map(e => {
       const emp = cachedEmps.find(em => em.id === e.employee_id);
-      return { name: emp ? emp.name : 'עובד', amount: Number(e.amount) || 0, sub: 'שכר עובד · ' + (e.event_name || '') };
+      return { name: emp ? emp.name : 'עובד', amount: e.amount, sub: 'שכר עובד · ' + (e.event_name || '') };
     });
+    // תשלומים לעובדים מאירועים
     const workerPayments = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === 'שולם').map(w => {
       const emp = cachedEmps.find(em => em.id === w.employee_id);
       const det = cachedEventDetails.find(d => d.id === w.event_detail_id);
-      return { name: emp ? emp.name : 'עובד', amount: Number(w.amount) || 0, sub: 'שכר עובד · ' + (det ? det.event_title : '') };
+      return { name: emp ? emp.name : 'עובד', amount: w.amount, sub: 'שכר עובד · ' + (det ? det.event_title : '') };
     });
     rows = [...txExpense, ...empPayments, ...workerPayments];
+    // Fix expense card display to include salary
+    const expCardEl = document.getElementById('d-expense');
+    if(expCardEl) expCardEl.textContent = fmt(txExpense.reduce((s,r)=>s+r.amount,0) + empPayments.reduce((s,r)=>s+r.amount,0) + workerPayments.reduce((s,r)=>s+r.amount,0));
   }
-
+  
   if (!rows.length) {
     content_el.innerHTML = '<div class="empty">אין פריטים</div>';
   } else {
-    content_el.innerHTML = rows.map(r => {
+    content_el.innerHTML = rows.map((r, i) => {
       if (r.isEvent) {
-        const paidBtn = !r.paid ? '<button class="btn-paid-quick" onclick="markEventPaid(\'' + r.detailId + '\')" title="סמן כשולם במלואו">שולם ✓</button>' : '';
-        const partialBtn = !r.paid ? '<button class="btn-paid-quick" style="background:var(--amber-bg);color:var(--amber)" onclick="markEventPartial(\'' + r.detailId + '\')" title="הזן תשלום חלקי">חלקי</button>' : '';
-        const editBtn = '<button class="btn-paid-quick" style="background:var(--blue-soft);color:var(--blue)" onclick="openSheetEvent(\'' + r.detailId + '\')" title="פתח את פרטי האירוע">✎ עריכת אירוע</button>';
-        const rem = Math.max(0, (r.price || 0) - (r.paidAmount || 0));
-        const partialInfo = (r.paidAmount > 0 && !r.paid) ? '<div style="font-size:11px;color:var(--green)">שולם ' + fmt(r.paidAmount) + ' · נותר ' + fmt(rem) + '</div>' : '';
-        return '<div class="income-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 8px;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer;border-radius:8px">' +
-          '<div style="flex:1"><div style="font-weight:500">' + esc(r.name) + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--muted)">' + esc(r.sub) + '</div>' : '') + partialInfo + '</div>' +
-          '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">' + editBtn + partialBtn + paidBtn + '<div style="font-weight:600">' + fmt(r.amount) + '</div></div></div>';
+        // שורת אירוע — לחיצה פותחת עריכה, עם כפתורי פעולה
+        const paidBtn = !r.paid ? '<button class="btn-paid-quick" onclick="event.stopPropagation();markEventPaid(\'' + r.detailId + '\')" title="סמן כשולם במלואו">שולם ✓</button>' : '';
+        const partialBtn = !r.paid ? '<button class="btn-paid-quick" style="background:var(--amber-bg);color:var(--amber)" onclick="event.stopPropagation();markEventPartial(\'' + r.detailId + '\')" title="הזן תשלום חלקי">חלקי</button>' : '';
+        const rem = Math.max(0, (r.price || r.amount || 0) - (r.paidAmount || 0));
+        const partialInfo = (r.paidAmount > 0) ? '<div style="font-size:11px;color:var(--green)">שולם ' + fmt(r.paidAmount) + ' · נותר ' + fmt(rem) + '</div>' : '';
+        return '<div class="income-row" onclick="editIncomeEvent(\'' + esc(r.eventTitle).replace(/'/g, "\\'") + '\',\'' + r.eventDate + '\',\'' + r.detailId + '\')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 8px;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer;border-radius:8px">' +
+          '<div style="flex:1"><div style="font-weight:500">' + esc(r.name) + ' <span style="font-size:11px;color:var(--blue)">✎</span></div>' + (r.sub ? '<div style="font-size:11px;color:var(--muted)">' + esc(r.sub) + '</div>' : '') + partialInfo + '</div>' +
+          '<div style="display:flex;align-items:center;gap:6px">' + partialBtn + paidBtn + '<div style="font-weight:600">' + fmt(r.amount) + '</div></div></div>';
       }
+      // שורה רגילה (עסקה)
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">' +
         '<div><div style="font-weight:500">' + esc(r.name) + '</div>' + (r.sub ? '<div style="font-size:11px;color:var(--muted)">' + esc(r.sub) + '</div>' : '') + '</div>' +
         '<div style="font-weight:600">' + fmt(r.amount) + '</div></div>';
     }).join('') +
     '<div style="display:flex;justify-content:space-between;padding:10px 8px;font-size:13px;font-weight:600;color:var(--muted)">' +
-    '<span>סה"כ</span><span>' + fmt(rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0)) + '</span></div>';
+    '<span>סה"כ</span><span>' + fmt(rows.reduce((s,r) => s+r.amount, 0)) + '</span></div>';
   }
-
+  
   title.textContent = titleText;
   panel.style.display = 'block';
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -4228,8 +3932,7 @@ function diagEvents() {
 
 // פתיחת עריכת אירוע מתוך פירוט ההכנסות/צפוי
 async function editIncomeEvent(title, date, detailId) {
-  const detail = cachedEventDetails.find(d => d.id === detailId);
-  await openEditEventModal({ title, date, source: detail && detail.is_manual ? 'manual' : 'gcal', detailId });
+  await openEditEventModal({ title, date, source: 'gcal', detailId });
 }
 
 // סימון מהיר של אירוע כשולם
@@ -4237,8 +3940,7 @@ async function markEventPaid(detailId) {
   if (!detailId) return;
   const det = cachedEventDetails.find(d => d.id === detailId);
   const price = det ? (det.price || 0) : 0;
-  const result = await sb.from('event_details').update({ status: 'בוצע תשלום', paid_amount: price, paid_at: todayYmd() }).eq('id', detailId);
-  if (result.error) { alert('עדכון התשלום נכשל: ' + result.error.message); return; }
+  await sb.from('event_details').update({ status: 'בוצע תשלום', paid_amount: price }).eq('id', detailId);
   await loadAll();
   // רענן את הפאנל אם פתוח
   const panel = $('tx-panel');
@@ -4263,10 +3965,9 @@ async function markEventPartial(detailId) {
   if (isNaN(add) || add <= 0) { alert('סכום לא תקין'); return; }
   let newPaid = cur + add;
   let update;
-  if (newPaid >= price) { update = { paid_amount: price, status: 'בוצע תשלום', paid_at: todayYmd() }; }
-  else { update = { paid_amount: newPaid, paid_at: todayYmd() }; }
-  const result = await sb.from('event_details').update(update).eq('id', detailId);
-  if (result.error) { alert('עדכון התשלום החלקי נכשל: ' + result.error.message); return; }
+  if (newPaid >= price) { update = { paid_amount: price, status: 'בוצע תשלום' }; }
+  else { update = { paid_amount: newPaid }; }
+  await sb.from('event_details').update(update).eq('id', detailId);
   await loadAll();
   const panel = $('tx-panel');
   if (panel && panel.style.display !== 'none') {
@@ -4339,8 +4040,7 @@ function setPFSource(src) {
 
 function renderCatBars(totalExp, workerSalary) {
   const cats = {};
-  // גרף הקטגוריות משקף הוצאות שבוצעו בפועל, בדיוק כמו כרטיס "הוצאות".
-  cachedTx.filter(t => t.type === 'expense' && txIsActual(t)).forEach(t => { cats[t.category] = (cats[t.category] || 0) + (Number(t.amount) || 0); });
+  cachedTx.filter(t => t.type === 'expense').forEach(t => { cats[t.category] = (cats[t.category] || 0) + t.amount; });
   // הוסף שכר עובדים כקטגוריה
   const workerTotal = workerSalary || 0;
   if (workerTotal > 0) cats['שכר עובדים'] = (cats['שכר עובדים'] || 0) + workerTotal;
@@ -4356,15 +4056,14 @@ function renderCatBars(totalExp, workerSalary) {
     let items = '';
     if (cat === '\u05e9\u05db\u05e8 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd') {
       // שכר עובדים — פרט לפי עובד (ששולם)
-      const monthDetailIds = getMonthDetails().map(d => d.id);
-      const paidEmp = cachedEmpEvents.filter(e => e.status === 'שולם');
-      const paidWork = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === 'שולם');
+      const paidEmp = cachedEmpEvents.filter(e => e.status === '\u05e9\u05d5\u05dc\u05dd');
+      const paidWork = cachedEventWorkers.filter(w => w.status === '\u05e9\u05d5\u05dc\u05dd');
       paidEmp.forEach(e => { const emp = cachedEmps.find(m => m.id === e.employee_id); items += catItemRow((emp ? emp.name : '\u05e2\u05d5\u05d1\u05d3') + (e.event_name ? ' \u00b7 ' + e.event_name : ''), e.amount); });
       paidWork.forEach(w => { const emp = cachedEmps.find(m => m.id === w.employee_id); const det = cachedEventDetails.find(d => d.id === w.event_detail_id); items += catItemRow((emp ? emp.name : '\u05e2\u05d5\u05d1\u05d3') + (det ? ' \u00b7 ' + det.event_title : ''), w.amount); });
     } else {
       // קטגוריית הוצאה רגילה — פרט לפי עסקאות
-      cachedTx.filter(t => t.type === 'expense' && txIsActual(t) && t.category === cat).forEach(t => {
-        items += catItemRow(t.description || t.category, t.amount, txCashflowDate(t));
+      cachedTx.filter(t => t.type === 'expense' && t.category === cat).forEach(t => {
+        items += catItemRow(t.description || t.category, t.amount, t.date);
       });
     }
     return '<div class="bar-wrap" style="cursor:pointer" onclick="toggleDisplay(\'cat-items-' + catIdx + '\')"><div class="bar-label"><span>' + esc(cat) + ' <span style="font-size:10px;color:var(--muted)">\u25be</span></span><span>' + fmt(amt) + ' (' + pct + '%)</span></div><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div></div>' +
@@ -4551,8 +4250,6 @@ function renderMonthView() {
   // הכנסות: אירועים עם מחיר (לפי תאריך) + הכנסות ידניות/בנק
   const evRows = appMode === 'home' ? [] : monthDetails.filter(d => d.price > 0).sort((a, b) => (a.event_date || '') > (b.event_date || '') ? 1 : -1);
   const txIncomeRows = cachedTx.filter(x => x.type === 'income');
-  const txIncomeActualRows = txIncomeRows.filter(txIsActual);
-  const txIncomeExpectedRows = txIncomeRows.filter(txIsExpected);
 
   let incHtml = evRows.map(d => {
     const c = cachedClients.find(cl => cl.id === d.client_id);
@@ -4595,42 +4292,34 @@ function renderMonthView() {
   const mvSalaries = salariesTotal();
   const mvSalaryCount = appMode === 'home' ? cachedSalaries.filter(s => s.active).length : 0;
 
-  incHtml += txIncomeRows.map(x => {
-    const actual = txIsActual(x);
-    return '<div class="mv-row ' + (actual ? 'mv-paid ' : '') + 'mv-static" title="' + esc(x.description) + '"><div class="mv-date">' + esc(txCashflowDate(x) || '—') + '</div>' +
-      '<div class="mv-name">' + esc(x.description) + ' <span class="mv-sub">· ' + t('הכנסה ידנית') + '</span></div>' +
-      '<span class="badge ' + (actual ? 'badge-paid' : 'badge-pending') + ' mv-badge-sm">' + (actual ? t('נכנס') : t('ממתין')) + '</span><div class="mv-amount">' + fmt(x.amount) + '</div></div>';
-  }).join('');
+  incHtml += txIncomeRows.map(x =>
+    '<div class="mv-row mv-paid mv-static" title="' + esc(x.description) + '"><div class="mv-date">—</div>' +
+    '<div class="mv-name">' + esc(x.description) + ' <span class="mv-sub">· ' + t('הכנסה ידנית') + '</span></div>' +
+    '<span class="badge badge-paid mv-badge-sm">' + t('נכנס') + '</span><div class="mv-amount">' + fmt(x.amount) + '</div></div>'
+  ).join('');
 
   incEl.innerHTML = incHtml || '<div class="empty">' + t('אין הכנסות החודש') + '</div>';
   const incCount = evRows.length + txIncomeRows.length + (bizSalary > 0 ? 1 : 0) + mvSalaryCount + shiftEmpCount;
   $('mv-income-count').textContent = incCount ? incCount + ' ' + (currentLang === 'en' ? 'items' : 'פריטים') : '';
 
-  const paidEv = evRows.reduce((s, d) => s + (mvIsPaid(d.status) ? (Number(d.price) || 0) : Math.min(Number(d.paid_amount) || 0, Number(d.price) || 0)), 0);
-  const pendEv = evRows.reduce((s, d) => s + (mvIsPaid(d.status) ? 0 : Math.max(0, (Number(d.price) || 0) - (Number(d.paid_amount) || 0))), 0);
-  const txIncActual = txIncomeActualRows.reduce((s, x) => s + (Number(x.amount) || 0), 0);
-  const txIncExpected = txIncomeExpectedRows.reduce((s, x) => s + (Number(x.amount) || 0), 0);
-  const inTotal = paidEv + txIncActual + bizSalary + mvSalaries + shiftIncome;
-  const inPending = pendEv + txIncExpected;
+  const paidEv = evRows.filter(d => mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
+  const pendEv = evRows.filter(d => !mvIsPaid(d.status)).reduce((s, d) => s + (d.price || 0), 0);
+  const txInc = txIncomeRows.reduce((s, x) => s + x.amount, 0);
+  const inTotal = paidEv + txInc + bizSalary + mvSalaries + shiftIncome;
   $('mv-income-totals').innerHTML =
     '<div class="mv-tot-row"><span style="color:var(--green)">' + t('נכנס') + '</span><span style="color:var(--green);font-weight:600">' + fmt(inTotal) + '</span></div>' +
-    '<div class="mv-tot-row"><span style="color:var(--amber)">' + t('ממתין') + '</span><span style="color:var(--amber);font-weight:600">' + fmt(inPending) + '</span></div>' +
-    '<div class="mv-tot-row mv-tot-main"><span>' + t('סה"כ צפוי') + '</span><span>' + fmt(inTotal + inPending) + '</span></div>';
+    '<div class="mv-tot-row"><span style="color:var(--amber)">' + t('ממתין') + '</span><span style="color:var(--amber);font-weight:600">' + fmt(pendEv) + '</span></div>' +
+    '<div class="mv-tot-row mv-tot-main"><span>' + t('סה"כ צפוי') + '</span><span>' + fmt(inTotal + pendEv) + '</span></div>';
 
   // הוצאות: עסקאות הוצאה + שכר ששולם
   const txExpRows = cachedTx.filter(x => x.type === 'expense');
-  const txExpActualRows = txExpRows.filter(txIsActual);
-  const txExpExpectedRows = txExpRows.filter(txIsExpected);
-  const paidEmpSalary = cachedEmpEvents.filter(e => e.status === 'שולם').reduce((s, e) => s + (Number(e.amount) || 0), 0);
-  const paidWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === 'שולם').reduce((s, w) => s + (Number(w.amount) || 0), 0);
-  const pendingEmpSalary = cachedEmpEvents.filter(e => e.status === 'ממתין').reduce((s, e) => s + (Number(e.amount) || 0), 0);
-  const pendingWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === 'ממתין').reduce((s, w) => s + (Number(w.amount) || 0), 0);
+  const paidEmpSalary = cachedEmpEvents.filter(e => e.status === 'שולם').reduce((s, e) => s + e.amount, 0);
+  const paidWorkerSalary = cachedEventWorkers.filter(w => monthDetailIds.includes(w.event_detail_id) && w.status === 'שולם').reduce((s, w) => s + w.amount, 0);
   const salary = paidEmpSalary + paidWorkerSalary;
-  const pendingSalary = pendingEmpSalary + pendingWorkerSalary;
 
   let expHtml = txExpRows.map(x =>
     '<div class="mv-row mv-static" title="' + esc(x.description) + '"><div class="mv-name">' + esc(x.description) +
-    (x.category ? ' <span class="mv-sub">· ' + esc(t(x.category)) + '</span>' : '') + (txIsExpected(x) ? ' <span class="mv-sub" style="color:var(--amber)">· צפוי</span>' : '') + '</div>' +
+    (x.category ? ' <span class="mv-sub">· ' + esc(t(x.category)) + '</span>' : '') + '</div>' +
     '<div class="mv-amount" style="color:var(--red)">' + fmt(x.amount) + '</div></div>'
   ).join('');
   if (salary > 0) expHtml += '<div class="mv-row mv-static"><div class="mv-name">' + t('שכר עובדים') + ' <span class="mv-sub">· ' + t('שולם החודש') + '</span></div>' +
@@ -4640,12 +4329,10 @@ function renderMonthView() {
   const expCount = txExpRows.length + (salary > 0 ? 1 : 0);
   $('mv-expense-count').textContent = expCount ? expCount + ' ' + (currentLang === 'en' ? 'items' : 'פריטים') : '';
 
-  const expActual = txExpActualRows.reduce((s, x) => s + (Number(x.amount) || 0), 0) + salary;
-  const expPending = txExpExpectedRows.reduce((s, x) => s + (Number(x.amount) || 0), 0) + pendingSalary;
-  const net = inTotal - expActual;
+  const expTotal = txExpRows.reduce((s, x) => s + x.amount, 0) + salary;
+  const net = inTotal - expTotal;
   $('mv-expense-totals').innerHTML =
-    '<div class="mv-tot-row"><span>' + t('סה"כ הוצאות') + '</span><span style="color:var(--red);font-weight:600">' + fmt(expActual) + '</span></div>' +
-    (expPending > 0 ? '<div class="mv-tot-row"><span style="color:var(--amber)">צפוי לצאת</span><span style="color:var(--amber);font-weight:600">' + fmt(expPending) + '</span></div>' : '') +
+    '<div class="mv-tot-row mv-tot-main"><span>' + t('סה"כ הוצאות') + '</span><span style="color:var(--red)">' + fmt(expTotal) + '</span></div>' +
     '<div class="mv-tot-row"><span>' + t('נשאר ביד') + '</span><span style="font-weight:600;color:' + (net >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmt(net) + '</span></div>';
 }
 
@@ -4659,11 +4346,7 @@ function mvEditEvent(detailId) {
 // עדכון סטטוס אירוע ישירות מהשורה (בלי לפתוח מודל)
 async function updateEventStatus(id, status) {
   const isPaid = mvIsPaid(status);
-  const detail = cachedEventDetails.find(d => d.id === id);
-  const update = { status, paid_at: isPaid ? todayYmd() : null };
-  if (isPaid && detail) update.paid_amount = Number(detail.price) || 0;
-  const result = await sb.from('event_details').update(update).eq('id', id);
-  if (result.error) { alert('עדכון הסטטוס נכשל: ' + result.error.message); return; }
+  await sb.from('event_details').update({ status, paid_at: isPaid ? todayYmd() : null }).eq('id', id);
   await loadAll();
 }
 
@@ -5068,15 +4751,11 @@ function renderHiddenEvents() {
 async function openEditEventModal({ title, date, source, detailId }) {
   isNewManualEvent = source === 'manual';
 
-  // חיפוש אמין: cache קודם (תגובה מיידית במובייל), ורק אם חסר — פנייה לשרת.
-  let detail = detailId ? (cachedEventDetails.find(d => d.id === detailId) || null) : null;
-  if (detailId && !detail) {
-    try {
-      const r = await sb.from('event_details').select('*').eq('id', detailId).maybeSingle();
-      detail = r.data || null;
-    } catch (err) {
-      console.warn('Event detail lookup failed; continuing with local data:', err);
-    }
+  // חיפוש אמין: אם יש מזהה — לפיו. אחרת לפי שם+תאריך (רשומות ישנות).
+  let detail = null;
+  if (detailId) {
+    const r = await sb.from('event_details').select('*').eq('id', detailId).maybeSingle();
+    detail = r.data || null;
   }
   if (!detail && title && date) {
     // התאמה מדויקת
@@ -5114,27 +4793,18 @@ async function openEditEventModal({ title, date, source, detailId }) {
   $('modal-status').value = detail ? detail.status || 'לא יצאה דרישת תשלום' : 'לא יצאה דרישת תשלום';
   $('modal-notes').value = detail ? detail.notes || '' : '';
 
-  // מציגים את המודל לפני טעינת עובדים/קבצים — לחיצה על עריכה חייבת להרגיש מיידית.
-  modalWorkers = currentEditDetailId
-    ? cachedEventWorkers.filter(w => w.event_detail_id === currentEditDetailId).map(w => ({ employee_id: w.employee_id, amount: w.amount, status: w.status }))
-    : [];
+  if (currentEditDetailId) {
+    const wRes = await sb.from('event_workers').select('*').eq('event_detail_id', currentEditDetailId);
+    modalWorkers = (wRes.data || []).map(w => ({ employee_id: w.employee_id, amount: w.amount, status: w.status }));
+  } else {
+    modalWorkers = [];
+  }
   renderModalWorkers();
+  await loadEventFiles(currentEditDetailId);
   if ($('event-delete-btn')) $('event-delete-btn').style.display = currentEditDetailId ? 'inline-block' : 'none';
+  // כפתור האיפוס מוצג גם לאירועי יומן שטרם נשמרו — כדי שהמשתמש יבין למה אין מה לאפס
   if ($('event-reset-btn')) $('event-reset-btn').style.display = 'inline-block';
   $('event-modal').style.display = 'flex';
-
-  // רענון משני ברקע. כשל כאן לא מונע עריכה של האירוע עצמו.
-  if (currentEditDetailId) {
-    try {
-      const wRes = await sb.from('event_workers').select('*').eq('event_detail_id', currentEditDetailId);
-      if (!wRes.error) {
-        modalWorkers = (wRes.data || []).map(w => ({ employee_id: w.employee_id, amount: w.amount, status: w.status }));
-        renderModalWorkers();
-      }
-    } catch (err) { console.warn('Could not refresh event workers:', err); }
-  }
-  try { await loadEventFiles(currentEditDetailId); }
-  catch (err) { console.warn('Could not load event files:', err); }
 }
 
 function fillClientSelect(selectedId) {
@@ -5170,7 +4840,6 @@ async function deleteEventFromModal() {
   // מחק גם קבצים מצורפים מהאחסון
   if (modalFiles.length) {
     await sb.storage.from('event-files').remove(modalFiles.map(f => f.storage_path));
-    await sb.from('event_files').delete().eq('event_detail_id', currentEditDetailId);
   }
   await sb.from('event_details').delete().eq('id', currentEditDetailId);
   closeEventModal();
@@ -5209,8 +4878,6 @@ async function resetEventFromModal() {
   const { error } = await sb.from('event_details').update({
     client_id: null,
     price: 0,
-    paid_amount: 0,
-    paid_at: null,
     status: 'לא יצאה דרישת תשלום',
     notes: null
   }).eq('id', currentEditDetailId);
@@ -5357,7 +5024,6 @@ async function saveEvent() {
   const clientId = $('modal-client').value || null;
   const price = parseFloat($('modal-price').value) || 0;
   const status = $('modal-status').value;
-  const currentDetail = currentEditDetailId ? cachedEventDetails.find(d => d.id === currentEditDetailId) : null;
   const expectedPaymentDate = $('modal-expected-payment').value || date;
   const notes = $('modal-notes').value;
   const eventMonth = date ? date.slice(0, 7) : getMonth();
@@ -5365,19 +5031,14 @@ async function saveEvent() {
 
   let detailId = currentEditDetailId;
   if (!detailId) {
-    const existing = await sb.from('event_details').select('id,paid_amount').eq('user_id', uid).eq('event_title', title).eq('event_date', date).maybeSingle();
+    const existing = await sb.from('event_details').select('id').eq('user_id', uid).eq('event_title', title).eq('event_date', date).maybeSingle();
     if (existing.data) detailId = existing.data.id;
   }
-  const persistedDetail = (detailId && cachedEventDetails.find(d => d.id === detailId)) || currentDetail;
-  const currentPaid = persistedDetail ? Math.min(Number(persistedDetail.paid_amount) || 0, price) : 0;
-  const paidAmount = mvIsPaid(status) ? price : currentPaid;
 
   if (detailId) {
-    const updateResult = await sb.from('event_details').update({ event_title: title, event_date: date, expected_payment_date: expectedPaymentDate, paid_amount: paidAmount, paid_at: mvIsPaid(status) ? todayYmd() : null, client_id: clientId, price, status, notes, month: eventMonth }).eq('id', detailId);
-    if (updateResult.error) { alert('שמירת האירוע נכשלה: ' + updateResult.error.message); return; }
+    await sb.from('event_details').update({ event_title: title, event_date: date, expected_payment_date: expectedPaymentDate, paid_at: mvIsPaid(status) ? todayYmd() : null, client_id: clientId, price, status, notes, month: eventMonth }).eq('id', detailId);
   } else {
-    const res = await sb.from('event_details').insert({ user_id: uid, event_title: title, event_date: date, expected_payment_date: expectedPaymentDate, paid_amount: paidAmount, paid_at: mvIsPaid(status) ? todayYmd() : null, client_id: clientId, price, status, notes, month: eventMonth, is_manual: isNewManualEvent }).select();
-    if (res.error) { alert('יצירת האירוע נכשלה: ' + res.error.message); return; }
+    const res = await sb.from('event_details').insert({ user_id: uid, event_title: title, event_date: date, expected_payment_date: expectedPaymentDate, paid_at: mvIsPaid(status) ? todayYmd() : null, client_id: clientId, price, status, notes, month: eventMonth, is_manual: isNewManualEvent }).select();
     detailId = res.data && res.data[0] ? res.data[0].id : null;
   }
 
@@ -5402,12 +5063,6 @@ async function addTx() {
   // כשהבורר מוסתר — משייכים אוטומטית לחשבון של המצב הנוכחי
   const accountId = picking ? (accSel.value || null) : defaultAccountFor(appMode);
   if (!desc || !amount || amount <= 0) return;
-  // אם קיימים חשבונות בנק, לא מאפשרים לתנועה חדשה להישמר בלי שיוך.
-  // כך הכנסה/הוצאה שבוצעה מתעדכנת מיד גם ב"זמין עכשיו".
-  if (accountsForMode().length && !accountId) {
-    alert('יש לבחור חשבון בנק לתנועה.');
-    return;
-  }
   $('btn-add-tx').disabled = true;
   // זוכר את החשבון האחרון שנבחר — רוב הרשומות נכנסות לאותו חשבון
   if (accountId) localStorage.setItem('cf_last_account_' + appMode, accountId);
@@ -5599,7 +5254,7 @@ async function autoImportRecurring(month, uid, existingTx) {
     );
     // טען מחדש את העסקאות
     const txR = await sb.from(TX_TABLE()).select('*').eq('user_id', uid).eq('month', month).order('created_at', { ascending: false });
-    cachedTx = visibleTransactions(txR.data || []);
+    cachedTx = txR.data || [];
   } finally {
     _importingMonths.delete(lockKey);
   }
@@ -5817,8 +5472,8 @@ let advStarted = false;
 function buildAdvisorContext() {
   const month = getMonth();
   if (appMode === 'home') {
-    const income = cachedTx.filter(t => t.type === 'income' && txIsActual(t));
-    const expense = cachedTx.filter(t => t.type === 'expense' && txIsActual(t));
+    const income = cachedTx.filter(t => t.type === 'income');
+    const expense = cachedTx.filter(t => t.type === 'expense');
     let bizSalary = 0;
     try { bizSalary = (JSON.parse(localStorage.getItem('cf_biz_salary') || '{}'))[month] || 0; } catch (e) {}
     const salaries = cachedSalaries.filter(s => s.active).map(s => ({ שם: s.person_name, נטו: s.amount || 0 }));
@@ -5839,12 +5494,12 @@ function buildAdvisorContext() {
   // מצב עסק
   const d = profitBreakdownData || {};
   const cats = {};
-  cachedTx.filter(t => t.type === 'expense' && txIsActual(t)).forEach(t => { cats[t.category || 'אחר'] = (cats[t.category || 'אחר'] || 0) + (Number(t.amount) || 0); });
+  cachedTx.filter(t => t.type === 'expense').forEach(t => { cats[t.category || 'אחר'] = (cats[t.category || 'אחר'] || 0) + t.amount; });
   const debtors = cachedClients.map(c => {
     const evs = cachedEventDetails.filter(x => x.client_id === c.id);
     const total = evs.reduce((s, x) => s + (x.price || 0), 0);
-    const paid = evs.reduce((sum, x) => sum + (mvIsPaid(x.status) ? (Number(x.price) || 0) : Math.min(Number(x.paid_amount) || 0, Number(x.price) || 0)), 0);
-    return { לקוח: c.name, חוב: Math.max(0, total - paid) };
+    const paid = evs.filter(x => x.status === 'בוצע תשלום' || x.status === 'בוצע תשלום + חשבונית מס').reduce((s, x) => s + (x.price || 0), 0);
+    return { לקוח: c.name, חוב: total - paid };
   }).filter(x => x.חוב > 0);
   return {
     מצב: 'עסק', חודש: month,

@@ -17,9 +17,10 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
-<link rel="stylesheet" href="/styles.css" />
+<link rel="stylesheet" href="/styles.css?v=2.5.5" />
 </head>
 <body>
+<div id="app-version" style="position:fixed;left:8px;bottom:6px;z-index:99999;font:600 10px/1.2 system-ui;color:#64748b;background:rgba(255,255,255,.88);border:1px solid #e2e8f0;border-radius:999px;padding:3px 7px;pointer-events:none">v2.5.5</div>
 <script>(function(){try{var t=localStorage.getItem('cf_theme');if(t&&t!=='classic')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 
 <div id="auth-screen">
@@ -201,7 +202,7 @@
         </div>
 
         <div class="overview-kpis">
-          <article class="overview-kpi overview-kpi-primary">
+          <article class="overview-kpi overview-kpi-primary" onclick="openAvailableBreakdown()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')openAvailableBreakdown()" style="cursor:pointer">
             <div class="overview-kpi-top"><span>זמין עכשיו</span><span class="status-dot" aria-hidden="true"></span></div>
             <strong id="biz-available-now">—</strong>
             <small id="biz-available-note">יתרת חשבונות העסק</small>
@@ -477,6 +478,8 @@
             <input type="number" id="t-amount" placeholder="סכום ₪" min="0" />
             <select id="t-type"><option value="income">הכנסה</option><option value="expense">הוצאה</option></select>
             <select id="t-cat"></select>
+            <input type="date" id="t-date" title="תאריך התנועה / התאריך הצפוי" />
+            <select id="t-cashflow-status" title="האם התנועה כבר בוצעה או עדיין צפויה"><option value="paid">בוצע בפועל</option><option value="expected">צפוי</option></select>
             <select id="t-account" title="לאיזה חשבון בנק שייכת הרשומה"></select>
           </div>
           <button class="btn-add" id="btn-add-tx" onclick="addTx()">+ הוסף</button>
@@ -1146,6 +1149,21 @@
   </div>
 </div>
 
+<!-- Available Now Breakdown Modal -->
+<div class="modal-overlay" id="available-breakdown-modal" style="display:none" onclick="if(event.target===this)closeAvailableBreakdown()">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <div class="modal-title">💰 ממה מורכב ״זמין עכשיו״</div>
+      <button class="btn-del" onclick="closeAvailableBreakdown()">✕</button>
+    </div>
+    <div class="modal-body" id="available-breakdown-body" style="padding:1.2rem 1.5rem"></div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeAvailableBreakdown()">סגור</button>
+      <button class="btn-add" onclick="closeAvailableBreakdown();showPage('accounts',document.querySelector('.tab[data-page=accounts]'))">לחשבונות הבנק</button>
+    </div>
+  </div>
+</div>
+
 <!-- Change Password Modal -->
 <div class="modal-overlay" id="chpass-modal" style="display:none" onclick="if(event.target===this)closeChangePassword()">
   <div class="modal" style="max-width:380px">
@@ -1183,6 +1201,7 @@
       <div class="ev-form-grid">
         <div class="form-group ev-span2"><label>שם האירוע</label><input type="text" id="modal-ev-title" /></div>
         <div class="form-group"><label>תאריך</label><input type="date" id="modal-ev-date" /></div>
+        <div class="form-group"><label>תאריך תשלום צפוי</label><input type="date" id="modal-expected-payment" /></div>
         <div class="form-group"><label>מחיר ללקוח (₪)</label><input type="number" id="modal-price" placeholder="0" min="0" /></div>
         <div class="form-group"><label>לקוח</label><select id="modal-client"></select></div>
         <div class="form-group"><label>סטטוס תשלום</label>
@@ -1254,8 +1273,8 @@
   </div>
 </div>
 
-<script src="/pricing.js"></script>
-<script src="/app.js"></script>
-<script src="/pwa.js" defer></script>
+<script src="/pricing.js?v=2.5.5"></script>
+<script src="/app.js?v=2.5.5"></script>
+<script src="/pwa.js?v=2.5.5" defer></script>
 </body>
 </html>
