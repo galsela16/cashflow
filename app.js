@@ -1,4 +1,4 @@
-const APP_VERSION = '2.5.6';
+const APP_VERSION = '2.5.7';
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
@@ -1720,18 +1720,18 @@ async function loadAll() {
   } else {
     cachedEventWorkers = [];
   }
-  // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
-  // חשוב: משייכים רשומות ישנות וטוענים את התנועות לפני renderAll,
-  // כדי ש״זמין עכשיו״ יתבסס על הנתונים העדכניים כבר ברינדור הראשון אחרי רענון.
-  // Accounts were fetched alongside the initial dashboard data.
-  // תקבול שסומן בתוך אירוע הוא כסף אמיתי שנכנס לבנק. מסנכרנים אותו לתנועת
-  // בנק פנימית לפני חישוב ״זמין עכשיו״, בלי להציג/לספור אותו שוב בדוחות.
+  // Monthly totals do not depend on internal bank receipt synchronization.
+  // Complete recurring imports and the forecast, then show the dashboard first.
+  await autoImportRecurring(month, uid, cachedTx);
+  await loadCashflow30();
+  renderAll();
+
+  // Preserve bank synchronization and ordering, but do not hold up the table.
+  // Allow a browser paint before starting account maintenance.
+  await new Promise(resolve => setTimeout(resolve, 0));
   await syncEventPaymentMovements();
   await backfillAccountLinks();
-  await autoImportRecurring(month, uid, cachedTx);
-  // Both reads need completed writes, but do not depend on each other.
-  await Promise.all([loadMovements(), loadCashflow30()]);
-  renderAll();
+  await loadMovements();
   // טען השקעות לעסק
   loadEquipment();
   cleanupOldEventFiles(); // ניקוי קבצים של אירועים שעברו (רקע)
@@ -3368,6 +3368,7 @@ async function syncEventPaymentMovements() {
   const liveIds = new Set(cachedEventDetails.map(event => event.id));
   const fallbackAccount = defaultAccountFor('business');
 
+  const pendingInserts = [];
   for (const event of cachedEventDetails) {
     const price = Math.max(0, Number(event.price) || 0);
     const paidAmount = effectiveEventPaidAmount(event);
@@ -3401,8 +3402,14 @@ async function syncEventPaymentMovements() {
         old.cashflow_status !== 'paid' || old.month !== row.month;
       if (changed) { const r = await sb.from('transactions').update(row).eq('id', old.id); if (r.error) eventReceiptSyncErrors.push(r.error.message); }
     } else {
-      const r = await sb.from('transactions').insert(row); if (r.error) eventReceiptSyncErrors.push(r.error.message);
+      pendingInserts.push(row);
     }
+  }
+
+  // Keep payloads bounded while reducing N inserts to ceil(N / 100) requests.
+  for (let i = 0; i < pendingInserts.length; i += 100) {
+    const r = await sb.from('transactions').insert(pendingInserts.slice(i, i + 100));
+    if (r.error) eventReceiptSyncErrors.push(r.error.message);
   }
 
   // אם אירוע נמחק, מנקים גם את תנועת הבנק הפנימית שלו.

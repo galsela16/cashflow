@@ -1,13 +1,13 @@
 // CashflowHQ Service Worker — network-first navigation, fast static fallback
-const CACHE = 'cashflowhq-v256-dashboard';
+const CACHE = 'cashflowhq-v257-loading';
 
 const CORE = [
   '/',
-  '/styles.css?v=2.5.6',
-  '/app.js?v=2.5.6',
-  '/pricing.js?v=2.5.6',
+  '/styles.css?v=2.5.7',
+  '/app.js?v=2.5.7',
+  '/pricing.js?v=2.5.7',
   '/pdf-font.js',
-  '/pwa.js?v=2.5.6',
+  '/pwa.js?v=2.5.7',
   '/manifest.webmanifest',
   '/icon-192.png',
   '/icon-512.png',
@@ -55,7 +55,7 @@ self.addEventListener('fetch', (e) => {
   if (critical.includes(url.pathname)) {
     e.respondWith((async () => {
       const cache = await caches.open(CACHE);
-      if (url.searchParams.get('v') === '2.5.6') {
+      if (url.searchParams.get('v') === '2.5.7') {
         const cached = await cache.match(req);
         if (cached) return cached;
       }
