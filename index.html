@@ -17,10 +17,10 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
-<link rel="stylesheet" href="/styles.css?v=2.5.5" />
+<link rel="stylesheet" href="/styles.css?v=2.5.6" />
 </head>
 <body>
-<div id="app-version" style="position:fixed;left:8px;bottom:6px;z-index:99999;font:600 10px/1.2 system-ui;color:#64748b;background:rgba(255,255,255,.88);border:1px solid #e2e8f0;border-radius:999px;padding:3px 7px;pointer-events:none">v2.5.5</div>
+<div id="app-version" style="position:fixed;left:8px;bottom:6px;z-index:99999;font:600 10px/1.2 system-ui;color:#64748b;background:rgba(255,255,255,.88);border:1px solid #e2e8f0;border-radius:999px;padding:3px 7px;pointer-events:none">v2.5.6</div>
 <script>(function(){try{var t=localStorage.getItem('cf_theme');if(t&&t!=='classic')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 
 <div id="auth-screen">
@@ -199,29 +199,6 @@
             <p id="overview-updated">מבוסס על הנתונים המעודכנים בחשבון</p>
           </div>
           <button class="overview-action" onclick="showPage('transactions',document.querySelector('.tab[data-page=transactions]'))">הוספת תנועה <span>＋</span></button>
-        </div>
-
-        <div class="overview-kpis">
-          <article class="overview-kpi overview-kpi-primary" onclick="openAvailableBreakdown()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')openAvailableBreakdown()" style="cursor:pointer">
-            <div class="overview-kpi-top"><span>זמין עכשיו</span><span class="status-dot" aria-hidden="true"></span></div>
-            <strong id="biz-available-now">—</strong>
-            <small id="biz-available-note">יתרת חשבונות העסק</small>
-          </article>
-          <article class="overview-kpi">
-            <div class="overview-kpi-top"><span>צפי לסוף החודש</span><span class="kpi-icon">↗</span></div>
-            <strong id="biz-eom-balance">—</strong>
-            <small id="biz-eom-note">כולל תנועות צפויות עד סוף החודש</small>
-          </article>
-          <article class="overview-kpi">
-            <div class="overview-kpi-top"><span>תזרים צפוי · 30 יום</span><span class="kpi-icon">30</span></div>
-            <strong id="biz-cf30-net">—</strong>
-            <small id="biz-cf30-note">הכנסות פחות הוצאות צפויות</small>
-          </article>
-          <article class="overview-kpi overview-kpi-attention" onclick="document.getElementById('today-attention').scrollIntoView({behavior:'smooth',block:'start'})">
-            <div class="overview-kpi-top"><span>דורש טיפול היום</span><span class="attention-count" id="biz-attention-count">0</span></div>
-            <strong id="biz-attention-label">הכול מסודר</strong>
-            <small>לחץ לצפייה בפעולות</small>
-          </article>
         </div>
 
         <section class="overview-panel monthly-sheet" aria-labelledby="monthly-sheet-title">
@@ -1273,8 +1250,8 @@
   </div>
 </div>
 
-<script src="/pricing.js?v=2.5.5"></script>
-<script src="/app.js?v=2.5.5"></script>
-<script src="/pwa.js?v=2.5.5" defer></script>
+<script src="/pricing.js?v=2.5.6"></script>
+<script src="/app.js?v=2.5.6"></script>
+<script src="/pwa.js?v=2.5.6" defer></script>
 </body>
 </html>

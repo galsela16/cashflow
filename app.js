@@ -1,4 +1,4 @@
-const APP_VERSION = '2.5.5';
+const APP_VERSION = '2.5.6';
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const versionBadge = document.getElementById('app-version');
 if (versionBadge) {
@@ -1707,7 +1707,8 @@ async function loadAll() {
     sb.from('employees').select('*').eq('user_id', uid).order('name'),
     sb.from('employee_events').select('*').eq('user_id', uid).eq('month', month),
     sb.from('clients').select('*').eq('user_id', uid).order('name'),
-    sb.from('event_details').select('*').eq('user_id', uid).order('event_date', { ascending: false })
+    sb.from('event_details').select('*').eq('user_id', uid).order('event_date', { ascending: false }),
+    fetchAccounts()
   ]);
   cachedTx = visibleTransactions(txR.data || []); cachedEmps = empR.data || []; cachedEmpEvents = evR.data || [];
   cachedClients = clientR.data || []; cachedEventDetails = detailR.data || [];
@@ -1722,14 +1723,14 @@ async function loadAll() {
   // ייבוא אוטומטי של הוצאות קבועות אם עוד לא יובאו החודש
   // חשוב: משייכים רשומות ישנות וטוענים את התנועות לפני renderAll,
   // כדי ש״זמין עכשיו״ יתבסס על הנתונים העדכניים כבר ברינדור הראשון אחרי רענון.
-  await fetchAccounts();
+  // Accounts were fetched alongside the initial dashboard data.
   // תקבול שסומן בתוך אירוע הוא כסף אמיתי שנכנס לבנק. מסנכרנים אותו לתנועת
   // בנק פנימית לפני חישוב ״זמין עכשיו״, בלי להציג/לספור אותו שוב בדוחות.
   await syncEventPaymentMovements();
   await backfillAccountLinks();
-  await loadMovements();
   await autoImportRecurring(month, uid, cachedTx);
-  await loadCashflow30();
+  // Both reads need completed writes, but do not depend on each other.
+  await Promise.all([loadMovements(), loadCashflow30()]);
   renderAll();
   // טען השקעות לעסק
   loadEquipment();
@@ -1897,43 +1898,13 @@ function unassignedActualDeltaSinceAnchor(accounts) {
   }, 0);
 }
 
-// תמונת מצב עסקית: ארבע התשובות שצריך לקבל בתוך שניות.
-// החישוב משתמש רק בנתונים שכבר נטענו ואינו מוסיף שאילתות או משנה את מבנה המסד.
-function renderBusinessOverview(net, pendingIncome, pendingExpense, pendingSalary) {
-  const availableEl = $('biz-available-now');
-  if (!availableEl) return;
-
+// Keep the dashboard action list and update time independent of the removed KPI cards.
+function renderBusinessOverview(pendingSalary) {
+  const list = $('biz-attention-list');
+  if (!list) return;
   const businessAccounts = cachedAccounts.filter(a => (a.scope || 'business') === 'business');
-  const hasAccounts = businessAccounts.length > 0;
-  const unassignedDelta = hasAccounts ? unassignedActualDeltaSinceAnchor(businessAccounts) : 0;
-  const available = hasAccounts
-    ? businessAccounts.reduce((sum, account) => sum + derivedBalance(account), 0) + unassignedDelta
-    : net;
-
   const today = todayYmd();
   const month = getMonth();
-  const monthEnd = month + '-' + String(new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate()).padStart(2, '0');
-  const end30 = addDays(today, 30);
-  const forecastRows = cachedForecastTx.filter(tx => txCashflowDate(tx) >= today && txCashflowDate(tx) <= end30);
-  const eomRows = forecastRows.filter(tx => {
-    const date = txCashflowDate(tx);
-    return date >= today && date <= monthEnd;
-  });
-  const eomChange = eomRows.reduce((sum, tx) => sum + (tx.type === 'income' ? 1 : -1) * (Number(tx.amount) || 0), 0);
-  const cf30Income = forecastRows.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
-  const cf30Expense = forecastRows.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
-  const cf30Net = cf30Income - cf30Expense;
-
-  setOverviewMoney('biz-available-now', available);
-  setOverviewMoney('biz-eom-balance', available + eomChange);
-  setOverviewMoney('biz-cf30-net', cf30Net, true);
-  const unassignedRecent = hasAccounts ? unassignedActualMovementsSinceAnchor(businessAccounts) : [];
-  const unassignedAll = hasAccounts ? balanceMovements().filter(m => txIsActual(m) && !m.account_id).length : 0;
-  $('biz-available-note').textContent = hasAccounts
-    ? (businessAccounts.length + ' חשבונות · לחצו לפירוט · רק תנועות שבוצעו בפועל' + (unassignedRecent.length ? ' · +' + fmt(Math.max(0, unassignedDelta)).replace('₪','₪') + ' ללא שיוך נכללו' : (unassignedAll ? ' · ⚠️ ' + unassignedAll + ' תנועות ישנות ללא חשבון' : '')))
-    : 'ללא חשבונות בנק — מוצג נטו החודש';
-  $('biz-eom-note').textContent = eomRows.length ? eomRows.length + ' תנועות צפויות עד סוף החודש' : 'לא הוגדרו תנועות נוספות החודש';
-  $('biz-cf30-note').textContent = forecastRows.length ? cf30Income.toLocaleString('he-IL') + ' ₪ נכנס · ' + cf30Expense.toLocaleString('he-IL') + ' ₪ יוצא' : 'לא הוגדרו תנועות צפויות';
 
   const attention = [];
   const overdueTx = cachedTx.filter(tx => txIsExpected(tx) && txCashflowDate(tx) && txCashflowDate(tx) < today);
@@ -1963,9 +1934,6 @@ function renderBusinessOverview(net, pendingIncome, pendingExpense, pendingSalar
     text: staleAccounts.length + ' חשבונות לא עודכנו לפחות שבוע', page: 'accounts'
   });
 
-  const list = $('biz-attention-list');
-  $('biz-attention-count').textContent = attention.length;
-  $('biz-attention-label').textContent = attention.length ? attention.length + ' פעולות פתוחות' : 'הכול מסודר';
   list.innerHTML = attention.length ? attention.slice(0, 4).map(item =>
     '<div class="attention-item' + (item.danger ? ' is-danger' : '') + '" onclick="showPage(\'' + item.page + '\',document.querySelector(\'.tab[onclick*=\"' + item.page + '\"]\'))">' +
       '<span class="attention-icon">' + item.icon + '</span>' +
@@ -1976,14 +1944,6 @@ function renderBusinessOverview(net, pendingIncome, pendingExpense, pendingSalar
 
   const updated = $('overview-updated');
   if (updated) updated.textContent = 'עודכן ' + new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-}
-
-function setOverviewMoney(id, value, showSign) {
-  const el = $(id);
-  if (!el) return;
-  const amount = Number(value) || 0;
-  el.textContent = (showSign && amount > 0 ? '+' : '') + fmt(amount);
-  el.style.color = amount < 0 ? 'var(--red)' : (id === 'biz-available-now' ? '#fff' : 'var(--overview-ink)');
 }
 
 function closeSheetBreakdown() {
@@ -4026,7 +3986,7 @@ function renderAll() {
   if ($('profit-breakdown') && $('profit-breakdown').style.display !== 'none') renderProfitBreakdown();
   renderCashflow30();
   renderCashflow13Weeks(net);
-  renderBusinessOverview(net, pendingIncome, pendingTxExpense, pendingEmpSalary + pendingWorkerSalary);
+  renderBusinessOverview(pendingEmpSalary + pendingWorkerSalary);
 
   $('d-income').textContent = fmt(income);
   $('d-expense').textContent = fmt(expense);

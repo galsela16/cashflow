@@ -1,13 +1,13 @@
 // CashflowHQ Service Worker — network-first navigation, fast static fallback
-const CACHE = 'cashflowhq-v255-payment-edit';
+const CACHE = 'cashflowhq-v256-dashboard';
 
 const CORE = [
   '/',
-  '/styles.css',
-  '/app.js',
-  '/pricing.js',
+  '/styles.css?v=2.5.6',
+  '/app.js?v=2.5.6',
+  '/pricing.js?v=2.5.6',
   '/pdf-font.js',
-  '/pwa.js',
+  '/pwa.js?v=2.5.6',
   '/manifest.webmanifest',
   '/icon-192.png',
   '/icon-512.png',
@@ -49,18 +49,26 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // קבצי האפליקציה הקריטיים הם network-first כדי שרענון אחרי Deploy
-  // לא ימשיך להריץ JavaScript ישן מתוך ה-PWA cache.
+  // Versioned assets are immutable within a release. Navigation stays network-first
+  // so a new deployment discovers its new versioned URLs and service worker.
   const critical = ['/app.js', '/pricing.js', '/styles.css', '/pwa.js'];
   if (critical.includes(url.pathname)) {
-    e.respondWith(
-      fetch(req, { cache: 'no-store' })
-        .then((res) => {
-          if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone()));
-          return res;
-        })
-        .catch(() => caches.match(req))
-    );
+    e.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      if (url.searchParams.get('v') === '2.5.6') {
+        const cached = await cache.match(req);
+        if (cached) return cached;
+      }
+      try {
+        const res = await fetch(req, { cache: 'no-store' });
+        if (res.ok) await cache.put(req, res.clone());
+        return res;
+      } catch (error) {
+        const cached = await cache.match(req);
+        if (cached) return cached;
+        throw error;
+      }
+    })());
     return;
   }
 
