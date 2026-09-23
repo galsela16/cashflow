@@ -1,7 +1,7 @@
 // רישום Service Worker — מאפשר התקנה כאפליקציה (PWA)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js?v=2.5.7').then(function (reg) {
+    navigator.serviceWorker.register('/sw.js?v=2.5.8').then(function (reg) {
       // בדוק אם יש גרסה חדשה בכל טעינה
       reg.update();
       // כשגרסה חדשה נכנסת לתוקף — רענן פעם אחת כדי לטעון אותה
